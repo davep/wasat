@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.0.1
 
-**WiP**
+**2026-06-17**
 
 - Initial version of the library.
 
