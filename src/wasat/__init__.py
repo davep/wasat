@@ -1,4 +1,4 @@
-"""Wasat: An asynchronous, type-hinted client library for the Gemini Protocol."""
+"""An async client library for the Gemini Protocol."""
 
 ##############################################################################
 # Python imports.
