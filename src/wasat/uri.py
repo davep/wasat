@@ -1,12 +1,13 @@
 """Gemini URI representation and parsing."""
 
 import urllib.parse
-from typing import Self
+from typing import Final, Self
 
 from .exceptions import URIError
 
-GEMINI_SCHEME = "gemini"
-GEMINI_PREFIX = f"{GEMINI_SCHEME}://"
+GEMINI_SCHEME: Final[str] = "gemini"
+GEMINI_PREFIX: Final[str] = f"{GEMINI_SCHEME}://"
+GEMINI_DEFAULT_PORT: Final[int] = 1965
 
 
 def _normalise_scheme(uri: str) -> str:
@@ -64,7 +65,7 @@ class GeminiURI:
 
         self._scheme = scheme
         self._host = parsed.hostname
-        self._port = parsed.port if parsed.port is not None else 1965
+        self._port = parsed.port if parsed.port is not None else GEMINI_DEFAULT_PORT
         self._path = parsed.path or "/"
         self._query = parsed.query if parsed.query else None
 
@@ -80,7 +81,7 @@ class GeminiURI:
 
     @property
     def port(self) -> int:
-        """The target port (defaults to 1965)."""
+        """The target port (defaults to `GEMINI_DEFAULT_PORT`)."""
         return self._port
 
     @property
@@ -103,7 +104,7 @@ class GeminiURI:
             A new GeminiURI instance with the updated query.
         """
         encoded_query = urllib.parse.quote(query, safe="~()*!.'")
-        port_str = f":{self._port}" if self._port != 1965 else ""
+        port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
         new_uri_str = (
             f"{GEMINI_PREFIX}{self._host}{port_str}{self._path}?{encoded_query}"
         )
@@ -140,7 +141,7 @@ class GeminiURI:
 
     def __str__(self) -> str:
         """Return the string representation of the URI."""
-        port_str = f":{self._port}" if self._port != 1965 else ""
+        port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
         query_str = f"?{self._query}" if self._query else ""
         return f"{GEMINI_PREFIX}{self._host}{port_str}{self._path}{query_str}"
 

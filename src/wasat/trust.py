@@ -6,6 +6,8 @@ import pathlib
 from datetime import UTC, datetime
 from typing import Protocol, runtime_checkable
 
+from .uri import GEMINI_DEFAULT_PORT
+
 
 def get_cert_fingerprint(cert_der: bytes) -> str:
     """Calculate the SHA-256 fingerprint of a DER-encoded certificate.
@@ -97,7 +99,7 @@ class FileTrustStore(TrustStore):
                                 continue
                         else:
                             host = host_port
-                            port = 1965
+                            port = GEMINI_DEFAULT_PORT
 
                         if fingerprint.startswith("sha256:"):
                             fingerprint = fingerprint[7:]

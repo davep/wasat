@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from wasat import (
+    GEMINI_DEFAULT_PORT,
     Client,
     FileTrustStore,
     RedirectError,
@@ -295,7 +296,9 @@ class TestClient:
                 assert resp1.status == StatusCode.SUCCESS
 
                 # Verify saved fingerprint in store
-                fingerprint1 = await trust_store.get_fingerprint("example.com", 1965)
+                fingerprint1 = await trust_store.get_fingerprint(
+                    "example.com", GEMINI_DEFAULT_PORT
+                )
                 assert fingerprint1 == get_cert_fingerprint(cert_der1)
 
                 # 2. Second request with same cert: should pass

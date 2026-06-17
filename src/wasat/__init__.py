@@ -12,13 +12,14 @@ from .exceptions import (
 from .response import Response
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore
-from .uri import GeminiURI
+from .uri import GEMINI_DEFAULT_PORT, GeminiURI
 
 __all__ = [
     "Client",
     "Response",
     "StatusCode",
     "GeminiURI",
+    "GEMINI_DEFAULT_PORT",
     "TrustStore",
     "FileTrustStore",
     "WasatError",

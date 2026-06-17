@@ -2,7 +2,7 @@
 
 import pytest
 
-from wasat import GeminiURI, URIError
+from wasat import GEMINI_DEFAULT_PORT, GeminiURI, URIError
 
 
 class TestGeminiURI:
@@ -13,18 +13,22 @@ class TestGeminiURI:
         uri = GeminiURI("gemini://example.com/path/to/resource?query")
         assert uri.scheme == "gemini"
         assert uri.host == "example.com"
-        assert uri.port == 1965
+        assert uri.port == GEMINI_DEFAULT_PORT
         assert uri.path == "/path/to/resource"
         assert uri.query == "query"
         assert str(uri) == "gemini://example.com/path/to/resource?query"
 
     def test_default_port(self) -> None:
-        """Test that default port is 1965 if none is specified."""
+        """Test that default port is GEMINI_DEFAULT_PORT if none is specified."""
         uri = GeminiURI("gemini://example.com")
-        assert uri.port == 1965
+        assert uri.port == GEMINI_DEFAULT_PORT
         assert uri.path == "/"
         assert uri.query is None
         assert str(uri) == "gemini://example.com/"
+
+    def test_default_port_value(self) -> None:
+        """Test that the GEMINI_DEFAULT_PORT constant is 1965."""
+        assert GEMINI_DEFAULT_PORT == 1965
 
     def test_custom_port(self) -> None:
         """Test parsing of custom ports."""
