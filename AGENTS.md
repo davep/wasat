@@ -28,6 +28,7 @@ All source code lives in [src/wasat/](src/wasat/). Key modules and their respons
     - Inline code: single backticks (\`like_this\`).
     - Cross-references: `[`ClassName`][module.ClassName]` or `[module.ClassName][]`. Do not use Sphinx markup.
 - **Descriptive Naming**: Use full, descriptive names for all classes, methods, functions, and variables. Avoid abbreviations.
+- **Language**: Use British English for all documentation and naming of classes, methods, functions and variables.
 - **Modularization**: Keep modules focused and relatively small. When introducing new components (e.g., custom parsers, protocol extensions), create a new module rather than expanding existing ones.
 
 ---
