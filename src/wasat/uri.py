@@ -35,8 +35,7 @@ class GeminiURI:
             self._query = uri.query
             return
 
-        cleaned = _normalise_scheme(uri.strip())
-        if not cleaned:
+        if not (cleaned := _normalise_scheme(uri.strip())):
             raise URIError("URI cannot be empty")
 
         to_parse = cleaned
@@ -48,8 +47,9 @@ class GeminiURI:
         except Exception as e:
             raise URIError(f"Failed to parse URI: {e}") from e
 
-        scheme = parsed.scheme.lower()
-        if scheme == "https" and cleaned.startswith(GEMINI_PREFIX):
+        if (scheme := parsed.scheme.lower()) == "https" and cleaned.startswith(
+            GEMINI_PREFIX
+        ):
             scheme = GEMINI_SCHEME
 
         if not scheme:
@@ -66,8 +66,7 @@ class GeminiURI:
         self._host = parsed.hostname
         self._port = parsed.port if parsed.port is not None else 1965
 
-        path = parsed.path
-        if not path:
+        if not (path := parsed.path):
             path = "/"
         elif not path.startswith("/"):
             path = "/" + path
