@@ -1,6 +1,6 @@
 # Wasat: Async Gemini Protocol Client Library
 
-Wasat is a modern, object-oriented, fully type-hinted asynchronous client library for the [Gemini Protocol](gemini://geminiprotocol.net), built with zero external dependencies.
+Wasat is an object-oriented, fully type-hinted asynchronous client library for the [Gemini Protocol](gemini://geminiprotocol.net), built with zero external dependencies.
 
 ## Features
 
