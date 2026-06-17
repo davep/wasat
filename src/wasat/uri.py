@@ -155,6 +155,11 @@ class GeminiURI:
         return f"GeminiURI('{self}')"
 
     def __eq__(self, other: object) -> bool:
+        if isinstance(other, str):
+            try:
+                other = GeminiURI(other)
+            except URIError:
+                return False
         if not isinstance(other, GeminiURI):
             return NotImplemented
         return (
