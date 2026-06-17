@@ -57,3 +57,21 @@ test = [
     "pytest>=9.1.0",
     "pytest-cov>=7.1.0",
 ]
+
+[tool.coverage.run]
+omit = [
+     "tests/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
