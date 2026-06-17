@@ -77,6 +77,11 @@ class TestGeminiURI:
         # Absolute URI
         assert str(base.resolve("gemini://other.com/path")) == "gemini://other.com/path"
 
+    def test_resolve_relative_error(self) -> None:
+        """Test that resolving a non-Gemini URI raises URIError."""
+        with pytest.raises(URIError, match="Failed to resolve relative URI"):
+            GeminiURI("gemini://example.com/").resolve("http://google.com")
+
     def test_equality(self) -> None:
         """Test comparison of GeminiURI instances."""
         uri1 = GeminiURI("gemini://example.com/path")
