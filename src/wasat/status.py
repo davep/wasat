@@ -33,7 +33,7 @@ class StatusCode(IntEnum):
 
     # 6x Client Certificate Required
     CLIENT_CERTIFICATE_REQUIRED = 60
-    CERTIFICATE_NOT_AUTHORIZED = 61
+    CERTIFICATE_NOT_AUTHORISED = 61
     CERTIFICATE_NOT_VALID = 62
 
     @property

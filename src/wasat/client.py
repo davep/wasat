@@ -28,7 +28,7 @@ class WrappedStreamReader:
     def __init__(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
-        """Initialize the wrapper.
+        """Initialise the wrapper.
 
         Args:
             reader: The stream reader to wrap.
@@ -86,7 +86,7 @@ class Client:
         read_timeout: float = 30.0,
         ssl_context: ssl.SSLContext | None = None,
     ) -> None:
-        """Initialize the Gemini Client.
+        """Initialise the Gemini Client.
 
         Args:
             verify_mode: The certificate verification mode:

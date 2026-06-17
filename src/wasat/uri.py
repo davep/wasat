@@ -9,8 +9,8 @@ GEMINI_SCHEME = "gemini"
 GEMINI_PREFIX = f"{GEMINI_SCHEME}://"
 
 
-def _normalize_scheme(uri: str) -> str:
-    """Normalize the scheme portion of a URI to lowercase."""
+def _normalise_scheme(uri: str) -> str:
+    """Normalise the scheme portion of a URI to lowercase."""
     scheme, separator, rest = uri.partition("://")
     return f"{scheme.lower()}{separator}{rest}" if separator else uri
 
@@ -19,7 +19,7 @@ class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
     def __init__(self, uri: str) -> None:
-        """Initialize and validate a Gemini URI.
+        """Initialise and validate a Gemini URI.
 
         Args:
             uri: The raw URI string.
@@ -27,7 +27,7 @@ class GeminiURI:
         Raises:
             URIError: If the URI is invalid or has an incorrect scheme.
         """
-        cleaned = _normalize_scheme(uri.strip())
+        cleaned = _normalise_scheme(uri.strip())
         if not cleaned:
             raise URIError("URI cannot be empty")
 
@@ -123,7 +123,7 @@ class GeminiURI:
         base_str = str(self)
         base_http = base_str.replace(GEMINI_PREFIX, "https://", 1)
 
-        relative_cleaned = _normalize_scheme(relative_uri)
+        relative_cleaned = _normalise_scheme(relative_uri)
         relative_http = relative_cleaned
         if relative_cleaned.startswith(GEMINI_PREFIX):
             relative_http = "https://" + relative_cleaned.removeprefix(GEMINI_PREFIX)

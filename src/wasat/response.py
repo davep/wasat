@@ -22,7 +22,7 @@ class Response:
         meta: str,
         reader: ReaderProtocol | None = None,
     ) -> None:
-        """Initialize the Response object.
+        """Initialise the Response object.
 
         Args:
             status: The Gemini status code.

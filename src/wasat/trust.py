@@ -66,7 +66,7 @@ class FileTrustStore(TrustStore):
     """
 
     def __init__(self, filepath: str | pathlib.Path) -> None:
-        """Initialize the file-based trust store.
+        """Initialise the file-based trust store.
 
         Args:
             filepath: The path to the file storing fingerprints.
@@ -103,7 +103,7 @@ class FileTrustStore(TrustStore):
                             fingerprint = fingerprint[7:]
                         self._cache[(host.lower(), port)] = fingerprint.lower()
         except Exception:
-            # Fail silently on load errors during initialization
+            # Fail silently on load errors during initialisation
             pass
 
     def _save_sync(self) -> None:
