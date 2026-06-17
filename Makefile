@@ -1,19 +1,21 @@
-lib      := wasat
-src      := src/
-tests    := tests/
-docs     := docs/
-run      := uv run
-sync     := uv sync --group dev --group test --group docs
-build    := uv build
-publish  := uv publish --username=__token__ --keyring-provider=subprocess
-test     := $(run) pytest
-python   := $(run) python
-ruff     := $(run) ruff
-lint     := $(ruff) check
-fmt      := $(ruff) format
-mypy     := $(run) mypy
-mkdocs   := $(run) mkdocs
-spell    := $(run) codespell
+lib             := wasat
+src             := src/
+tests           := tests/
+docs            := docs/
+reports         := .reports
+run             := uv run
+sync            := uv sync --group dev --group test --group docs
+build           := uv build
+publish-package := uv publish --username=__token__ --keyring-provider=subprocess
+test            := $(run) pytest --verbose --cov
+python          := $(run) python
+ruff            := $(run) ruff
+lint            := $(ruff) check
+fmt             := $(ruff) format
+mypy            := $(run) mypy
+coverage        := $(test) --cov-report html:$(reports)/html
+mkdocs          := $(run) mkdocs
+spell           := $(run) codespell
 
 ##############################################################################
 # Local "interactive testing" of the code.
@@ -58,6 +60,11 @@ stricttypecheck:	        # Perform a strict static type checks with mypy
 test:				# Run the unit tests
 	$(test) -v
 
+.PHONY: coverage
+coverage:			# Produce a test coverage report
+	$(coverage)
+	open $(reports)/html/index.html
+
 .PHONY: spellcheck
 spellcheck:			# Spell check the code
 	$(spell) *.md $(src) $(docs) $(tests)
@@ -91,11 +98,11 @@ spackage:			# Create a source package for the library
 
 .PHONY: testdist
 testdist: package			# Perform a test distribution
-	$(publish) --index testpypi
+	$(publish-package) --index testpypi
 
 .PHONY: dist
 dist: package			# Upload to pypi
-	$(publish)
+	$(publish-package)
 
 ##############################################################################
 # Utility.
