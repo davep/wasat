@@ -1,43 +1,77 @@
 """Entry point for executing the wasat package directly."""
 
-import asyncio
-import sys
+##############################################################################
+# Python imports.
+from argparse import ArgumentParser, Namespace
+from asyncio import run
+from sys import exit, stderr
 
-from .client import Client
-from .exceptions import WasatError
+##############################################################################
+# Local imports.
+from . import Client, WasatError, __version__
 
 
+##############################################################################
+def get_args() -> Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        Namespace: Parsed command-line arguments.
+    """
+    parser = ArgumentParser(
+        prog="wasat",
+        description="An asynchronous client library and CLI for the Gemini protocol.",
+    )
+    parser.add_argument(
+        "url",
+        help="The Gemini URL to request.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output.",
+    )
+
+    return parser.parse_args()
+
+
+##############################################################################
 async def run_cli() -> None:
     """Run the Wasat CLI asynchronously."""
-    if len(sys.argv) < 2:
-        print("Usage: wasat <gemini-url>", file=sys.stderr)
-        sys.exit(1)
-
-    url = sys.argv[1]
-    client = Client(verify_mode="tofu")
+    args = get_args()
 
     try:
-        response = await client.request(url)
-        print("--- Gemini Response ---")
-        print(f"Status: {response.status.value} ({response.status.name})")
-        print(f"Meta: {response.meta}")
-        print("-----------------------")
-        if response.status.is_success:
-            body = await response.text()
-            print(body)
+        async with await Client(verify_mode="tofu").request(args.url) as response:
+            if args.verbose or not response.status.is_success:
+                print("--- Gemini Response ---")
+                print(f"Status: {response.status.value} ({response.status.name})")
+                print(f"Meta: {response.meta}")
+                print("-----------------------")
+            if response.status.is_success:
+                print(await response.text())
+            else:
+                exit(1)
     except WasatError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"Error: {e}", file=stderr)
+        exit(1)
 
 
+##############################################################################
 def main() -> None:
     """CLI entry point."""
     try:
-        asyncio.run(run_cli())
+        run(run_cli())
     except KeyboardInterrupt:
-        sys.exit(130)
+        exit(130)
 
 
+##############################################################################
 if __name__ == "__main__":
     main()
 
