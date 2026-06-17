@@ -66,11 +66,7 @@ class GeminiURI:
         self._host = parsed.hostname
         self._port = parsed.port if parsed.port is not None else 1965
 
-        if not (path := parsed.path):
-            path = "/"
-        elif not path.startswith("/"):
-            path = "/" + path
-        self._path = path
+        self._path = parsed.path or "/"
 
         self._query = parsed.query if parsed.query else None
 
