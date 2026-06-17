@@ -93,6 +93,18 @@ class TestGeminiURI(unittest.TestCase):
         self.assertNotEqual(uri1, uri3)
         self.assertNotEqual(uri1, "gemini://example.com/path")
 
+    def test_clone_from_gemini_uri(self) -> None:
+        """Test instantiating a GeminiURI with another GeminiURI instance (cloning)."""
+        original = GeminiURI("gemini://example.com:1966/path/to/resource?query")
+        clone = GeminiURI(original)
+
+        self.assertEqual(clone.scheme, "gemini")
+        self.assertEqual(clone.host, "example.com")
+        self.assertEqual(clone.port, 1966)
+        self.assertEqual(clone.path, "/path/to/resource")
+        self.assertEqual(clone.query, "query")
+        self.assertEqual(clone, original)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -187,8 +187,7 @@ class Client:
             uri: The target GeminiURI.
             writer: The StreamWriter representing the established connection.
         """
-        request_line = f"{uri}\r\n".encode()
-        writer.write(request_line)
+        writer.write(f"{uri}\r\n".encode())
         await writer.drain()
 
     async def _read_response_line(
@@ -378,8 +377,7 @@ class Client:
             ProtocolError: If the server response violates the Gemini protocol.
             RedirectError: If redirect limits are exceeded or loops are detected.
         """
-        if isinstance(uri, str):
-            uri = GeminiURI(uri)
+        uri = GeminiURI(uri)
 
         # Resolve permanent redirects cache first
         seen_redirects = {uri}

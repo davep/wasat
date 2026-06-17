@@ -18,15 +18,23 @@ def _normalise_scheme(uri: str) -> str:
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
-    def __init__(self, uri: str) -> None:
+    def __init__(self, uri: str | Self) -> None:
         """Initialise and validate a Gemini URI.
 
         Args:
-            uri: The raw URI string.
+            uri: The raw URI string or an existing GeminiURI to clone.
 
         Raises:
             URIError: If the URI is invalid or has an incorrect scheme.
         """
+        if isinstance(uri, GeminiURI):
+            self._scheme = uri.scheme
+            self._host = uri.host
+            self._port = uri.port
+            self._path = uri.path
+            self._query = uri.query
+            return
+
         cleaned = _normalise_scheme(uri.strip())
         if not cleaned:
             raise URIError("URI cannot be empty")
