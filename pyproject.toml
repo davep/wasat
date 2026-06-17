@@ -9,6 +9,32 @@ authors = [
 requires-python = ">=3.12"
 dependencies = []
 license = "MIT"
+keywords = [
+    "API",
+    "async",
+    "client",
+    "library",
+    "Gemini",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://wasat.davep.dev/"
+Repository = "https://github.com/davep/wasat"
+Documentation = "https://wasat.davep.dev/"
+Source = "https://github.com/davep/wasat"
+Issues = "https://github.com/davep/wasat/issues"
+Discussions = "https://github.com/davep/wasat/discussions"
 
 [project.scripts]
 wasat = "wasat.__main__:main"
@@ -16,6 +42,29 @@ wasat = "wasat.__main__:main"
 [build-system]
 requires = ["uv_build>=0.11.21,<0.12.0"]
 build-backend = "uv_build"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "codespell>=2.4.2",
+    "mypy>=2.1.0",
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.17",
+]
+docs = [
+    "mkdocs>=1.6.1,<2",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.4",
+]
+test = [
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+]
 
 [tool.pyright]
 venvPath="."
@@ -41,23 +90,6 @@ select = [
 [tool.ruff.lint.pycodestyle]
 max-line-length = 120
 
-[dependency-groups]
-dev = [
-    "codespell>=2.4.2",
-    "mypy>=2.1.0",
-    "pre-commit>=4.6.0",
-    "ruff>=0.15.17",
-]
-docs = [
-    "mkdocs>=1.6.1,<2",
-    "mkdocs-material>=9.7.6",
-    "mkdocstrings[python]>=1.0.4",
-]
-test = [
-    "pytest>=9.1.0",
-    "pytest-cov>=7.1.0",
-]
-
 [tool.coverage.run]
 omit = [
      "tests/*"
@@ -74,4 +106,3 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
-
