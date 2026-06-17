@@ -2,6 +2,8 @@
 
 import unittest
 
+import pytest
+
 from wasat import GeminiURI, URIError
 
 
@@ -106,6 +108,36 @@ class TestGeminiURI(unittest.TestCase):
         self.assertEqual(clone.path, "/path/to/resource")
         self.assertEqual(clone.query, "query")
         self.assertEqual(clone, original)
+
+
+@pytest.mark.parametrize(
+    "invalid_uri",
+    [
+        # Unmatched IPv6 brackets in netloc
+        "gemini://[::1",
+        "gemini://]::1",
+        # Malformed bracketed netloc structures
+        "gemini://invalid[::1]",
+        "gemini://[::1]extra",
+        "gemini://[invalid_ipv6_address]",
+        "gemini://[127.0.0.1]",
+        # NFKC normalisation issues (invalid characters under NFKC normalisation)
+        "gemini://example.com\uff0fpath",
+        "gemini://example\uff1acom",
+    ],
+)
+def test_parsing_failures_from_urlparse(invalid_uri: str) -> None:
+    """Test that URIs causing urlparse exceptions raise URIError.
+
+    This test checks that malformed IPv6 brackets, invalid bracketed netloc
+    structures, and netlocs with NFKC normalisation issues all trigger
+    the urlparse error path.
+
+    Args:
+        invalid_uri: The invalid URI string to parse.
+    """
+    with pytest.raises(URIError, match="Failed to parse URI"):
+        GeminiURI(invalid_uri)
 
 
 ### test_uri.py ends here
