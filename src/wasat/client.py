@@ -178,6 +178,188 @@ class Client:
 
         return context
 
+    async def _send_request_line(
+        self, uri: GeminiURI, writer: asyncio.StreamWriter
+    ) -> None:
+        """Send the Gemini request line to the server.
+
+        Args:
+            uri: The target GeminiURI.
+            writer: The StreamWriter representing the established connection.
+        """
+        request_line = f"{uri}\r\n".encode()
+        writer.write(request_line)
+        await writer.drain()
+
+    async def _read_response_line(
+        self, reader: asyncio.StreamReader
+    ) -> tuple[StatusCode, str]:
+        """Read and parse the response line from the server.
+
+        Args:
+            reader: The StreamReader representing the established connection.
+
+        Returns:
+            A tuple of (StatusCode, meta string).
+
+        Raises:
+            ConnectionError: If the connection is closed before reading the response.
+            ProtocolError: If the response line format is invalid.
+        """
+        async with asyncio.timeout(self._read_timeout):
+            try:
+                response_line_bytes = await reader.readuntil(b"\r\n")
+            except asyncio.LimitOverrunError as e:
+                raise ProtocolError(
+                    "Response line exceeds maximum allowed limit"
+                ) from e
+            except (asyncio.IncompleteReadError, ConnectionResetError) as e:
+                raise ConnectionError(
+                    "Connection closed by server before sending response"
+                ) from e
+
+        response_line = response_line_bytes.decode("utf-8").rstrip("\r\n")
+        if not response_line:
+            raise ProtocolError("Received empty response line")
+
+        parts = response_line.split(" ", 1)
+        status_str = parts[0]
+        if len(status_str) != 2 or not status_str.isdigit():
+            raise ProtocolError(f"Invalid status code format: '{status_str}'")
+
+        status_value = int(status_str)
+        try:
+            status_code = StatusCode.from_int(status_value)
+        except ValueError as e:
+            raise ProtocolError(f"Invalid status code: '{status_str}': {e}") from e
+        meta = parts[1] if len(parts) > 1 else ""
+
+        return status_code, meta
+
+    async def _connect(
+        self, uri: GeminiURI, ssl_context: ssl.SSLContext
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        """Establish connection to the Gemini server.
+
+        Args:
+            uri: The target GeminiURI.
+            ssl_context: The SSLContext to use for the TLS handshake.
+
+        Returns:
+            A tuple of (StreamReader, StreamWriter).
+
+        Raises:
+            ConnectionError: If the connection attempt times out or fails.
+            SecurityError: If the TLS handshake fails.
+        """
+        try:
+            async with asyncio.timeout(self._connect_timeout):
+                return await asyncio.open_connection(
+                    host=uri.host,
+                    port=uri.port,
+                    ssl=ssl_context,
+                    server_hostname=uri.host if ssl_context.check_hostname else None,
+                )
+        except TimeoutError as e:
+            raise ConnectionError(
+                f"Connection to {uri.host}:{uri.port} timed out"
+            ) from e
+        except ssl.SSLError as e:
+            raise SecurityError(f"TLS handshake failed: {e}") from e
+        except Exception as e:
+            raise ConnectionError(
+                f"Failed to connect to {uri.host}:{uri.port}: {e}"
+            ) from e
+
+    async def _verify_tofu(self, uri: GeminiURI, writer: asyncio.StreamWriter) -> None:
+        """Verify the peer certificate using Trust-On-First-Use (TOFU).
+
+        Args:
+            uri: The target GeminiURI.
+            writer: The StreamWriter representing the established connection.
+
+        Raises:
+            ConnectionError: If the TLS handshake was not completed.
+            SecurityError: If the certificate is missing, mismatched, or rejected.
+        """
+        transport = writer.transport
+        ssl_object = transport.get_extra_info("ssl_object")
+        if ssl_object is None:
+            raise ConnectionError("TLS handshake not completed")
+
+        cert_der = ssl_object.getpeercert(binary_form=True)
+        if not cert_der:
+            raise SecurityError("Server did not present a TLS certificate")
+
+        assert self._trust_store is not None
+        is_trusted = await self._trust_store.verify(uri.host, uri.port, cert_der)
+        if not is_trusted:
+            stored_fingerprint = await self._trust_store.get_fingerprint(
+                uri.host, uri.port
+            )
+            current_fingerprint = get_cert_fingerprint(cert_der)
+            if stored_fingerprint is not None:
+                raise SecurityError(
+                    f"Verification failed: certificate fingerprint mismatch for {uri.host}:{uri.port}. "
+                    f"Expected: sha256:{stored_fingerprint}, Received: sha256:{current_fingerprint}."
+                )
+
+            accept = True
+            if self._on_new_certificate:
+                accept = await self._on_new_certificate(
+                    uri.host, uri.port, current_fingerprint
+                )
+            if accept:
+                await self._trust_store.save(uri.host, uri.port, cert_der)
+            else:
+                raise SecurityError(
+                    f"Certificate rejected for {uri.host}:{uri.port} by callback."
+                )
+
+    async def _do_request(self, uri: GeminiURI) -> Response:
+        """Execute a single Gemini request.
+
+        Args:
+            uri: The target GeminiURI.
+
+        Returns:
+            The Gemini Response object.
+
+        Raises:
+            ConnectionError: On connection/network failure.
+            SecurityError: On certificate validation failure.
+            ProtocolError: On protocol format violations.
+        """
+        ssl_context = (
+            self._ssl_context
+            if self._ssl_context is not None
+            else self._create_ssl_context()
+        )
+
+        reader, writer = await self._connect(uri, ssl_context)
+
+        try:
+            if self._verify_mode == "tofu":
+                await self._verify_tofu(uri, writer)
+
+            await self._send_request_line(uri, writer)
+            status_code, meta = await self._read_response_line(reader)
+
+            if status_code.is_success:
+                wrapped_reader = WrappedStreamReader(reader, writer)
+                return Response(status_code, meta, wrapped_reader)
+            else:
+                writer.close()
+                with contextlib.suppress(Exception):
+                    await writer.wait_closed()
+                return Response(status_code, meta, None)
+
+        except Exception:
+            writer.close()
+            with contextlib.suppress(Exception):
+                await writer.wait_closed()
+            raise
+
     async def request(self, uri: str | GeminiURI) -> Response:
         """Perform a Gemini request and return the response.
 
@@ -251,133 +433,6 @@ class Client:
             response = await self._do_request(uri)
 
         return response
-
-    async def _do_request(self, uri: GeminiURI) -> Response:
-        """Execute a single Gemini request.
-
-        Args:
-            uri: The target GeminiURI.
-
-        Returns:
-            The Gemini Response object.
-
-        Raises:
-            ConnectionError: On connection/network failure.
-            SecurityError: On certificate validation failure.
-            ProtocolError: On protocol format violations.
-        """
-        ssl_context = (
-            self._ssl_context
-            if self._ssl_context is not None
-            else self._create_ssl_context()
-        )
-
-        try:
-            async with asyncio.timeout(self._connect_timeout):
-                reader, writer = await asyncio.open_connection(
-                    host=uri.host,
-                    port=uri.port,
-                    ssl=ssl_context,
-                    server_hostname=uri.host if ssl_context.check_hostname else None,
-                )
-        except TimeoutError as e:
-            raise ConnectionError(
-                f"Connection to {uri.host}:{uri.port} timed out"
-            ) from e
-        except ssl.SSLError as e:
-            raise SecurityError(f"TLS handshake failed: {e}") from e
-        except Exception as e:
-            raise ConnectionError(
-                f"Failed to connect to {uri.host}:{uri.port}: {e}"
-            ) from e
-
-        try:
-            # Custom validation for TOFU
-            if self._verify_mode == "tofu":
-                transport = writer.transport
-                ssl_object = transport.get_extra_info("ssl_object")
-                if ssl_object is None:
-                    raise ConnectionError("TLS handshake not completed")
-
-                cert_der = ssl_object.getpeercert(binary_form=True)
-                if not cert_der:
-                    raise SecurityError("Server did not present a TLS certificate")
-
-                assert self._trust_store is not None
-                is_trusted = await self._trust_store.verify(
-                    uri.host, uri.port, cert_der
-                )
-                if not is_trusted:
-                    stored_fingerprint = await self._trust_store.get_fingerprint(
-                        uri.host, uri.port
-                    )
-                    current_fingerprint = get_cert_fingerprint(cert_der)
-                    if stored_fingerprint is not None:
-                        raise SecurityError(
-                            f"Verification failed: certificate fingerprint mismatch for {uri.host}:{uri.port}. "
-                            f"Expected: sha256:{stored_fingerprint}, Received: sha256:{current_fingerprint}."
-                        )
-                    else:
-                        accept = True
-                        if self._on_new_certificate:
-                            accept = await self._on_new_certificate(
-                                uri.host, uri.port, current_fingerprint
-                            )
-                        if accept:
-                            await self._trust_store.save(uri.host, uri.port, cert_der)
-                        else:
-                            raise SecurityError(
-                                f"Certificate rejected for {uri.host}:{uri.port} by callback."
-                            )
-
-            # Send request line
-            request_line = f"{uri}\r\n".encode()
-            writer.write(request_line)
-            await writer.drain()
-
-            # Read response line
-            async with asyncio.timeout(self._read_timeout):
-                try:
-                    response_line_bytes = await reader.readuntil(b"\r\n")
-                except asyncio.LimitOverrunError as e:
-                    raise ProtocolError(
-                        "Response line exceeds maximum allowed limit"
-                    ) from e
-                except (asyncio.IncompleteReadError, ConnectionResetError) as e:
-                    raise ConnectionError(
-                        "Connection closed by server before sending response"
-                    ) from e
-
-            response_line = response_line_bytes.decode("utf-8").rstrip("\r\n")
-            if not response_line:
-                raise ProtocolError("Received empty response line")
-
-            parts = response_line.split(" ", 1)
-            status_str = parts[0]
-            if len(status_str) != 2 or not status_str.isdigit():
-                raise ProtocolError(f"Invalid status code format: '{status_str}'")
-
-            status_value = int(status_str)
-            try:
-                status_code = StatusCode.from_int(status_value)
-            except ValueError as e:
-                raise ProtocolError(f"Invalid status code: '{status_str}': {e}") from e
-            meta = parts[1] if len(parts) > 1 else ""
-
-            if status_code.is_success:
-                wrapped_reader = WrappedStreamReader(reader, writer)
-                return Response(status_code, meta, wrapped_reader)
-            else:
-                writer.close()
-                with contextlib.suppress(Exception):
-                    await writer.wait_closed()
-                return Response(status_code, meta, None)
-
-        except Exception:
-            writer.close()
-            with contextlib.suppress(Exception):
-                await writer.wait_closed()
-            raise
 
 
 ### client.py ends here
