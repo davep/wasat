@@ -113,30 +113,6 @@ uv run python -m wasat gemini://geminiprotocol.net/
 uv run wasat gemini://localhost:1965/index.gmi
 ```
 
----
-
-## API Reference
-
-### Exceptions (`wasat.exceptions`)
-- `WasatError`: Base exception class.
-- `URIError`: Raised for invalid Gemini URIs.
-- `ProtocolError`: Raised for server responses that violate the protocol specification.
-- `ConnectionError`: Raised for network-level failures, connection drops, and timeouts.
-- `SecurityError`: Raised for TLS failures or mismatching TOFU fingerprints.
-- `RedirectError`: Raised for redirect loops or exceeding limits.
-
-### Status Codes (`wasat.status`)
-`StatusCode` is an `IntEnum` representing all status codes defined by the Gemini specification. It includes status categorization properties:
-- `status.is_input` (1x codes)
-- `status.is_success` (2x codes)
-- `status.is_redirect` (3x codes)
-- `status.is_temporary_failure` (4x codes)
-- `status.is_permanent_failure` (5x codes)
-- `status.is_failure` (4x or 5x codes)
-- `status.is_client_certificate_required` (6x codes)
-
----
-
 ## License
 
 MIT
