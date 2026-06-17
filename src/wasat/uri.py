@@ -147,7 +147,7 @@ class GeminiURI:
         return f"{GEMINI_PREFIX}{self._host}{port_str}{self._path}{query_str}"
 
     def __repr__(self) -> str:
-        return f"GeminiURI('{self}')"
+        return f"{self.__class__.__name__}('{self}')"
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
