@@ -2,9 +2,7 @@
 
 import unittest
 
-from wasat.exceptions import ProtocolError
-from wasat.response import Response
-from wasat.status import StatusCode
+from wasat import ProtocolError, Response, StatusCode
 
 
 class MockStreamReader:
@@ -106,5 +104,4 @@ class TestResponse(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(reader.closed)
 
 
-if __name__ == "__main__":
-    unittest.main()
+### test_response.py ends here

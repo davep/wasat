@@ -2,8 +2,7 @@
 
 import unittest
 
-from wasat.exceptions import URIError
-from wasat.uri import GeminiURI
+from wasat import GeminiURI, URIError
 
 
 class TestGeminiURI(unittest.TestCase):
@@ -109,5 +108,4 @@ class TestGeminiURI(unittest.TestCase):
         self.assertEqual(clone, original)
 
 
-if __name__ == "__main__":
-    unittest.main()
+### test_uri.py ends here

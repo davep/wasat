@@ -2,7 +2,7 @@
 
 import unittest
 
-from wasat.status import StatusCode
+from wasat import StatusCode
 
 
 class TestStatusCode(unittest.TestCase):
@@ -59,5 +59,4 @@ class TestStatusCode(unittest.TestCase):
             StatusCode.from_int(5)
 
 
-if __name__ == "__main__":
-    unittest.main()
+### test_status.py ends here

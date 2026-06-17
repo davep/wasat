@@ -7,13 +7,14 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from wasat.client import Client
-from wasat.exceptions import (
+from wasat import (
+    Client,
+    FileTrustStore,
     RedirectError,
     SecurityError,
+    StatusCode,
 )
-from wasat.status import StatusCode
-from wasat.trust import FileTrustStore, get_cert_fingerprint
+from wasat.trust import get_cert_fingerprint
 
 
 class MockSSLObject:
@@ -309,5 +310,4 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
             )
 
 
-if __name__ == "__main__":
-    unittest.main()
+### test_client.py ends here
