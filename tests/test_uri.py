@@ -43,6 +43,11 @@ class TestGeminiURI:
         with pytest.raises(URIError):
             GeminiURI("gemini://")
 
+    def test_missing_scheme(self) -> None:
+        """Test that a missing scheme raises URIError."""
+        with pytest.raises(URIError):
+            GeminiURI("example.com/path")
+
     def test_empty_uri(self) -> None:
         """Test that empty or whitespace URIs raise URIError."""
         with pytest.raises(URIError):
