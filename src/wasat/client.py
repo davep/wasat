@@ -2,10 +2,12 @@
 
 import asyncio
 import contextlib
+import os
 import pathlib
 import ssl
+import sys
 from collections.abc import Callable, Coroutine
-from typing import Literal
+from typing import Final, Literal
 
 from .exceptions import (
     ConnectionError,
@@ -20,6 +22,29 @@ from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
 from .uri import GeminiURI
 
 type NewCertCallback = Callable[[str, int, str], Coroutine[None, None, bool]]
+
+
+_DEFAULT_STORE_DIR: Final[str] = "wasat"
+_DEFAULT_STORE_FILE: Final[str] = "known_hosts"
+
+
+def _get_default_trust_store_path() -> pathlib.Path:
+    """Get the default trust store filepath based on the operating system's behaviour.
+
+    Returns:
+        The default pathlib.Path to the known hosts store.
+    """
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        base_dir = (
+            pathlib.Path(appdata)
+            if appdata
+            else pathlib.Path.home() / "AppData" / "Roaming"
+        )
+    else:
+        base_dir = pathlib.Path.home() / ".config"
+
+    return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_STORE_FILE
 
 
 class WrappedStreamReader:
@@ -120,11 +145,9 @@ class Client:
 
         # Set up default trust store for TOFU if none is specified
         if self._verify_mode == "tofu" and self._trust_store is None:
-            if trust_store_path is None:
-                trust_store_path = (
-                    pathlib.Path.home() / ".config" / "wasat" / "known_hosts"
-                )
-            self._trust_store = FileTrustStore(trust_store_path)
+            self._trust_store = FileTrustStore(
+                trust_store_path or _get_default_trust_store_path()
+            )
 
         # Cache for permanent redirects (status 31)
         self._permanent_redirects: dict[GeminiURI, GeminiURI] = {}

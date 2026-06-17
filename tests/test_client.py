@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from wasat.client import Client
 from wasat.exceptions import (
@@ -243,6 +243,70 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(SecurityError) as ctx:
                 await client.request("gemini://example.com/index.gmi")
             self.assertIn("fingerprint mismatch", str(ctx.exception))
+
+    @patch("wasat.client.FileTrustStore")
+    def test_default_trust_store_path_windows_with_appdata(
+        self, mock_file_trust_store: MagicMock
+    ) -> None:
+        """Test default trust store path on Windows when APPDATA is set."""
+        with (
+            patch("wasat.client.sys") as mock_sys,
+            patch("wasat.client.os.environ", {"APPDATA": "C:\\MockAppData"}),
+        ):
+            mock_sys.platform = "win32"
+
+            Client(verify_mode="tofu")
+
+            mock_file_trust_store.assert_called_once()
+            called_path = mock_file_trust_store.call_args[0][0]
+            self.assertEqual(
+                called_path, Path("C:\\MockAppData") / "wasat" / "known_hosts"
+            )
+
+    @patch("wasat.client.FileTrustStore")
+    def test_default_trust_store_path_windows_without_appdata(
+        self, mock_file_trust_store: MagicMock
+    ) -> None:
+        """Test default trust store path on Windows when APPDATA is not set."""
+        with (
+            patch("wasat.client.sys") as mock_sys,
+            patch("wasat.client.os.environ", {}),
+            patch("pathlib.Path.home", return_value=Path("C:\\Users\\MockUser")),
+        ):
+            mock_sys.platform = "win32"
+
+            Client(verify_mode="tofu")
+
+            mock_file_trust_store.assert_called_once()
+            called_path = mock_file_trust_store.call_args[0][0]
+            self.assertEqual(
+                called_path,
+                Path("C:\\Users\\MockUser")
+                / "AppData"
+                / "Roaming"
+                / "wasat"
+                / "known_hosts",
+            )
+
+    @patch("wasat.client.FileTrustStore")
+    def test_default_trust_store_path_unix(
+        self, mock_file_trust_store: MagicMock
+    ) -> None:
+        """Test default trust store path on Unix-like systems."""
+        with (
+            patch("wasat.client.sys") as mock_sys,
+            patch("pathlib.Path.home", return_value=Path("/home/mockuser")),
+        ):
+            mock_sys.platform = "linux"
+
+            Client(verify_mode="tofu")
+
+            mock_file_trust_store.assert_called_once()
+            called_path = mock_file_trust_store.call_args[0][0]
+            self.assertEqual(
+                called_path,
+                Path("/home/mockuser") / ".config" / "wasat" / "known_hosts",
+            )
 
 
 if __name__ == "__main__":
