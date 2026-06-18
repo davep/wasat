@@ -1,10 +1,15 @@
 """Gemini URI representation and parsing."""
 
-import urllib.parse
+##############################################################################
+# Python imports.
 from typing import Final, Self
+from urllib.parse import quote, urljoin, urlparse
 
+##############################################################################
+# Local imports.
 from .exceptions import URIError
 
+##############################################################################
 GEMINI_SCHEME: Final[str] = "gemini"
 """The default URL scheme for the Gemini protocol."""
 GEMINI_PREFIX: Final[str] = f"{GEMINI_SCHEME}://"
@@ -13,12 +18,14 @@ GEMINI_DEFAULT_PORT: Final[int] = 1965
 """The default network port for the Gemini protocol."""
 
 
+##############################################################################
 def _normalise_scheme(uri: str) -> str:
     """Normalise the scheme portion of a URI to lowercase."""
     scheme, separator, rest = uri.partition("://")
     return f"{scheme.lower()}{separator}{rest}" if separator else uri
 
 
+##############################################################################
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
@@ -31,6 +38,18 @@ class GeminiURI:
         Raises:
             URIError: If the URI is invalid or has an incorrect scheme.
         """
+
+        self._scheme: str
+        """The scheme portion of the URI (always 'gemini')."""
+        self._host: str
+        """The hostname portion of the URI."""
+        self._port: int
+        """The port number of the URI, defaulting to 1965."""
+        self._path: str
+        """The path portion of the URI."""
+        self._query: str | None
+        """The query string portion of the URI, or None."""
+
         if isinstance(uri, GeminiURI):
             self._scheme = uri.scheme
             self._host = uri.host
@@ -47,7 +66,7 @@ class GeminiURI:
             to_parse = "https://" + cleaned.removeprefix(GEMINI_PREFIX)
 
         try:
-            parsed = urllib.parse.urlparse(to_parse)
+            parsed = urlparse(to_parse)
         except Exception as e:
             raise URIError(f"Failed to parse URI: {e}") from e
 
@@ -67,15 +86,10 @@ class GeminiURI:
             raise URIError("URI host is missing or invalid")
 
         self._scheme = scheme
-        """The scheme portion of the URI (always 'gemini')."""
         self._host = parsed.hostname
-        """The hostname portion of the URI."""
         self._port = parsed.port if parsed.port is not None else GEMINI_DEFAULT_PORT
-        """The port number of the URI, defaulting to 1965."""
         self._path = parsed.path or "/"
-        """The path portion of the URI."""
         self._query = parsed.query if parsed.query else None
-        """The query string portion of the URI, or None."""
 
     @property
     def scheme(self) -> str:
@@ -111,7 +125,7 @@ class GeminiURI:
         Returns:
             A new GeminiURI instance with the updated query.
         """
-        encoded_query = urllib.parse.quote(query, safe="~()*!.'")
+        encoded_query = quote(query, safe="~()*!.'")
         port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
         new_uri_str = (
             f"{GEMINI_PREFIX}{self._host}{port_str}{self._path}?{encoded_query}"
@@ -139,7 +153,7 @@ class GeminiURI:
             relative_http = "https://" + relative_cleaned.removeprefix(GEMINI_PREFIX)
 
         try:
-            resolved_http = urllib.parse.urljoin(base_http, relative_http)
+            resolved_http = urljoin(base_http, relative_http)
             resolved_gemini = resolved_http.replace("https://", GEMINI_PREFIX, 1)
             return self.__class__(resolved_gemini)
         except Exception as e:
