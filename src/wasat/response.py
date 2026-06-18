@@ -30,9 +30,13 @@ class Response:
             reader: The stream reader for reading the response body.
         """
         self._status = status
+        """The Gemini status code of the response."""
         self._meta = meta
+        """The meta/header line of the response."""
         self._reader = reader
+        """The stream reader for the response body."""
         self._body: bytes | None = None
+        """The cached response body bytes, or None if not read yet."""
 
     @property
     def status(self) -> StatusCode:

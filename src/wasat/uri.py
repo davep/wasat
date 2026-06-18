@@ -6,8 +6,11 @@ from typing import Final, Self
 from .exceptions import URIError
 
 GEMINI_SCHEME: Final[str] = "gemini"
+"""The default URL scheme for the Gemini protocol."""
 GEMINI_PREFIX: Final[str] = f"{GEMINI_SCHEME}://"
+"""The standard prefix for Gemini URIs."""
 GEMINI_DEFAULT_PORT: Final[int] = 1965
+"""The default network port for the Gemini protocol."""
 
 
 def _normalise_scheme(uri: str) -> str:
@@ -64,10 +67,15 @@ class GeminiURI:
             raise URIError("URI host is missing or invalid")
 
         self._scheme = scheme
+        """The scheme portion of the URI (always 'gemini')."""
         self._host = parsed.hostname
+        """The hostname portion of the URI."""
         self._port = parsed.port if parsed.port is not None else GEMINI_DEFAULT_PORT
+        """The port number of the URI, defaulting to 1965."""
         self._path = parsed.path or "/"
+        """The path portion of the URI."""
         self._query = parsed.query if parsed.query else None
+        """The query string portion of the URI, or None."""
 
     @property
     def scheme(self) -> str:

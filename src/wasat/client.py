@@ -22,10 +22,13 @@ from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
 from .uri import GeminiURI
 
 type NewCertCallback = Callable[[str, int, str], Coroutine[None, None, bool]]
+"""Async callback function signature for verifying a new certificate."""
 
 
 _DEFAULT_STORE_DIR: Final[str] = "wasat"
+"""The default directory name for storing known hosts."""
 _DEFAULT_STORE_FILE: Final[str] = "known_hosts"
+"""The default filename for storing known hosts."""
 
 
 def _get_default_trust_store_path() -> pathlib.Path:
@@ -60,8 +63,11 @@ class WrappedStreamReader:
             writer: The stream writer to close on EOF or error.
         """
         self._reader = reader
+        """The wrapped async stream reader."""
         self._writer = writer
+        """The wrapped async stream writer."""
         self._closed = False
+        """Flag indicating whether the stream connection has been closed."""
 
     async def read(self, n: int = -1) -> bytes:
         """Read data from the stream, closing the connection at EOF.
@@ -131,17 +137,27 @@ class Client:
             ssl_context: Pre-configured ssl.SSLContext. Overrides verify_mode/cert config.
         """
         self._verify_mode = verify_mode
+        """The verification mode: 'ca', 'tofu', or 'off'."""
         self._trust_store = trust_store
+        """The trust store instance for TOFU verification."""
         self._client_cert = (
             pathlib.Path(client_cert) if client_cert is not None else None
         )
+        """The path to the client TLS certificate."""
         self._client_key = pathlib.Path(client_key) if client_key is not None else None
+        """The path to the client TLS private key."""
         self._on_new_certificate = on_new_certificate
+        """The async callback invoked when a new certificate is encountered."""
         self._follow_redirects = follow_redirects
+        """Flag indicating whether to automatically follow redirects."""
         self._max_redirects = max_redirects
+        """The maximum number of redirects to follow."""
         self._connect_timeout = connect_timeout
+        """The connection establishment timeout in seconds."""
         self._read_timeout = read_timeout
+        """The response line read timeout in seconds."""
         self._ssl_context = ssl_context
+        """A pre-configured SSL context to override default TLS configuration."""
 
         # Set up default trust store for TOFU if none is specified
         if self._verify_mode == "tofu" and self._trust_store is None:
@@ -151,6 +167,7 @@ class Client:
 
         # Cache for permanent redirects (status 31)
         self._permanent_redirects: dict[GeminiURI, GeminiURI] = {}
+        """Cache mapping requested URIs to their permanent redirect targets."""
 
     def _create_ssl_context(self) -> ssl.SSLContext:
         """Create and configure the SSLContext based on verification settings.

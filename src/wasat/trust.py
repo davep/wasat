@@ -74,9 +74,13 @@ class FileTrustStore(TrustStore):
             filepath: The path to the file storing fingerprints.
         """
         self.filepath = pathlib.Path(filepath)
+        """The path to the file storing the certificate fingerprints."""
         self._lock = asyncio.Lock()
+        """Lock to synchronise file access and cache operations."""
         self._cache: dict[tuple[str, int], str] = {}
+        """In-memory cache mapping (hostname, port) to certificate fingerprint."""
         self._loaded = False
+        """Flag indicating whether the trust store has been loaded from disk."""
 
     def _load_sync(self) -> None:
         """Load the known hosts from file synchronously."""
