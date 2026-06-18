@@ -1,14 +1,18 @@
 """Gemini Protocol async client implementation."""
 
+##############################################################################
+# Python imports.
 import asyncio
-import contextlib
 import os
-import pathlib
 import ssl
 import sys
 from collections.abc import Callable, Coroutine
+from contextlib import suppress
+from pathlib import Path
 from typing import Final, Literal
 
+##############################################################################
+# Local imports.
 from .exceptions import (
     ConnectionError,
     ProtocolError,
@@ -21,35 +25,34 @@ from .status import StatusCode
 from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
 from .uri import GeminiURI
 
+##############################################################################
 type NewCertCallback = Callable[[str, int, str], Coroutine[None, None, bool]]
 """Async callback function signature for verifying a new certificate."""
 
-
+##############################################################################
 _DEFAULT_STORE_DIR: Final[str] = "wasat"
 """The default directory name for storing known hosts."""
 _DEFAULT_STORE_FILE: Final[str] = "known_hosts"
 """The default filename for storing known hosts."""
 
 
-def _get_default_trust_store_path() -> pathlib.Path:
+##############################################################################
+def _get_default_trust_store_path() -> Path:
     """Get the default trust store filepath based on the operating system's behaviour.
 
     Returns:
-        The default pathlib.Path to the known hosts store.
+        The default Path to the known hosts store.
     """
     if sys.platform == "win32":
         appdata = os.environ.get("APPDATA")
-        base_dir = (
-            pathlib.Path(appdata)
-            if appdata
-            else pathlib.Path.home() / "AppData" / "Roaming"
-        )
+        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
     else:
-        base_dir = pathlib.Path.home() / ".config"
+        base_dir = Path.home() / ".config"
 
     return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_STORE_FILE
 
 
+##############################################################################
 class WrappedStreamReader:
     """Wraps StreamReader to ensure the StreamWriter is closed upon reaching EOF or on error."""
 
@@ -95,10 +98,11 @@ class WrappedStreamReader:
         if not self._closed:
             self._closed = True
             self._writer.close()
-            with contextlib.suppress(Exception):
+            with suppress(Exception):
                 await self._writer.wait_closed()
 
 
+##############################################################################
 class Client:
     """Asynchronous Gemini Protocol Client."""
 
@@ -107,9 +111,9 @@ class Client:
         *,
         verify_mode: Literal["ca", "tofu", "off"] = "ca",
         trust_store: TrustStore | None = None,
-        trust_store_path: str | pathlib.Path | None = None,
-        client_cert: str | pathlib.Path | None = None,
-        client_key: str | pathlib.Path | None = None,
+        trust_store_path: str | Path | None = None,
+        client_cert: str | Path | None = None,
+        client_key: str | Path | None = None,
         on_new_certificate: NewCertCallback | None = None,
         follow_redirects: bool = True,
         max_redirects: int = 5,
@@ -140,11 +144,9 @@ class Client:
         """The verification mode: 'ca', 'tofu', or 'off'."""
         self._trust_store = trust_store
         """The trust store instance for TOFU verification."""
-        self._client_cert = (
-            pathlib.Path(client_cert) if client_cert is not None else None
-        )
+        self._client_cert = Path(client_cert) if client_cert is not None else None
         """The path to the client TLS certificate."""
-        self._client_key = pathlib.Path(client_key) if client_key is not None else None
+        self._client_key = Path(client_key) if client_key is not None else None
         """The path to the client TLS private key."""
         self._on_new_certificate = on_new_certificate
         """The async callback invoked when a new certificate is encountered."""
@@ -366,13 +368,13 @@ class Client:
                 return Response(status_code, meta, wrapped_reader)
             else:
                 writer.close()
-                with contextlib.suppress(Exception):
+                with suppress(Exception):
                     await writer.wait_closed()
                 return Response(status_code, meta, None)
 
         except Exception:
             writer.close()
-            with contextlib.suppress(Exception):
+            with suppress(Exception):
                 await writer.wait_closed()
             raise
 
