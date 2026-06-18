@@ -1,5 +1,7 @@
 """Gemini protocol status codes and categories."""
 
+from __future__ import annotations
+
 from enum import IntEnum
 
 
@@ -109,7 +111,7 @@ class StatusCode(IntEnum):
         return self.category == 6
 
     @classmethod
-    def from_int(cls, value: int) -> "StatusCode":
+    def from_int(cls, value: int) -> StatusCode:
         """Resolve a status code integer, falling back to the group's primary code if unallocated.
 
         Args:
