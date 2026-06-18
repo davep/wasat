@@ -1,14 +1,19 @@
 """Trust models and certificate verification for Gemini connections."""
 
+##############################################################################
+# Python imports.
 import asyncio
-import hashlib
-import pathlib
 from datetime import UTC, datetime
+from hashlib import sha256
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+##############################################################################
+# Local imports.
 from .uri import GEMINI_DEFAULT_PORT
 
 
+##############################################################################
 def get_cert_fingerprint(cert_der: bytes) -> str:
     """Calculate the SHA-256 fingerprint of a DER-encoded certificate.
 
@@ -18,9 +23,10 @@ def get_cert_fingerprint(cert_der: bytes) -> str:
     Returns:
         The hex-encoded SHA-256 fingerprint.
     """
-    return hashlib.sha256(cert_der).hexdigest().lower()
+    return sha256(cert_der).hexdigest().lower()
 
 
+##############################################################################
 @runtime_checkable
 class TrustStore(Protocol):
     """Protocol defining the interface for certificate fingerprint stores."""
@@ -61,22 +67,27 @@ class TrustStore(Protocol):
         ...
 
 
+##############################################################################
 class FileTrustStore(TrustStore):
     """A standard file-based TOFU (Trust On First Use) store.
 
     Stores fingerprints in a simple text file format similar to known_hosts.
     """
 
-    def __init__(self, filepath: str | pathlib.Path) -> None:
+    def __init__(self, filepath: str | Path) -> None:
         """Initialise the file-based trust store.
 
         Args:
             filepath: The path to the file storing fingerprints.
         """
-        self.filepath = pathlib.Path(filepath)
+        self.filepath = Path(filepath)
+        """The path to the file storing the certificate fingerprints."""
         self._lock = asyncio.Lock()
+        """Lock to synchronise file access and cache operations."""
         self._cache: dict[tuple[str, int], str] = {}
+        """In-memory cache mapping (hostname, port) to certificate fingerprint."""
         self._loaded = False
+        """Flag indicating whether the trust store has been loaded from disk."""
 
     def _load_sync(self) -> None:
         """Load the known hosts from file synchronously."""

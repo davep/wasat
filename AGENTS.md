@@ -24,6 +24,7 @@ All source code lives in [src/wasat/](src/wasat/). Key modules and their respons
 - **Docstrings**: Always write full Google-style docstrings for every module, class, method, and function. Do *not* include type annotations in the docstring text.
   - Docstrings always start on the same line as the opening triple quote.
   - The closing triple quote is on its own line for multi-line docstrings.
+  - Document all file-wide types, module-level constants, and instance attributes/properties established via `__init__` with a clear one-line docstring immediately following the assignment/definition (e.g., `_CONST = "val"\n  """One-line explainer."""`).
   - Cross-references should use mkdocstrings-compatible Markdown formatting:
     - Inline code: single backticks (\`like_this\`).
     - Cross-references: `[`ClassName`][module.ClassName]` or `[module.ClassName][]`. Do not use Sphinx markup.
