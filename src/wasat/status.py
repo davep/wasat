@@ -1,10 +1,15 @@
 """Gemini protocol status codes and categories."""
 
+##############################################################################
+# Add extra type checking support.
 from __future__ import annotations
 
+##############################################################################
+# Python imports.
 from enum import IntEnum
 
 
+##############################################################################
 class StatusCode(IntEnum):
     """Gemini protocol status codes."""
 
