@@ -1,18 +1,24 @@
 """Response class for Gemini protocol requests."""
 
+##############################################################################
+# Python imports.
 from collections.abc import AsyncIterator
 from typing import Protocol, Self
 
+##############################################################################
+# Local imports.
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
 
 
+##############################################################################
 class ReaderProtocol(Protocol):
     """Protocol for async reader streams."""
 
     async def read(self, n: int = -1) -> bytes: ...
 
 
+##############################################################################
 class Response:
     """Represents a response from a Gemini server."""
 
