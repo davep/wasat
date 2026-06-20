@@ -85,6 +85,60 @@ client = Client(
 
 ---
 
+## Client Certificate Authentication
+
+Gemini supports client certificates as a method of user authentication (e.g. for session tracking or user identities). When a server requires a client certificate, it returns a `60` status code (CLIENT_CERTIFICATE_REQUIRED).
+
+Wasat provides a [FileClientCertificateStore][wasat.certs.FileClientCertificateStore] to manage, scope, and persist generated client certificates.
+
+### Automatic Certificate Handling
+
+You can configure the client to automatically prompt your application, generate self-signed certificates, and retry requests when faced with a client certificate requirement:
+
+```python
+from typing import Literal
+from wasat import Client, GeminiURI, ClientCertificateStore
+
+async def handle_cert_request(
+    uri: GeminiURI,
+    store: ClientCertificateStore
+) -> Literal["transient", "persistent", "ignore"]:
+    # Determine whether to generate a transient/persistent certificate, or ignore.
+    # Transient certificates are stored in a temporary folder and cleaned up at exit.
+    print(f"Server at {uri.host} requested a client certificate.")
+    return "transient"
+
+client = Client(
+    verify_mode="tofu",
+    on_client_certificate_required=handle_cert_request
+)
+```
+
+### Manual Certificate Handling
+
+If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:
+
+```python
+from wasat import Client, StatusCode
+
+client = Client(verify_mode="tofu")
+
+response = await client.request("gemini://example.com/protected")
+if response.status == StatusCode.CLIENT_CERTIFICATE_REQUIRED:
+    # Generate a certificate for the host/path scope and save it in the store
+    await client.client_cert_store.create_credentials(
+        response.uri,
+        transient=True,
+        common_name="my_identity",
+        email="user@example.com"
+    )
+
+    # Retry the request; the client automatically detects and loads the new cert
+    response = await client.request("gemini://example.com/protected")
+```
+
+---
+
 ## Exception Hierarchy
 
 All exceptions raised by the library inherit from the base class [WasatError][wasat.exceptions.WasatError]. When managing errors, you can catch specific sub-classes for finer control:

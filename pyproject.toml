@@ -7,7 +7,9 @@ authors = [
     { name = "Dave Pearson", email = "davep@davep.org" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "cryptography>=49.0.0",
+]
 license = "MIT"
 keywords = [
     "API",

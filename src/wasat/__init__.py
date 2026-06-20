@@ -16,6 +16,12 @@ __licence__ = "MIT"
 
 ##############################################################################
 # Local imports.
+from .certs import (
+    ClientCertCallback,
+    ClientCertificateStore,
+    FileClientCertificateStore,
+    generate_self_signed_cert,
+)
 from .client import Client
 from .exceptions import (
     ConnectionError,
@@ -40,6 +46,10 @@ __all__ = [
     "GEMINI_DEFAULT_PORT",
     "TrustStore",
     "FileTrustStore",
+    "ClientCertificateStore",
+    "FileClientCertificateStore",
+    "ClientCertCallback",
+    "generate_self_signed_cert",
     "WasatError",
     "URIError",
     "ProtocolError",
