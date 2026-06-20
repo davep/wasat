@@ -9,7 +9,7 @@ import sys
 from collections.abc import Callable, Coroutine
 from contextlib import suppress
 from pathlib import Path
-from typing import Final, Literal
+from typing import Final, Literal, Self
 
 ##############################################################################
 # Local imports.
@@ -553,7 +553,7 @@ class Client:
         if self._client_cert_store is not None:
             await self._client_cert_store.close()
 
-    async def __aenter__(self) -> "Client":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager.
 
         Returns:
