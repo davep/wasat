@@ -6,6 +6,7 @@ nav:
   - Introduction: index.md
   - Getting Started: getting_started.md
   - API:
+      - library/certs.md
       - library/client.md
       - library/exceptions.md
       - library/response.md

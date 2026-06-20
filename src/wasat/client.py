@@ -13,6 +13,11 @@ from typing import Final, Literal
 
 ##############################################################################
 # Local imports.
+from .certs import (
+    ClientCertCallback,
+    ClientCertificateStore,
+    FileClientCertificateStore,
+)
 from .exceptions import (
     ConnectionError,
     ProtocolError,
@@ -34,6 +39,8 @@ _DEFAULT_STORE_DIR: Final[str] = "wasat"
 """The default directory name for storing known hosts."""
 _DEFAULT_STORE_FILE: Final[str] = "known_hosts"
 """The default filename for storing known hosts."""
+_DEFAULT_CERTS_DIR: Final[str] = "certs"
+"""The default subdirectory name for storing client certificates."""
 
 
 ##############################################################################
@@ -50,6 +57,22 @@ def _get_default_trust_store_path() -> Path:
         base_dir = Path.home() / ".config"
 
     return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_STORE_FILE
+
+
+##############################################################################
+def _get_default_certs_store_path() -> Path:
+    """Get the default client certificates store directory filepath.
+
+    Returns:
+        The default Path to the client certificates store.
+    """
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    else:
+        base_dir = Path.home() / ".config"
+
+    return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_CERTS_DIR
 
 
 ##############################################################################
@@ -114,6 +137,9 @@ class Client:
         trust_store_path: str | Path | None = None,
         client_cert: str | Path | None = None,
         client_key: str | Path | None = None,
+        client_cert_store: ClientCertificateStore | None = None,
+        client_cert_store_path: str | Path | None = None,
+        on_client_certificate_required: ClientCertCallback | None = None,
         on_new_certificate: NewCertCallback | None = None,
         follow_redirects: bool = True,
         max_redirects: int = 5,
@@ -132,6 +158,10 @@ class Client:
             trust_store_path: Filepath for the default FileTrustStore in TOFU mode.
             client_cert: Path to client TLS certificate (for client auth).
             client_key: Path to client TLS private key (optional if in cert file).
+            client_cert_store: Custom ClientCertificateStore instance.
+            client_cert_store_path: Directory path for the default FileClientCertificateStore.
+            on_client_certificate_required: Async callback invoked when client certificate
+                is required (status code 60). Returns 'transient', 'persistent' or 'ignore'.
             on_new_certificate: Async callback called when a new certificate is
                 encountered in TOFU mode. Must return True to accept, False to reject.
             follow_redirects: If True, automatically follow redirects.
@@ -148,6 +178,16 @@ class Client:
         """The path to the client TLS certificate."""
         self._client_key = Path(client_key) if client_key is not None else None
         """The path to the client TLS private key."""
+        self._client_cert_store: ClientCertificateStore = (
+            client_cert_store
+            if client_cert_store is not None
+            else FileClientCertificateStore(
+                client_cert_store_path or _get_default_certs_store_path()
+            )
+        )
+        """The client certificate store instance."""
+        self._on_client_certificate_required = on_client_certificate_required
+        """Callback invoked when a client certificate is required by the server."""
         self._on_new_certificate = on_new_certificate
         """The async callback invoked when a new certificate is encountered."""
         self._follow_redirects = follow_redirects
@@ -171,8 +211,16 @@ class Client:
         self._permanent_redirects: dict[GeminiURI, GeminiURI] = {}
         """Cache mapping requested URIs to their permanent redirect targets."""
 
-    def _create_ssl_context(self) -> ssl.SSLContext:
+    def _create_ssl_context(
+        self,
+        client_cert: Path | None = None,
+        client_key: Path | None = None,
+    ) -> ssl.SSLContext:
         """Create and configure the SSLContext based on verification settings.
+
+        Args:
+            client_cert: Optional path to the client certificate PEM file.
+            client_key: Optional path to the client private key PEM file.
 
         Returns:
             A configured ssl.SSLContext instance.
@@ -189,10 +237,13 @@ class Client:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
 
-        if self._client_cert:
+        cert_to_load = client_cert or self._client_cert
+        key_to_load = client_key or self._client_key
+
+        if cert_to_load:
             context.load_cert_chain(
-                certfile=self._client_cert,
-                keyfile=self._client_key,
+                certfile=cert_to_load,
+                keyfile=key_to_load,
             )
 
         return context
@@ -334,6 +385,15 @@ class Client:
                     f"Certificate rejected for {uri.host}:{uri.port} by callback."
                 )
 
+    @property
+    def client_cert_store(self) -> ClientCertificateStore:
+        """The client certificate store used by this client.
+
+        Returns:
+            The client certificate store instance.
+        """
+        return self._client_cert_store
+
     async def _do_request(self, uri: GeminiURI) -> Response:
         """Execute a single Gemini request.
 
@@ -348,11 +408,20 @@ class Client:
             SecurityError: On certificate validation failure.
             ProtocolError: On protocol format violations.
         """
-        ssl_context = (
-            self._ssl_context
-            if self._ssl_context is not None
-            else self._create_ssl_context()
-        )
+        ssl_context = self._ssl_context
+        if ssl_context is None:
+            cert_path = self._client_cert
+            key_path = self._client_key
+
+            if not cert_path and self._client_cert_store is not None:
+                creds = await self._client_cert_store.get_credentials(uri)
+                if creds is not None:
+                    cert_path, key_path = creds
+
+            ssl_context = self._create_ssl_context(
+                client_cert=cert_path,
+                client_key=key_path,
+            )
 
         reader, writer = await self._connect(uri, ssl_context)
 
@@ -370,7 +439,32 @@ class Client:
                 writer.close()
                 with suppress(Exception):
                     await writer.wait_closed()
-                return Response(status_code, meta, None)
+
+                response = Response(status_code, meta, None)
+
+                # Handle client certificate required status
+                if (
+                    response.status == StatusCode.CLIENT_CERTIFICATE_REQUIRED
+                    and self._on_client_certificate_required is not None
+                    and self._client_cert_store is not None
+                ):
+                    # Check if a certificate was already presented
+                    has_store_cert = (
+                        await self._client_cert_store.get_credentials(uri) is not None
+                    )
+                    if not has_store_cert and not self._client_cert:
+                        action = await self._on_client_certificate_required(
+                            uri, self._client_cert_store
+                        )
+                        if action in ("transient", "persistent"):
+                            await self._client_cert_store.create_credentials(
+                                uri,
+                                transient=(action == "transient"),
+                            )
+                            # Retry the request
+                            return await self._do_request(uri)
+
+                return response
 
         except Exception:
             writer.close()
@@ -450,6 +544,25 @@ class Client:
             response = await self._do_request(uri)
 
         return response
+
+    async def close(self) -> None:
+        """Close the client and clean up resources, including the client certificate store."""
+        if self._client_cert_store is not None:
+            await self._client_cert_store.close()
+
+    async def __aenter__(self) -> "Client":
+        """Enter the async context manager.
+
+        Returns:
+            The Client instance.
+        """
+        return self
+
+    async def __aexit__(
+        self, exc_type: object, exc_val: object, exc_tb: object
+    ) -> None:
+        """Exit the async context manager, closing resources."""
+        await self.close()
 
 
 ### client.py ends here

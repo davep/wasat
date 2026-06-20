@@ -3,12 +3,19 @@
 ##############################################################################
 # Python imports.
 from argparse import ArgumentParser, Namespace
-from asyncio import run
+from asyncio import run, to_thread
 from sys import exit, stderr
+from typing import Literal
 
 ##############################################################################
 # Local imports.
-from . import Client, WasatError, __version__
+from . import (
+    Client,
+    ClientCertificateStore,
+    GeminiURI,
+    WasatError,
+    __version__,
+)
 
 
 ##############################################################################
@@ -42,12 +49,50 @@ def get_args() -> Namespace:
 
 
 ##############################################################################
+async def cli_on_client_certificate_required(
+    uri: GeminiURI,
+    store: ClientCertificateStore,
+) -> Literal["transient", "persistent", "ignore"]:
+    """Handle a client certificate requirement by prompting the user in the CLI.
+
+    Args:
+        uri: The target GeminiURI requesting the certificate.
+        store: The ClientCertificateStore instance.
+
+    Returns:
+        The action to take ('transient', 'persistent', or 'ignore').
+    """
+    print(f"\nServer at {uri.host} requires a client certificate.", file=stderr)
+    try:
+        choice = await to_thread(
+            input, "Would you like to generate a certificate? [y/N]: "
+        )
+        if choice.strip().lower() in ("y", "yes"):
+            type_choice = await to_thread(
+                input,
+                "Generate transient (session-only) or persistent certificate? [t/P]: ",
+            )
+            if type_choice.strip().lower() == "t":
+                return "transient"
+            else:
+                return "persistent"
+    except Exception:
+        pass
+    return "ignore"
+
+
+##############################################################################
 async def run_cli() -> None:
     """Run the Wasat CLI asynchronously."""
     args = get_args()
 
+    client = Client(
+        verify_mode="tofu",
+        on_client_certificate_required=cli_on_client_certificate_required,
+    )
+
     try:
-        async with await Client(verify_mode="tofu").request(args.url) as response:
+        async with client, await client.request(args.url) as response:
             if args.verbose or not response.status.is_success:
                 print("--- Gemini Response ---")
                 print(f"Status: {response.status.value} ({response.status.name})")
