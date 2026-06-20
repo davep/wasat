@@ -44,19 +44,28 @@ _DEFAULT_CERTS_DIR: Final[str] = "certs"
 
 
 ##############################################################################
+def _get_default_base_dir() -> Path:
+    """Get the default configuration base directory based on the operating system's behaviour.
+
+    Returns:
+        The default config base Path.
+    """
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    else:
+        base = Path.home() / ".config"
+    return base / _DEFAULT_STORE_DIR
+
+
+##############################################################################
 def _get_default_trust_store_path() -> Path:
     """Get the default trust store filepath based on the operating system's behaviour.
 
     Returns:
         The default Path to the known hosts store.
     """
-    if sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
-    else:
-        base_dir = Path.home() / ".config"
-
-    return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_STORE_FILE
+    return _get_default_base_dir() / _DEFAULT_STORE_FILE
 
 
 ##############################################################################
@@ -66,13 +75,7 @@ def _get_default_certs_store_path() -> Path:
     Returns:
         The default Path to the client certificates store.
     """
-    if sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
-    else:
-        base_dir = Path.home() / ".config"
-
-    return base_dir / _DEFAULT_STORE_DIR / _DEFAULT_CERTS_DIR
+    return _get_default_base_dir() / _DEFAULT_CERTS_DIR
 
 
 ##############################################################################
