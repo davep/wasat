@@ -4,6 +4,7 @@
 # Python imports.
 from argparse import ArgumentParser, Namespace
 from asyncio import run, to_thread
+from getpass import getpass
 from sys import exit, stderr
 from typing import Literal
 
@@ -13,6 +14,7 @@ from . import (
     Client,
     ClientCertificateStore,
     GeminiURI,
+    StatusCode,
     WasatError,
     __version__,
 )
@@ -92,16 +94,49 @@ async def run_cli() -> None:
     )
 
     try:
-        async with client, await client.request(args.url) as response:
-            if args.verbose or not response.status.is_success:
-                print("--- Gemini Response ---")
-                print(f"Status: {response.status.value} ({response.status.name})")
-                print(f"Meta: {response.meta}")
-                print("-----------------------")
-            if response.status.is_success:
-                print(await response.text())
-            else:
-                exit(1)
+        current_uri = GeminiURI(args.url)
+    except WasatError as e:
+        print(f"Error: {e}", file=stderr)
+        exit(1)
+
+    try:
+        async with client:
+            while True:
+                async with await client.request(current_uri) as response:
+                    if args.verbose:
+                        print("--- Gemini Response ---")
+                        print(
+                            f"Status: {response.status.value} ({response.status.name})"
+                        )
+                        print(f"Meta: {response.meta}")
+                        print("-----------------------")
+
+                    if response.status.is_input:
+                        prompt = f"{response.meta}: " if response.meta else "Input: "
+                        try:
+                            if response.status == StatusCode.SENSITIVE_INPUT:
+                                user_input = await to_thread(getpass, prompt)
+                            else:
+                                user_input = await to_thread(input, prompt)
+                        except (EOFError, KeyboardInterrupt):
+                            print()
+                            exit(1)
+                        current_uri = current_uri.with_query(user_input)
+                        continue
+
+                    if not args.verbose and not response.status.is_success:
+                        print("--- Gemini Response ---")
+                        print(
+                            f"Status: {response.status.value} ({response.status.name})"
+                        )
+                        print(f"Meta: {response.meta}")
+                        print("-----------------------")
+
+                    if response.status.is_success:
+                        print(await response.text())
+                        break
+                    else:
+                        exit(1)
     except WasatError as e:
         print(f"Error: {e}", file=stderr)
         exit(1)
