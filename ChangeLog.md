@@ -4,6 +4,8 @@
 
 **WiP**
 
+- Added `uri` property to `Response` to expose the target URI of the
+  request. ([#5](https://github.com/davep/wasat/pull/5))
 - Added support for generating and storing client certificates.
   ([#3](https://github.com/davep/wasat/pull/3))
 - Added support for handling Gemini Protocol input requests (status codes 10

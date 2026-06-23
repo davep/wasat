@@ -9,24 +9,32 @@ from typing import Any
 
 import pytest
 
-from wasat import StatusCode
+from wasat import GeminiURI, StatusCode
 from wasat.__main__ import run_cli
 
 
 class DummyResponse:
     """A dummy Response object for testing."""
 
-    def __init__(self, status: StatusCode, meta: str, text_content: str = "") -> None:
+    def __init__(
+        self,
+        status: StatusCode,
+        meta: str,
+        text_content: str = "",
+        uri: GeminiURI | None = None,
+    ) -> None:
         """Initialise dummy response.
 
         Args:
             status: The status code of response.
             meta: The meta string.
             text_content: The mock text body.
+            uri: The Gemini URI of response.
         """
         self.status = status
         self.meta = meta
         self._text_content = text_content
+        self.uri = uri
 
     async def text(self) -> str:
         """Get the text body.
@@ -170,3 +178,32 @@ def test_cli_input_interrupted(
         asyncio.run(run_cli())
 
     assert exc_info.value.code == 1
+
+
+def test_cli_verbose_output(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --verbose option prints the URI and response details.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    monkeypatch.setattr("sys.argv", ["wasat", "-v", "gemini://example.com/index.gmi"])
+
+    uri = GeminiURI("gemini://example.com/index.gmi")
+    resp = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Hello verbose!", uri=uri)
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return resp
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Gemini Response ---" in captured.out
+    assert "URI: gemini://example.com/index.gmi" in captured.out
+    assert "Status: 20 (SUCCESS)" in captured.out
+    assert "Meta: text/gemini" in captured.out
+    assert "Hello verbose!" in captured.out

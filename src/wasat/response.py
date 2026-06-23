@@ -9,6 +9,7 @@ from typing import Protocol, Self
 # Local imports.
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
+from .uri import GeminiURI
 
 
 ##############################################################################
@@ -27,6 +28,7 @@ class Response:
         status: StatusCode,
         meta: str,
         reader: ReaderProtocol | None = None,
+        uri: GeminiURI | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -34,6 +36,7 @@ class Response:
             status: The Gemini status code.
             meta: The extra metadata line.
             reader: The stream reader for reading the response body.
+            uri: The Gemini URI of the response.
         """
         self._status = status
         """The Gemini status code of the response."""
@@ -41,6 +44,8 @@ class Response:
         """The meta/header line of the response."""
         self._reader = reader
         """The stream reader for the response body."""
+        self._uri = uri
+        """The Gemini URI of the response, or None if not set."""
         self._body: bytes | None = None
         """The cached response body bytes, or None if not read yet."""
 
@@ -48,6 +53,11 @@ class Response:
     def status(self) -> StatusCode:
         """The response status code."""
         return self._status
+
+    @property
+    def uri(self) -> GeminiURI | None:
+        """The Gemini URI associated with the response, or None if not set."""
+        return self._uri
 
     @property
     def meta(self) -> str:

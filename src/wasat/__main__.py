@@ -105,6 +105,7 @@ async def run_cli() -> None:
                 async with await client.request(current_uri) as response:
                     if args.verbose:
                         print("--- Gemini Response ---")
+                        print(f"URI: {response.uri}")
                         print(
                             f"Status: {response.status.value} ({response.status.name})"
                         )

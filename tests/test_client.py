@@ -13,6 +13,7 @@ from wasat import (
     GEMINI_DEFAULT_PORT,
     Client,
     FileTrustStore,
+    GeminiURI,
     RedirectError,
     SecurityError,
     StatusCode,
@@ -124,6 +125,7 @@ class TestClient:
 
             assert response.status == StatusCode.SUCCESS
             assert response.mime_type == "text/gemini"
+            assert response.uri == GeminiURI("gemini://example.com/index.gmi")
 
             text = await response.text()
             assert text == "Hello from Gemini!"
@@ -161,6 +163,7 @@ class TestClient:
             response = await client.request("gemini://example.com/source")
 
             assert response.status == StatusCode.SUCCESS
+            assert response.uri == GeminiURI("gemini://example.com/target")
             assert await response.text() == "Target Content"
             assert call_count == 2
 

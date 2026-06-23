@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from wasat import ProtocolError, Response, StatusCode
+from wasat import GeminiURI, ProtocolError, Response, StatusCode
 
 
 class MockStreamReader:
@@ -41,6 +41,18 @@ class TestResponse:
         assert r1.mime_type == "text/gemini; charset=utf-8"
         assert r1.content_type == "text/gemini"
         assert r1.charset == "utf-8"
+
+    def test_uri_property(self) -> None:
+        """Test that the uri property is correctly exposed and returned."""
+        uri = GeminiURI("gemini://example.com/foo")
+        r = Response(StatusCode.SUCCESS, "", uri=uri)
+        assert r.uri == uri
+        assert r.uri.host == "example.com"
+        assert r.uri.path == "/foo"
+
+        # Defaults to None
+        r_none = Response(StatusCode.SUCCESS, "")
+        assert r_none.uri is None
 
         # Success with custom MIME type and charset
         r2 = Response(StatusCode.SUCCESS, "text/plain; charset=iso-8859-1; foo=bar")

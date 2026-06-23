@@ -437,13 +437,13 @@ class Client:
 
             if status_code.is_success:
                 wrapped_reader = WrappedStreamReader(reader, writer)
-                return Response(status_code, meta, wrapped_reader)
+                return Response(status_code, meta, wrapped_reader, uri)
             else:
                 writer.close()
                 with suppress(Exception):
                     await writer.wait_closed()
 
-                response = Response(status_code, meta, None)
+                response = Response(status_code, meta, None, uri)
 
                 # Handle client certificate required status
                 if (
