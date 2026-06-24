@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.1.0
 
-**WiP**
+**Released: 2026-06-24**
 
 - Added support for generating and storing client certificates.
   ([#3](https://github.com/davep/wasat/pull/3))
@@ -21,7 +21,7 @@
 
 ## v0.0.1
 
-**2026-06-17**
+**Released: 2026-06-17**
 
 - Initial version of the library.
 
