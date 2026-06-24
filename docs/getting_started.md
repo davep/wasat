@@ -9,7 +9,7 @@ All of the public classes, protocols, and exceptions are exposed at the top leve
 The following classes and protocols form the core interface of the library:
 
 - **[Client][wasat.client.Client]**: The asynchronous client used to configure and dispatch requests.
-- **[Response][wasat.response.Response]**: Represents the server's response, exposing the target URI, text decoding, and chunked body streaming.
+- **[Response][wasat.response.Response]**: Represents the server's response, exposing the target URI (`uri`), the originally requested URI (`requested_uri`), redirect history (`history`), text decoding, and chunked body streaming.
 - **[GeminiURI][wasat.uri.GeminiURI]**: A utility class to parse, validate, and resolve Gemini URIs safely.
 - **[StatusCode][wasat.status.StatusCode]**: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.
 - **[TrustStore][wasat.trust.TrustStore]**: A protocol defining the trust verification interface.

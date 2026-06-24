@@ -133,5 +133,27 @@ class TestResponse:
 
         asyncio.run(run())
 
+    def test_history_and_requested_uri(self) -> None:
+        """Test that history and requested_uri properties are correctly exposed."""
+        uri = GeminiURI("gemini://example.com/foo")
+        requested_uri = GeminiURI("gemini://example.com/original")
+
+        # Test default values.
+        r_default = Response(StatusCode.SUCCESS, "")
+        assert r_default.history == []
+        assert r_default.requested_uri is None
+
+        # Test customised values.
+        hist_resp = Response(StatusCode.TEMPORARY_REDIRECT, "gemini://example.com/foo")
+        r = Response(
+            StatusCode.SUCCESS,
+            "",
+            uri=uri,
+            history=[hist_resp],
+            requested_uri=requested_uri,
+        )
+        assert r.history == [hist_resp]
+        assert r.requested_uri == requested_uri
+
 
 ### test_response.py ends here

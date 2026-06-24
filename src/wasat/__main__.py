@@ -105,6 +105,18 @@ async def run_cli() -> None:
                 async with await client.request(current_uri) as response:
                     if args.verbose:
                         print("--- Gemini Response ---")
+                        if (
+                            response.requested_uri is not None
+                            and response.uri != response.requested_uri
+                        ):
+                            print(f"Requested URI: {response.requested_uri}")
+                        if response.history:
+                            print("Redirections:")
+                            for redirect_resp in response.history:
+                                print(
+                                    f"  {redirect_resp.uri} -> "
+                                    f"{redirect_resp.meta.strip()}"
+                                )
                         print(f"URI: {response.uri}")
                         print(
                             f"Status: {response.status.value} ({response.status.name})"
