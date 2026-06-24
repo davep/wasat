@@ -13,6 +13,7 @@ from wasat import (
     GEMINI_DEFAULT_PORT,
     Client,
     FileTrustStore,
+    GeminiURI,
     RedirectError,
     SecurityError,
     StatusCode,
@@ -124,6 +125,7 @@ class TestClient:
 
             assert response.status == StatusCode.SUCCESS
             assert response.mime_type == "text/gemini"
+            assert response.uri == GeminiURI("gemini://example.com/index.gmi")
 
             text = await response.text()
             assert text == "Hello from Gemini!"
@@ -161,8 +163,16 @@ class TestClient:
             response = await client.request("gemini://example.com/source")
 
             assert response.status == StatusCode.SUCCESS
+            assert response.uri == GeminiURI("gemini://example.com/target")
             assert await response.text() == "Target Content"
             assert call_count == 2
+            assert response.requested_uri == GeminiURI("gemini://example.com/source")
+            assert len(response.history) == 1
+            assert response.history[0].status == StatusCode.TEMPORARY_REDIRECT
+            assert response.history[0].uri == GeminiURI("gemini://example.com/source")
+            assert response.history[0].requested_uri == GeminiURI(
+                "gemini://example.com/source"
+            )
 
         asyncio.run(run())
 
@@ -257,11 +267,22 @@ class TestClient:
             resp1 = await client.request("gemini://example.com/old")
             assert await resp1.text() == "New Content"
             assert call_count == 2
+            assert resp1.requested_uri == GeminiURI("gemini://example.com/old")
+            assert resp1.uri == GeminiURI("gemini://example.com/new")
+            assert len(resp1.history) == 1
+            assert resp1.history[0].status == StatusCode.PERMANENT_REDIRECT
+            assert resp1.history[0].uri == GeminiURI("gemini://example.com/old")
+            assert resp1.history[0].requested_uri == GeminiURI(
+                "gemini://example.com/old"
+            )
 
             # Second request to /old (should go directly to /new)
             resp2 = await client.request("gemini://example.com/old")
             assert await resp2.text() == "New Content"
             assert call_count == 3  # Only 1 additional connection
+            assert resp2.requested_uri == GeminiURI("gemini://example.com/old")
+            assert resp2.uri == GeminiURI("gemini://example.com/new")
+            assert len(resp2.history) == 0
 
         asyncio.run(run())
 

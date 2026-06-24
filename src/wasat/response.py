@@ -1,5 +1,7 @@
 """Response class for Gemini protocol requests."""
 
+from __future__ import annotations
+
 ##############################################################################
 # Python imports.
 from collections.abc import AsyncIterator
@@ -9,6 +11,7 @@ from typing import Protocol, Self
 # Local imports.
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
+from .uri import GeminiURI
 
 
 ##############################################################################
@@ -27,6 +30,9 @@ class Response:
         status: StatusCode,
         meta: str,
         reader: ReaderProtocol | None = None,
+        uri: GeminiURI | None = None,
+        history: list[Response] | None = None,
+        requested_uri: GeminiURI | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -34,6 +40,9 @@ class Response:
             status: The Gemini status code.
             meta: The extra metadata line.
             reader: The stream reader for reading the response body.
+            uri: The Gemini URI of the response.
+            history: A history of response objects from any redirections.
+            requested_uri: The originally requested Gemini URI.
         """
         self._status = status
         """The Gemini status code of the response."""
@@ -41,6 +50,12 @@ class Response:
         """The meta/header line of the response."""
         self._reader = reader
         """The stream reader for the response body."""
+        self._uri = uri
+        """The Gemini URI of the response, or None if not set."""
+        self._history = list(history) if history is not None else []
+        """The history of response objects from any redirections."""
+        self._requested_uri = requested_uri
+        """The originally requested Gemini URI, or None if not set."""
         self._body: bytes | None = None
         """The cached response body bytes, or None if not read yet."""
 
@@ -48,6 +63,21 @@ class Response:
     def status(self) -> StatusCode:
         """The response status code."""
         return self._status
+
+    @property
+    def uri(self) -> GeminiURI | None:
+        """The Gemini URI associated with the response, or None if not set."""
+        return self._uri
+
+    @property
+    def history(self) -> list[Response]:
+        """The history of response objects from any redirections, ordered from oldest to newest."""
+        return self._history
+
+    @property
+    def requested_uri(self) -> GeminiURI | None:
+        """The originally requested Gemini URI, or None if not set."""
+        return self._requested_uri
 
     @property
     def meta(self) -> str:

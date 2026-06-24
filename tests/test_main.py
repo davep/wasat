@@ -9,24 +9,38 @@ from typing import Any
 
 import pytest
 
-from wasat import StatusCode
+from wasat import GeminiURI, StatusCode
 from wasat.__main__ import run_cli
 
 
 class DummyResponse:
     """A dummy Response object for testing."""
 
-    def __init__(self, status: StatusCode, meta: str, text_content: str = "") -> None:
+    def __init__(
+        self,
+        status: StatusCode,
+        meta: str,
+        text_content: str = "",
+        uri: GeminiURI | None = None,
+        history: list[Any] | None = None,
+        requested_uri: GeminiURI | None = None,
+    ) -> None:
         """Initialise dummy response.
 
         Args:
             status: The status code of response.
             meta: The meta string.
             text_content: The mock text body.
+            uri: The Gemini URI of response.
+            history: Optional redirection history.
+            requested_uri: Optional originally requested URI.
         """
         self.status = status
         self.meta = meta
         self._text_content = text_content
+        self.uri = uri
+        self.history = history if history is not None else []
+        self.requested_uri = requested_uri
 
     async def text(self) -> str:
         """Get the text body.
@@ -170,3 +184,80 @@ def test_cli_input_interrupted(
         asyncio.run(run_cli())
 
     assert exc_info.value.code == 1
+
+
+def test_cli_verbose_output(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --verbose option prints the URI and response details.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    monkeypatch.setattr("sys.argv", ["wasat", "-v", "gemini://example.com/index.gmi"])
+
+    uri = GeminiURI("gemini://example.com/index.gmi")
+    resp = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Hello verbose!", uri=uri)
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return resp
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Gemini Response ---" in captured.out
+    assert "URI: gemini://example.com/index.gmi" in captured.out
+    assert "Status: 20 (SUCCESS)" in captured.out
+    assert "Meta: text/gemini" in captured.out
+    assert "Hello verbose!" in captured.out
+
+
+def test_cli_verbose_output_with_redirect(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --verbose option prints requested URI and history on redirects.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    monkeypatch.setattr("sys.argv", ["wasat", "-v", "gemini://example.com/redirect"])
+
+    requested_uri = GeminiURI("gemini://example.com/redirect")
+    final_uri = GeminiURI("gemini://example.com/target")
+    hist_resp = DummyResponse(
+        StatusCode.TEMPORARY_REDIRECT,
+        "gemini://example.com/target",
+        uri=requested_uri,
+        requested_uri=requested_uri,
+    )
+    resp = DummyResponse(
+        StatusCode.SUCCESS,
+        "text/gemini",
+        "Hello redirect verbose!",
+        uri=final_uri,
+        history=[hist_resp],
+        requested_uri=requested_uri,
+    )
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return resp
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Gemini Response ---" in captured.out
+    assert "Requested URI: gemini://example.com/redirect" in captured.out
+    assert "Redirections:" in captured.out
+    assert (
+        "  gemini://example.com/redirect -> gemini://example.com/target" in captured.out
+    )
+    assert "URI: gemini://example.com/target" in captured.out
+    assert "Status: 20 (SUCCESS)" in captured.out
+    assert "Meta: text/gemini" in captured.out
+    assert "Hello redirect verbose!" in captured.out

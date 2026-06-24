@@ -397,11 +397,18 @@ class Client:
         """
         return self._client_cert_store
 
-    async def _do_request(self, uri: GeminiURI) -> Response:
+    async def _do_request(
+        self,
+        uri: GeminiURI,
+        history: list[Response] | None = None,
+        requested_uri: GeminiURI | None = None,
+    ) -> Response:
         """Execute a single Gemini request.
 
         Args:
             uri: The target GeminiURI.
+            history: Optional redirection history list.
+            requested_uri: Optional originally requested URI.
 
         Returns:
             The Gemini Response object.
@@ -437,13 +444,27 @@ class Client:
 
             if status_code.is_success:
                 wrapped_reader = WrappedStreamReader(reader, writer)
-                return Response(status_code, meta, wrapped_reader)
+                return Response(
+                    status_code,
+                    meta,
+                    wrapped_reader,
+                    uri,
+                    history=history,
+                    requested_uri=requested_uri,
+                )
             else:
                 writer.close()
                 with suppress(Exception):
                     await writer.wait_closed()
 
-                response = Response(status_code, meta, None)
+                response = Response(
+                    status_code,
+                    meta,
+                    None,
+                    uri,
+                    history=history,
+                    requested_uri=requested_uri,
+                )
 
                 # Handle client certificate required status
                 if (
@@ -465,7 +486,9 @@ class Client:
                                 transient=(action == "transient"),
                             )
                             # Retry the request
-                            return await self._do_request(uri)
+                            return await self._do_request(
+                                uri, history=history, requested_uri=requested_uri
+                            )
 
                 return response
 
@@ -493,20 +516,24 @@ class Client:
             ProtocolError: If the server response violates the Gemini protocol.
             RedirectError: If redirect limits are exceeded or loops are detected.
         """
-        uri = GeminiURI(uri)
+        requested_uri = GeminiURI(uri)
+        current_uri = requested_uri
 
         # Resolve permanent redirects cache first
-        seen_redirects = {uri}
-        while uri in self._permanent_redirects:
-            uri = self._permanent_redirects[uri]
-            if uri in seen_redirects:
+        seen_redirects = {current_uri}
+        while current_uri in self._permanent_redirects:
+            current_uri = self._permanent_redirects[current_uri]
+            if current_uri in seen_redirects:
                 raise RedirectError(
-                    f"Circular permanent redirect cache loop detected for {uri}"
+                    f"Circular permanent redirect cache loop detected for {current_uri}"
                 )
-            seen_redirects.add(uri)
+            seen_redirects.add(current_uri)
 
-        visited = {uri}
-        response = await self._do_request(uri)
+        visited = {current_uri}
+        history: list[Response] = []
+        response = await self._do_request(
+            current_uri, history=history, requested_uri=requested_uri
+        )
 
         while response.status.is_redirect and self._follow_redirects:
             if len(visited) > self._max_redirects:
@@ -524,7 +551,7 @@ class Client:
                 )
 
             try:
-                new_uri = uri.resolve(redirect_str)
+                new_uri = current_uri.resolve(redirect_str)
             except URIError as e:
                 await response.close()
                 raise RedirectError(
@@ -537,14 +564,19 @@ class Client:
 
             # If it's a permanent redirect, cache it
             if response.status == StatusCode.PERMANENT_REDIRECT:
-                self._permanent_redirects[uri] = new_uri
+                self._permanent_redirects[current_uri] = new_uri
 
             visited.add(new_uri)
-            uri = new_uri
+            current_uri = new_uri
+
+            # Keep track of previous redirect response objects
+            history.append(response)
 
             # Close previous response before making the next request
             await response.close()
-            response = await self._do_request(uri)
+            response = await self._do_request(
+                current_uri, history=history, requested_uri=requested_uri
+            )
 
         return response
 
