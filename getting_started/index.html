@@ -12,7 +12,7 @@
         <link rel="prev" href="..">
       
       
-        <link rel="next" href="../library/client/">
+        <link rel="next" href="../library/certs/">
       
       
         
@@ -259,7 +259,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../library/client/" class="md-tabs__link">
+        <a href="../library/certs/" class="md-tabs__link">
           
   
   
@@ -500,6 +500,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#client-certificate-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Certificate Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Client Certificate Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-certificate-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatic Certificate Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-certificate-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Certificate Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#exception-hierarchy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -526,6 +565,8 @@
   
     
     
+      
+        
       
         
       
@@ -581,6 +622,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../library/certs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    wasat.certs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -882,6 +951,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#client-certificate-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Certificate Authentication
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Client Certificate Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-certificate-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatic Certificate Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-certificate-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Certificate Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#exception-hierarchy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -919,7 +1027,7 @@
 <p>The following classes and protocols form the core interface of the library:</p>
 <ul>
 <li><strong><a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a></strong>: The asynchronous client used to configure and dispatch requests.</li>
-<li><strong><a class="autorefs autorefs-internal" title="            Response" href="../library/response/#wasat.response.Response">Response</a></strong>: Represents the server's response, supporting text decoding and chunked body streaming.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            Response" href="../library/response/#wasat.response.Response">Response</a></strong>: Represents the server's response, exposing the target URI (<code>uri</code>), the originally requested URI (<code>requested_uri</code>), redirect history (<code>history</code>), text decoding, and chunked body streaming.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a></strong>: A utility class to parse, validate, and resolve Gemini URIs safely.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            StatusCode" href="../library/status/#wasat.status.StatusCode">StatusCode</a></strong>: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            TrustStore" href="../library/trust/#wasat.trust.TrustStore">TrustStore</a></strong>: A protocol defining the trust verification interface.</li>
@@ -984,6 +1092,48 @@
 <span class="p">)</span>
 </code></pre></div>
 <hr />
+<h2 id="client-certificate-authentication">Client Certificate Authentication</h2>
+<p>Gemini supports client certificates as a method of user authentication (e.g. for session tracking or user identities). When a server requires a client certificate, it returns a <code>60</code> status code (CLIENT_CERTIFICATE_REQUIRED).</p>
+<p>Wasat provides a <a class="autorefs autorefs-internal" title="            FileClientCertificateStore" href="../library/certs/#wasat.certs.FileClientCertificateStore">FileClientCertificateStore</a> to manage, scope, and persist generated client certificates.</p>
+<h3 id="automatic-certificate-handling">Automatic Certificate Handling</h3>
+<p>You can configure the client to automatically prompt your application, generate self-signed certificates, and retry requests when faced with a client certificate requirement:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">GeminiURI</span><span class="p">,</span> <span class="n">ClientCertificateStore</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_cert_request</span><span class="p">(</span>
+    <span class="n">uri</span><span class="p">:</span> <span class="n">GeminiURI</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">ClientCertificateStore</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;transient&quot;</span><span class="p">,</span> <span class="s2">&quot;persistent&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">]:</span>
+    <span class="c1"># Determine whether to generate a transient/persistent certificate, or ignore.</span>
+    <span class="c1"># Transient certificates are stored in a temporary folder and cleaned up at exit.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Server at </span><span class="si">{</span><span class="n">uri</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2"> requested a client certificate.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;transient&quot;</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span>
+    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">,</span>
+    <span class="n">on_client_certificate_required</span><span class="o">=</span><span class="n">handle_cert_request</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="manual-certificate-handling">Manual Certificate Handling</h3>
+<p>If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">StatusCode</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/protected&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">StatusCode</span><span class="o">.</span><span class="n">CLIENT_CERTIFICATE_REQUIRED</span><span class="p">:</span>
+    <span class="c1"># Generate a certificate for the host/path scope and save it in the store</span>
+    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">client_cert_store</span><span class="o">.</span><span class="n">create_credentials</span><span class="p">(</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
+        <span class="n">transient</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">common_name</span><span class="o">=</span><span class="s2">&quot;my_identity&quot;</span><span class="p">,</span>
+        <span class="n">email</span><span class="o">=</span><span class="s2">&quot;user@example.com&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Retry the request; the client automatically detects and loads the new cert</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/protected&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
 <h2 id="exception-hierarchy">Exception Hierarchy</h2>
 <p>All exceptions raised by the library inherit from the base class <a class="autorefs autorefs-internal" title="            WasatError" href="../library/exceptions/#wasat.exceptions.WasatError">WasatError</a>. When managing errors, you can catch specific sub-classes for finer control:</p>
 <ul>
@@ -1039,13 +1189,13 @@
         
         
           
-          <a href="../library/client/" class="md-footer__link md-footer__link--next" aria-label="Next: wasat.client">
+          <a href="../library/certs/" class="md-footer__link md-footer__link--next" aria-label="Next: wasat.certs">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                wasat.client
+                wasat.certs
               </div>
             </div>
             <div class="md-footer__button md-icon">

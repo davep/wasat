@@ -257,7 +257,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../library/client/" class="md-tabs__link">
+        <a href="../library/certs/" class="md-tabs__link">
           
   
   
@@ -437,6 +437,8 @@
       
         
       
+        
+      
     
     
     
@@ -479,6 +481,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../library/certs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    wasat.certs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -722,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v010" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.1.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v001" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -794,6 +835,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v010" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.1.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v001" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -825,8 +877,26 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v010">v0.1.0</h2>
+<p><strong>Released: 2026-06-24</strong></p>
+<ul>
+<li>Added support for generating and storing client certificates.
+  (<a href="https://github.com/davep/wasat/pull/3">#3</a>)</li>
+<li>Added support for handling Gemini Protocol input requests (status codes 10
+  and 11) in the CLI. (<a href="https://github.com/davep/wasat/pull/4">#4</a>)</li>
+<li>Added <code>uri</code> property to <code>Response</code> to expose the target URI of the
+  request. (<a href="https://github.com/davep/wasat/pull/5">#5</a>)</li>
+<li>Added <code>history</code> property to <code>Response</code> to expose any redirection history.
+  (<a href="https://github.com/davep/wasat/pull/5">#5</a>)</li>
+<li>Added <code>requested_uri</code> property to <code>Response</code> to expose the
+  originally-requested URI in any response.
+  (<a href="https://github.com/davep/wasat/pull/5">#5</a>)</li>
+<li>Updated the CLI to show the originally-requested URI and the redirection
+  history, in verbose mode, if there was a redirection.
+  (<a href="https://github.com/davep/wasat/pull/5">#5</a>)</li>
+</ul>
 <h2 id="v001">v0.0.1</h2>
-<p><strong>2026-06-17</strong></p>
+<p><strong>Released: 2026-06-17</strong></p>
 <ul>
 <li>Initial version of the library.</li>
 </ul>
