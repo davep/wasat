@@ -2,9 +2,11 @@
 
 import asyncio
 import tempfile
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 import pytest
+from cryptography import x509
 
 from wasat import (
     Client,
@@ -155,6 +157,15 @@ def test_generate_self_signed_cert() -> None:
     with pytest.raises(ValueError):
         generate_self_signed_cert("test_client", key_type="ecdsa", country="GBR")
 
+    # Expiry with valid_days=None (9999-12-31)
+    cert_pem_none, _ = generate_self_signed_cert("test_client", valid_days=None)
+    cert = x509.load_pem_x509_certificate(cert_pem_none)
+    try:
+        expiry = cert.not_valid_after_utc
+    except AttributeError:
+        expiry = cert.not_valid_after.replace(tzinfo=UTC)
+    assert expiry == datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
+
 
 ##############################################################################
 def test_file_client_cert_store() -> None:
@@ -179,6 +190,19 @@ def test_file_client_cert_store() -> None:
             assert retrieved is not None
             assert retrieved[0] == cert_path
             assert retrieved[1] == key_path
+
+            # Test credentials with valid_days=None
+            cert_path_none, _ = await store.create_credentials(
+                GeminiURI("gemini://example.com/none-expiry"),
+                transient=False,
+                valid_days=None,
+            )
+            cert_none = x509.load_pem_x509_certificate(cert_path_none.read_bytes())
+            try:
+                expiry_none = cert_none.not_valid_after_utc
+            except AttributeError:
+                expiry_none = cert_none.not_valid_after.replace(tzinfo=UTC)
+            assert expiry_none == datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
 
             # 4. Check scope matching hierarchy
             sub_uri = GeminiURI("gemini://example.com/admin/subpage/test")
