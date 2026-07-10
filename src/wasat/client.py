@@ -472,11 +472,11 @@ class Client:
                     and self._on_client_certificate_required is not None
                     and self._client_cert_store is not None
                 ):
-                    # Check if a certificate was already presented
-                    has_store_cert = (
-                        await self._client_cert_store.get_credentials(uri) is not None
+                    # Check if a certificate for the exact scope is already in the store
+                    has_exact_cert = (
+                        await self._client_cert_store.has_exact_credentials(uri)
                     )
-                    if not has_store_cert and not self._client_cert:
+                    if not has_exact_cert and not self._client_cert:
                         action = await self._on_client_certificate_required(
                             uri, self._client_cert_store
                         )
