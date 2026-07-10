@@ -752,6 +752,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v021" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.2.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.2.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v010" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -835,6 +857,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v021" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.2.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v020" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.2.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v010" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -877,6 +921,30 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v021">v0.2.1</h2>
+<p><strong>Released: 2026-07-10</strong></p>
+<ul>
+<li>Fixed client certificate path prefix matching in <code>get_candidate_scopes</code> to
+  support both trailing and non-trailing slash parent directory paths,
+  ensuring certificates registered for paths like <code>/foo/bar</code> (no trailing
+  slash) are correctly matched and offered for subpaths (e.g.
+  <code>/foo/bar/baz</code>). (<a href="https://github.com/davep/wasat/pull/9">#9</a>)</li>
+<li>Added <code>has_exact_credentials</code> to the <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation.
+  (<a href="https://github.com/davep/wasat/pull/9">#9</a>)</li>
+<li>Updated the client connection logic to use <code>has_exact_credentials</code> when
+  checking whether a client certificate requirement is new/fresh, ensuring
+  the client correctly prompts the user for a new certificate if a parent
+  certificate is rejected by the server, while avoiding infinite loops.
+  (<a href="https://github.com/davep/wasat/pull/9">#9</a>)</li>
+</ul>
+<h2 id="v020">v0.2.0</h2>
+<p><strong>Released: 2026-07-10</strong></p>
+<ul>
+<li>Allowed passing <code>None</code> to <code>valid_days</code> in <code>generate_self_signed_cert</code> and
+  <code>create_credentials</code> to generate client certificates that expire on
+  <code>9999-12-31</code>. (<a href="https://github.com/davep/wasat/pull/7">#7</a>)</li>
+</ul>
 <h2 id="v010">v0.1.0</h2>
 <p><strong>Released: 2026-06-24</strong></p>
 <ul>

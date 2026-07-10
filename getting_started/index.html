@@ -1122,12 +1122,14 @@
 
 <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/protected&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">StatusCode</span><span class="o">.</span><span class="n">CLIENT_CERTIFICATE_REQUIRED</span><span class="p">:</span>
-    <span class="c1"># Generate a certificate for the host/path scope and save it in the store</span>
+    <span class="c1"># Generate a certificate for the host/path scope and save it in the store.</span>
+    <span class="c1"># Set valid_days=None to create a certificate that expires on 9999-12-31.</span>
     <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">client_cert_store</span><span class="o">.</span><span class="n">create_credentials</span><span class="p">(</span>
         <span class="n">response</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
         <span class="n">transient</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">common_name</span><span class="o">=</span><span class="s2">&quot;my_identity&quot;</span><span class="p">,</span>
-        <span class="n">email</span><span class="o">=</span><span class="s2">&quot;user@example.com&quot;</span>
+        <span class="n">email</span><span class="o">=</span><span class="s2">&quot;user@example.com&quot;</span><span class="p">,</span>
+        <span class="n">valid_days</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">)</span>
 
     <span class="c1"># Retry the request; the client automatically detects and loads the new cert</span>
