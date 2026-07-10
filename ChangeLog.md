@@ -1,6 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.2.0
+
+**Released: 2026-07-10**
 
 - Allowed passing `None` to `valid_days` in `generate_self_signed_cert` and
   `create_credentials` to generate client certificates that expire on
