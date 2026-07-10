@@ -1,5 +1,23 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed client certificate path prefix matching in `get_candidate_scopes` to
+  support both trailing and non-trailing slash parent directory paths,
+  ensuring certificates registered for paths like `/foo/bar` (no trailing
+  slash) are correctly matched and offered for subpaths (e.g.
+  `/foo/bar/baz`). ([#9](https://github.com/davep/wasat/pull/9))
+- Added `has_exact_credentials` to the `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation.
+  ([#9](https://github.com/davep/wasat/pull/9))
+- Updated the client connection logic to use `has_exact_credentials` when
+  checking whether a client certificate requirement is new/fresh, ensuring
+  the client correctly prompts the user for a new certificate if a parent
+  certificate is rejected by the server, while avoiding infinite loops.
+  ([#9](https://github.com/davep/wasat/pull/9))
+
 ## v0.2.0
 
 **Released: 2026-07-10**

@@ -110,11 +110,17 @@ def test_candidate_scopes() -> None:
     candidates = get_candidate_scopes(uri)
     expected = [
         "example.com:1965/foo/bar/baz.gmi",
+        "example.com:1965/foo/bar/baz.gmi/",
+        "example.com:1965/foo/bar",
         "example.com:1965/foo/bar/",
+        "example.com:1965/foo",
         "example.com:1965/foo/",
         "example.com:1965/",
         "example.com/foo/bar/baz.gmi",
+        "example.com/foo/bar/baz.gmi/",
+        "example.com/foo/bar",
         "example.com/foo/bar/",
+        "example.com/foo",
         "example.com/foo/",
         "example.com/",
     ]
@@ -286,5 +292,43 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
                     GeminiURI("gemini://example.com/protected")
                 )
                 assert has_cert is not None
+
+    asyncio.run(run())
+
+
+# ############################################################################
+def test_exact_vs_parent_scope_matching() -> None:
+    """Test exact scope vs parent scope certificate matching."""
+
+    async def run() -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = FileClientCertificateStore(tmpdir)
+
+            # Register a certificate at /private (no trailing slash)
+            uri_parent = GeminiURI("gemini://example.com/private")
+            cert_path, key_path = await store.create_credentials(
+                uri_parent, transient=False
+            )
+
+            # 1. Querying /private/r1/r2 should return the certificate
+            uri_sub = GeminiURI("gemini://example.com/private/r1/r2")
+            creds = await store.get_credentials(uri_sub)
+            assert creds is not None
+            assert creds[0] == cert_path
+
+            # 2. Querying exact credentials for /private should return True
+            assert await store.has_exact_credentials(uri_parent) is True
+
+            # 3. Querying exact credentials for /private/r1/r2 should return False
+            assert await store.has_exact_credentials(uri_sub) is False
+
+            # 4. Register a certificate at /private/r1/r2 (exact match for a subpath)
+            cert_sub_path, _ = await store.create_credentials(uri_sub, transient=False)
+            assert await store.has_exact_credentials(uri_sub) is True
+
+            # Querying /private/r1/r2 should return the more specific sub-certificate
+            creds_new = await store.get_credentials(uri_sub)
+            assert creds_new is not None
+            assert creds_new[0] == cert_sub_path
 
     asyncio.run(run())

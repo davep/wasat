@@ -85,10 +85,9 @@ def get_candidate_scopes(uri: GeminiURI) -> list[str]:
         prefix = "/".join(parts[:i])
         if prefix == "":
             prefix = "/"
-        else:
-            if i < len(parts) and not prefix.endswith("/"):
-                prefix += "/"
         path_prefixes.append(prefix)
+        if prefix != "/" and not prefix.endswith("/"):
+            path_prefixes.append(prefix + "/")
 
     seen: set[str] = set()
     unique_prefixes: list[str] = []
@@ -222,6 +221,21 @@ def generate_self_signed_cert(
 class ClientCertificateStore(Protocol):
     """Protocol defining the interface for client certificate storage and retrieval."""
 
+    async def has_exact_credentials(self, uri: GeminiURI) -> bool:
+        """Check if a certificate exists for the exact scope of the URI.
+
+        This checks if a certificate has been registered specifically for the
+        exact host, port, and path of the given URI (without traversing parent
+        scopes).
+
+        Args:
+            uri: The target GeminiURI.
+
+        Returns:
+            True if a certificate is registered for this exact scope, False otherwise.
+        """
+        ...
+
     async def get_credentials(self, uri: GeminiURI) -> tuple[Path, Path] | None:
         """Retrieve the certificate and private key paths matching the given URI.
 
@@ -344,6 +358,50 @@ class FileClientCertificateStore(ClientCertificateStore):
         if not self._loaded:
             await asyncio.to_thread(self._load_sync)
             self._loaded = True
+
+    async def has_exact_credentials(self, uri: GeminiURI) -> bool:
+        """Check if a certificate exists for the exact scope of the URI.
+
+        This checks if a certificate has been registered specifically for the
+        exact host, port, and path of the given URI (without traversing parent
+        scopes).
+
+        Args:
+            uri: The target GeminiURI.
+
+        Returns:
+            True if a certificate is registered for this exact scope, False otherwise.
+        """
+        host = uri.host.lower()
+        port = uri.port
+        path = uri.path or "/"
+        if not path.startswith("/"):
+            path = "/" + path
+
+        scope = f"{host}:{port}{path}"
+        scope_no_port = f"{host}{path}"
+
+        async with self._lock:
+            # Check transient index first
+            for s in (scope, scope_no_port):
+                if s in self._transient_index:
+                    cert_path, key_path = self._transient_index[s]
+                    if cert_path.exists() and key_path.exists():
+                        return True
+
+            # Check persistent index
+            await self._ensure_loaded()
+            for s in (scope, scope_no_port):
+                if s in self._index:
+                    entry = self._index[s]
+                    cert_rel = entry.get("cert")
+                    key_rel = entry.get("key")
+                    if cert_rel and key_rel:
+                        cert_path = self.store_dir / cert_rel
+                        key_path = self.store_dir / key_rel
+                        if cert_path.exists() and key_path.exists():
+                            return True
+            return False
 
     async def get_credentials(self, uri: GeminiURI) -> tuple[Path, Path] | None:
         """Retrieve the certificate and private key paths matching the given URI.
