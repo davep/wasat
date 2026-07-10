@@ -125,12 +125,14 @@ client = Client(verify_mode="tofu")
 
 response = await client.request("gemini://example.com/protected")
 if response.status == StatusCode.CLIENT_CERTIFICATE_REQUIRED:
-    # Generate a certificate for the host/path scope and save it in the store
+    # Generate a certificate for the host/path scope and save it in the store.
+    # Set valid_days=None to create a certificate that expires on 9999-12-31.
     await client.client_cert_store.create_credentials(
         response.uri,
         transient=True,
         common_name="my_identity",
-        email="user@example.com"
+        email="user@example.com",
+        valid_days=None
     )
 
     # Retry the request; the client automatically detects and loads the new cert

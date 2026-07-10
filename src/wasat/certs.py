@@ -113,7 +113,7 @@ def generate_self_signed_cert(
     key_type: Literal["ecdsa", "rsa"] = "ecdsa",
     rsa_key_size: int = 2048,
     ecdsa_curve: str = "secp256r1",
-    valid_days: int = 365,
+    valid_days: int | None = 365,
     email: str | None = None,
     user_id: str | None = None,
     domain: str | None = None,
@@ -127,7 +127,8 @@ def generate_self_signed_cert(
         key_type: The key type to generate ('ecdsa' or 'rsa').
         rsa_key_size: RSA key size in bits.
         ecdsa_curve: ECDSA curve name.
-        valid_days: Certificate validity in days.
+        valid_days: Certificate validity in days. If None, the certificate
+            will expire on 9999-12-31.
         email: Optional email address.
         user_id: Optional user identifier.
         domain: Optional domain name for Subject Alternative Name.
@@ -178,6 +179,12 @@ def generate_self_signed_cert(
     subject = issuer = x509.Name(subject_attrs)
 
     now = datetime.now(UTC)
+    expiry = (
+        datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
+        if valid_days is None
+        else now + timedelta(days=valid_days)
+    )
+
     builder = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -185,7 +192,7 @@ def generate_self_signed_cert(
         .public_key(private_key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now - timedelta(days=1))
-        .not_valid_after(now + timedelta(days=valid_days))
+        .not_valid_after(expiry)
         .add_extension(
             x509.BasicConstraints(ca=False, path_length=None),
             critical=True,
@@ -236,7 +243,7 @@ class ClientCertificateStore(Protocol):
         *,
         transient: bool = False,
         common_name: str | None = None,
-        valid_days: int = 365,
+        valid_days: int | None = 365,
         key_type: Literal["ecdsa", "rsa"] = "ecdsa",
         rsa_key_size: int = 2048,
         ecdsa_curve: str = "secp256r1",
@@ -253,7 +260,8 @@ class ClientCertificateStore(Protocol):
             transient: If True, the certificate is generated in a temporary
                 directory and not registered in the persistent store.
             common_name: The Common Name (CN) for the certificate. Defaults to the host.
-            valid_days: Number of days the certificate should be valid.
+            valid_days: Number of days the certificate should be valid. If None, the
+                certificate will expire on 9999-12-31.
             key_type: The key type to generate ('ecdsa' or 'rsa').
             rsa_key_size: RSA key size in bits.
             ecdsa_curve: ECDSA curve name.
@@ -377,7 +385,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         *,
         transient: bool = False,
         common_name: str | None = None,
-        valid_days: int = 365,
+        valid_days: int | None = 365,
         key_type: Literal["ecdsa", "rsa"] = "ecdsa",
         rsa_key_size: int = 2048,
         ecdsa_curve: str = "secp256r1",
@@ -394,7 +402,8 @@ class FileClientCertificateStore(ClientCertificateStore):
             transient: If True, the certificate is generated in a temporary
                 directory and not registered in the persistent store.
             common_name: The Common Name (CN) for the certificate. Defaults to the host.
-            valid_days: Number of days the certificate should be valid.
+            valid_days: Number of days the certificate should be valid. If None, the
+                certificate will expire on 9999-12-31.
             key_type: The key type to generate ('ecdsa' or 'rsa').
             rsa_key_size: RSA key size in bits.
             ecdsa_curve: ECDSA curve name.
