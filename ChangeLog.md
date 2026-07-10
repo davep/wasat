@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.2.1
 
-**Released: WiP**
+**Released: 2026-07-10**
 
 - Fixed client certificate path prefix matching in `get_candidate_scopes` to
   support both trailing and non-trailing slash parent directory paths,
