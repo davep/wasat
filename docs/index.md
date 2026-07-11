@@ -1,6 +1,6 @@
 # Wasat: Async Gemini Protocol Client Library
 
-Wasat is an asynchronous, object-oriented, fully type-hinted client library for the Gemini Protocol. It is built using only the Python standard library, requiring zero external dependencies, and is designed to target Python 3.12 and later.
+Wasat is an asynchronous, object-oriented, fully type-hinted client library for the Gemini Protocol. It is designed to target Python 3.12 and later, relying only on `cryptography` for certificate management and otherwise using the Python standard library.
 
 Features of the library:
 
