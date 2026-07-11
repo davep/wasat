@@ -6,8 +6,9 @@ All source code lives in [src/wasat/](src/wasat/). Key modules and their respons
 
 | Module | Responsibility |
 |---|---|
-| [`__init__.py`](src/wasat/__init__.py) | Library entry point. Exposes public classes (`Client`, `Response`, `StatusCode`, `GeminiURI`, `TrustStore`, `FileTrustStore`) and exceptions, while keeping internal details hidden. |
+| [`__init__.py`](src/wasat/__init__.py) | Library entry point. Exposes public classes (`Client`, `Response`, `StatusCode`, `GeminiURI`, `TrustStore`, `FileTrustStore`, `ClientCertificateStore`, `FileClientCertificateStore`), types/callbacks (`ClientCertCallback`), helper functions (`generate_self_signed_cert`), and exceptions, while keeping internal details hidden. |
 | [`__main__.py`](src/wasat/__main__.py) | Self-contained package execution entry point and CLI runner. Not part of the public library interface. |
+| [`certs.py`](src/wasat/certs.py) | Client certificate generation and storage management (`ClientCertificateStore`, `FileClientCertificateStore`) for Gemini connections. |
 | [`client.py`](src/wasat/client.py) | Async client implementation (`Client`), including TLS connection establishment, request dispatch, redirect handling, timeout enforcement, and stream wrapping via `WrappedStreamReader`. |
 | [`response.py`](src/wasat/response.py) | Represents Gemini server response (`Response`), handling response body caching, text decoding with charsets, chunked streaming (`iter_chunks`), and async context management. |
 | [`status.py`](src/wasat/status.py) | Gemini protocol status code parsing and category logic (`StatusCode`). |
@@ -71,7 +72,9 @@ make tidy
 
 All tests live in the [tests/](tests/) directory:
 
+- [tests/test_certs.py](tests/test_certs.py)
 - [tests/test_client.py](tests/test_client.py)
+- [tests/test_main.py](tests/test_main.py)
 - [tests/test_response.py](tests/test_response.py)
 - [tests/test_status.py](tests/test_status.py)
 - [tests/test_uri.py](tests/test_uri.py)
