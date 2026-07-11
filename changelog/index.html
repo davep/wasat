@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v031" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.3.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v030" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -868,6 +879,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v031" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.3.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v030" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -943,6 +965,24 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v031">v0.3.1</h2>
+<p><strong>Released: 2026-07-11</strong></p>
+<ul>
+<li>Fixed client certificate handling during redirects on the same host and
+  port. If a client certificate was successfully used for a request in a
+  redirect chain, the client automatically retrieves and reuses it for any
+  subsequent redirected requests targeting the same host and port,
+  preventing certificate information loss on sibling paths.
+  (<a href="https://github.com/davep/wasat/pull/14">#14</a>)</li>
+<li>Added <code>register_credentials</code> to the <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation to allow programmatically
+  registering/associating existing client certificate files with a new URI
+  scope. (<a href="https://github.com/davep/wasat/pull/14">#14</a>)</li>
+<li>Updated the client connection logic to skip generating a new certificate
+  if the <code>on_client_certificate_required</code> callback has already registered
+  exact credentials for the URI, allowing manual registration in the
+  callback. (<a href="https://github.com/davep/wasat/pull/14">#14</a>)</li>
+</ul>
 <h2 id="v030">v0.3.0</h2>
 <p><strong>Released: 2026-07-11</strong></p>
 <ul>

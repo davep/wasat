@@ -523,6 +523,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#shared-hosts-and-certificate-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Hosts and Certificate Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirection-and-certificate-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redirection and Certificate Reuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#manual-certificate-handling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -974,6 +996,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#shared-hosts-and-certificate-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Hosts and Certificate Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirection-and-certificate-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redirection and Certificate Reuse
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#manual-certificate-handling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1114,6 +1158,29 @@
     <span class="n">on_client_certificate_required</span><span class="o">=</span><span class="n">handle_cert_request</span>
 <span class="p">)</span>
 </code></pre></div>
+<h3 id="shared-hosts-and-certificate-mapping">Shared Hosts and Certificate Mapping</h3>
+<p>On a shared host (like <code>station.martinrue.com</code>), where multiple independent users have their own directories (e.g. <code>/davep</code> and <code>/otheruser</code>), scoping the certificate to the host root <code>/</code> is a privacy risk because other users could request your client certificate. Instead, you should keep the certificate scoped to the specific path.</p>
+<p>To reuse the certificate you generated on the sign-up page (e.g., <code>/join</code>) for your home page (e.g., <code>/davep</code>), you can retrieve the existing certificate from the store inside the callback and associate it with the new path using <a class="autorefs autorefs-internal" title="            register_credentials
+
+
+  
+      async
+  " href="../library/certs/#wasat.certs.ClientCertificateStore.register_credentials">register_credentials</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_cert_request</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="n">GeminiURI</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">ClientCertificateStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="c1"># If visiting your page and the cert is not yet registered, map it from /join</span>
+    <span class="k">if</span> <span class="n">uri</span><span class="o">.</span><span class="n">host</span> <span class="o">==</span> <span class="s2">&quot;station.martinrue.com&quot;</span> <span class="ow">and</span> <span class="n">uri</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/davep&quot;</span><span class="p">):</span>
+        <span class="n">join_uri</span> <span class="o">=</span> <span class="n">GeminiURI</span><span class="p">(</span><span class="s2">&quot;gemini://station.martinrue.com/join&quot;</span><span class="p">)</span>
+        <span class="n">join_creds</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">get_credentials</span><span class="p">(</span><span class="n">join_uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">join_creds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Register the existing /join cert files for /davep</span>
+            <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">register_credentials</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">join_creds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">join_creds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="s2">&quot;persistent&quot;</span>
+
+    <span class="c1"># Default to generating a new transient cert</span>
+    <span class="k">return</span> <span class="s2">&quot;transient&quot;</span>
+</code></pre></div>
+<h3 id="redirection-and-certificate-reuse">Redirection and Certificate Reuse</h3>
+<p>When a request is redirected (e.g. from <code>gemini://example.com/join</code> to <code>gemini://example.com/dashboard</code>), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port. This ensures user session continuity and prevents triggering the certificate callback multiple times for different paths within the same domain.</p>
 <h3 id="manual-certificate-handling">Manual Certificate Handling</h3>
 <p>If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">StatusCode</span>
