@@ -734,10 +734,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response(client_cert_path)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;client_cert_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.charset" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;charset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.client_cert_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;client_cert_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.client_cert_used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;client_cert_used
       
     </span>
   </a>
@@ -1205,10 +1238,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response(client_cert_path)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;client_cert_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.charset" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;charset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.client_cert_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;client_cert_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.client_cert_used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;client_cert_used
       
     </span>
   </a>
@@ -1511,6 +1577,7 @@
     <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.response.Response(uri))" href="#wasat.response.Response(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="history (wasat.response.Response(history))" href="#wasat.response.Response(history)">history</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Response (wasat.response.Response)" href="#wasat.response.Response">Response</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="requested_uri (wasat.response.Response(requested_uri))" href="#wasat.response.Response(requested_uri)">requested_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="client_cert_path (wasat.response.Response(client_cert_path))" href="#wasat.response.Response(client_cert_path)">client_cert_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1629,6 +1696,22 @@
                   <code>None</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="wasat.response.Response(client_cert_path)" class="doc doc-heading doc-heading-parameter">                  <code>client_cert_path</code>
+</h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The path to the client certificate used for the connection.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -1669,6 +1752,54 @@
     <div class="doc doc-contents ">
 
         <p>The charset parameter from the MIME type, defaulting to 'utf-8'.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="wasat.response.Response.client_cert_path" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">client_cert_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">client_cert_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The path to the client certificate used for the connection, or None.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="wasat.response.Response.client_cert_used" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">client_cert_used</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">client_cert_used</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether a client certificate was used for the connection.</p>
 
     </div>
 
