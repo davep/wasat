@@ -114,6 +114,31 @@ client = Client(
 )
 ```
 
+### Shared Hosts and Certificate Mapping
+
+On a shared host (like `station.martinrue.com`), where multiple independent users have their own directories (e.g. `/davep` and `/otheruser`), scoping the certificate to the host root `/` is a privacy risk because other users could request your client certificate. Instead, you should keep the certificate scoped to the specific path.
+
+To reuse the certificate you generated on the sign-up page (e.g., `/join`) for your home page (e.g., `/davep`), you can retrieve the existing certificate from the store inside the callback and associate it with the new path using [register_credentials][wasat.certs.ClientCertificateStore.register_credentials]:
+
+```python
+async def handle_cert_request(uri: GeminiURI, store: ClientCertificateStore) -> str:
+    # If visiting your page and the cert is not yet registered, map it from /join
+    if uri.host == "station.martinrue.com" and uri.path.startswith("/davep"):
+        join_uri = GeminiURI("gemini://station.martinrue.com/join")
+        join_creds = await store.get_credentials(join_uri)
+        if join_creds is not None:
+            # Register the existing /join cert files for /davep
+            await store.register_credentials(uri, join_creds[0], join_creds[1])
+            return "persistent"
+
+    # Default to generating a new transient cert
+    return "transient"
+```
+
+### Redirection and Certificate Reuse
+
+When a request is redirected (e.g. from `gemini://example.com/join` to `gemini://example.com/dashboard`), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port. This ensures user session continuity and prevents triggering the certificate callback multiple times for different paths within the same domain.
+
 ### Manual Certificate Handling
 
 If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:

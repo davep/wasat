@@ -1,5 +1,24 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed client certificate handling during redirects on the same host and
+  port. If a client certificate was successfully used for a request in a
+  redirect chain, the client automatically retrieves and reuses it for any
+  subsequent redirected requests targeting the same host and port,
+  preventing certificate information loss on sibling paths.
+  ([#14](https://github.com/davep/wasat/pull/14))
+- Added `register_credentials` to the `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation to allow programmatically
+  registering/associating existing client certificate files with a new URI
+  scope. ([#14](https://github.com/davep/wasat/pull/14))
+- Updated the client connection logic to skip generating a new certificate
+  if the `on_client_certificate_required` callback has already registered
+  exact credentials for the URI, allowing manual registration in the
+  callback. ([#14](https://github.com/davep/wasat/pull/14))
+
 ## v0.3.0
 
 **Released: 2026-07-11**
