@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.3.1
 
-**Released: WiP**
+**Released: 2026-07-11**
 
 - Fixed client certificate handling during redirects on the same host and
   port. If a client certificate was successfully used for a request in a
