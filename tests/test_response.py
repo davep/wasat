@@ -1,6 +1,7 @@
 """Tests for Response class and body streaming."""
 
 import asyncio
+from pathlib import Path
 
 import pytest
 
@@ -154,6 +155,19 @@ class TestResponse:
         )
         assert r.history == [hist_resp]
         assert r.requested_uri == requested_uri
+
+    def test_client_cert_path(self) -> None:
+        """Test that client_cert_path and client_cert_used properties are correctly exposed."""
+        # Test default value.
+        r_default = Response(StatusCode.SUCCESS, "")
+        assert r_default.client_cert_path is None
+        assert not r_default.client_cert_used
+
+        # Test customised value.
+        cert_path = Path("/path/to/client.crt")
+        r = Response(StatusCode.SUCCESS, "", client_cert_path=cert_path)
+        assert r.client_cert_path == cert_path
+        assert r.client_cert_used
 
 
 ### test_response.py ends here

@@ -1,5 +1,14 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `client_cert_path` and `client_cert_used` properties to `Response`
+  to expose the path to the client certificate and a boolean flag indicating
+  if one was used for the connection.
+  ([#11](https://github.com/davep/wasat/pull/11))
+
 ## v0.2.1
 
 **Released: 2026-07-10**

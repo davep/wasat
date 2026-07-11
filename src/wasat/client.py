@@ -419,6 +419,7 @@ class Client:
             ProtocolError: On protocol format violations.
         """
         ssl_context = self._ssl_context
+        cert_path: Path | None = None
         if ssl_context is None:
             cert_path = self._client_cert
             key_path = self._client_key
@@ -451,6 +452,7 @@ class Client:
                     uri,
                     history=history,
                     requested_uri=requested_uri,
+                    client_cert_path=cert_path,
                 )
             else:
                 writer.close()
@@ -464,6 +466,7 @@ class Client:
                     uri,
                     history=history,
                     requested_uri=requested_uri,
+                    client_cert_path=cert_path,
                 )
 
                 # Handle client certificate required status

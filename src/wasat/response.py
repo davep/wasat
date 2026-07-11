@@ -5,6 +5,7 @@ from __future__ import annotations
 ##############################################################################
 # Python imports.
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Protocol, Self
 
 ##############################################################################
@@ -33,6 +34,7 @@ class Response:
         uri: GeminiURI | None = None,
         history: list[Response] | None = None,
         requested_uri: GeminiURI | None = None,
+        client_cert_path: Path | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -43,6 +45,7 @@ class Response:
             uri: The Gemini URI of the response.
             history: A history of response objects from any redirections.
             requested_uri: The originally requested Gemini URI.
+            client_cert_path: The path to the client certificate used for the connection.
         """
         self._status = status
         """The Gemini status code of the response."""
@@ -56,6 +59,8 @@ class Response:
         """The history of response objects from any redirections."""
         self._requested_uri = requested_uri
         """The originally requested Gemini URI, or None if not set."""
+        self._client_cert_path = client_cert_path
+        """The path to the client certificate used for the connection, or None."""
         self._body: bytes | None = None
         """The cached response body bytes, or None if not read yet."""
 
@@ -78,6 +83,16 @@ class Response:
     def requested_uri(self) -> GeminiURI | None:
         """The originally requested Gemini URI, or None if not set."""
         return self._requested_uri
+
+    @property
+    def client_cert_path(self) -> Path | None:
+        """The path to the client certificate used for the connection, or None."""
+        return self._client_cert_path
+
+    @property
+    def client_cert_used(self) -> bool:
+        """Whether a client certificate was used for the connection."""
+        return self._client_cert_path is not None
 
     @property
     def meta(self) -> str:

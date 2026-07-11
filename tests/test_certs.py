@@ -292,6 +292,8 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
                     GeminiURI("gemini://example.com/protected")
                 )
                 assert has_cert is not None
+                assert response.client_cert_path == has_cert[0]
+                assert response.client_cert_used
 
     asyncio.run(run())
 
