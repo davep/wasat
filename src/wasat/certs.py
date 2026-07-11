@@ -290,6 +290,24 @@ class ClientCertificateStore(Protocol):
         """
         ...
 
+    async def register_credentials(
+        self,
+        uri: GeminiURI,
+        cert_path: str | Path,
+        key_path: str | Path,
+        *,
+        transient: bool = False,
+    ) -> None:
+        """Register existing certificate and private key paths for the URI's scope.
+
+        Args:
+            uri: The target GeminiURI.
+            cert_path: Path to the existing client certificate.
+            key_path: Path to the existing private key.
+            transient: If True, registers as transient.
+        """
+        ...
+
     async def delete_credentials(self, uri: GeminiURI) -> bool:
         """Delete the certificate and key associated with the matching scope.
 
@@ -533,6 +551,56 @@ class FileClientCertificateStore(ClientCertificateStore):
                 }
                 await asyncio.to_thread(self._save_sync)
                 return cert_path, key_path
+
+    async def register_credentials(
+        self,
+        uri: GeminiURI,
+        cert_path: str | Path,
+        key_path: str | Path,
+        *,
+        transient: bool = False,
+    ) -> None:
+        """Register existing certificate and private key paths for the URI's scope.
+
+        Args:
+            uri: The target GeminiURI.
+            cert_path: Path to the existing client certificate.
+            key_path: Path to the existing private key.
+            transient: If True, registers as transient.
+        """
+        host = uri.host
+        port = uri.port
+        path = uri.path or "/"
+        if not path.startswith("/"):
+            path = "/" + path
+        scope = f"{host.lower()}:{port}{path}"
+
+        c_path = Path(cert_path)
+        k_path = Path(key_path)
+
+        async with self._lock:
+            if transient:
+                self._transient_index[scope] = (c_path, k_path)
+            else:
+                await self._ensure_loaded()
+                self.store_dir.mkdir(parents=True, exist_ok=True)
+
+                safe_base = _safe_filename(scope)
+                dest_cert_file = f"{safe_base}.crt"
+                dest_key_file = f"{safe_base}.key"
+                dest_cert_path = self.store_dir / dest_cert_file
+                dest_key_path = self.store_dir / dest_key_file
+
+                if c_path.resolve() != dest_cert_path.resolve():
+                    await asyncio.to_thread(shutil.copy2, c_path, dest_cert_path)
+                if k_path.resolve() != dest_key_path.resolve():
+                    await asyncio.to_thread(shutil.copy2, k_path, dest_key_path)
+
+                self._index[scope] = {
+                    "cert": dest_cert_file,
+                    "key": dest_key_file,
+                }
+                await asyncio.to_thread(self._save_sync)
 
     async def delete_credentials(self, uri: GeminiURI) -> bool:
         """Delete the certificate and key associated with the matching scope.

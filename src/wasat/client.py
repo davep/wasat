@@ -428,6 +428,22 @@ class Client:
                 creds = await self._client_cert_store.get_credentials(uri)
                 if creds is not None:
                     cert_path, key_path = creds
+                elif history:
+                    # Look back in the redirect history for a request on the same host and port
+                    # that successfully used a client certificate.
+                    for prev_resp in reversed(history):
+                        if (
+                            prev_resp.client_cert_used
+                            and prev_resp.uri is not None
+                            and prev_resp.uri.host.lower() == uri.host.lower()
+                            and prev_resp.uri.port == uri.port
+                        ):
+                            prev_creds = await self._client_cert_store.get_credentials(
+                                prev_resp.uri
+                            )
+                            if prev_creds is not None:
+                                cert_path, key_path = prev_creds
+                                break
 
             ssl_context = self._create_ssl_context(
                 client_cert=cert_path,
@@ -484,10 +500,13 @@ class Client:
                             uri, self._client_cert_store
                         )
                         if action in ("transient", "persistent"):
-                            await self._client_cert_store.create_credentials(
-                                uri,
-                                transient=(action == "transient"),
-                            )
+                            if not await self._client_cert_store.has_exact_credentials(
+                                uri
+                            ):
+                                await self._client_cert_store.create_credentials(
+                                    uri,
+                                    transient=(action == "transient"),
+                                )
                             # Retry the request
                             return await self._do_request(
                                 uri, history=history, requested_uri=requested_uri

@@ -3,6 +3,7 @@
 import asyncio
 import tempfile
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Literal
 
 import pytest
@@ -332,5 +333,337 @@ def test_exact_vs_parent_scope_matching() -> None:
             creds_new = await store.get_credentials(uri_sub)
             assert creds_new is not None
             assert creds_new[0] == cert_sub_path
+
+    asyncio.run(run())
+
+
+##############################################################################
+def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test redirection combined with client certificate requests."""
+
+    async def run() -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ssl_obj = MockSSLObject()
+
+            # Connection sequence:
+            # 1. First request to /initial -> returns 60 (Certificate required)
+            # 2. Retry to /initial (with cert 1) -> returns 30 /redirected
+            # 3. Request to /redirected -> returns 60 (Certificate required)
+            # 4. Retry to /redirected (with cert 2) -> returns 20 Success
+            reader1 = MockStreamReader([b"60 Certificate required for initial\r\n"])
+            writer1 = MockStreamWriter(ssl_obj)
+
+            reader2 = MockStreamReader([b"30 gemini://example.com/redirected\r\n"])
+            writer2 = MockStreamWriter(ssl_obj)
+
+            reader3 = MockStreamReader([b"60 Certificate required for redirected\r\n"])
+            writer3 = MockStreamWriter(ssl_obj)
+
+            reader4 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader4.set_body(b"Success Content")
+            writer4 = MockStreamWriter(ssl_obj)
+
+            connections = [
+                (reader1, writer1),
+                (reader2, writer2),
+                (reader3, writer3),
+                (reader4, writer4),
+            ]
+            call_count = 0
+            ssl_contexts_used = []
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                nonlocal call_count
+                conn = connections[call_count]
+                call_count += 1
+                if "ssl" in kwargs:
+                    ssl_contexts_used.append(kwargs["ssl"])
+                return conn
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            callback_uris = []
+
+            async def on_cert_required(
+                uri: GeminiURI, store: Any
+            ) -> Literal["transient"]:
+                callback_uris.append(uri)
+                return "transient"
+
+            client = Client(
+                verify_mode="off",
+                client_cert_store_path=tmpdir,
+                on_client_certificate_required=on_cert_required,
+            )
+
+            async with client:
+                response = await client.request("gemini://example.com/initial")
+                assert response.status == StatusCode.SUCCESS
+                assert await response.text() == "Success Content"
+                assert call_count == 4
+
+                # Check the URIs for which the callback was triggered
+                assert callback_uris == [
+                    GeminiURI("gemini://example.com/initial"),
+                    GeminiURI("gemini://example.com/redirected"),
+                ]
+
+    asyncio.run(run())
+
+
+##############################################################################
+def test_client_cert_parent_scope_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that a certificate stored under a parent scope is used for redirects automatically."""
+
+    async def run() -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ssl_obj = MockSSLObject()
+
+            # Connection sequence:
+            # 1. Request to /initial -> returns 30 /redirected (using client cert)
+            # 2. Request to /redirected -> returns 20 Success (using client cert)
+            reader1 = MockStreamReader([b"30 gemini://example.com/redirected\r\n"])
+            writer1 = MockStreamWriter(ssl_obj)
+
+            reader2 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader2.set_body(b"Success Content")
+            writer2 = MockStreamWriter(ssl_obj)
+
+            connections = [
+                (reader1, writer1),
+                (reader2, writer2),
+            ]
+            call_count = 0
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                nonlocal call_count
+                conn = connections[call_count]
+                call_count += 1
+                return conn
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(
+                verify_mode="off",
+                client_cert_store_path=tmpdir,
+            )
+
+            # Pre-populate store with a certificate for the host scope (example.com:1965/)
+            host_uri = GeminiURI("gemini://example.com/")
+            cert_path, key_path = await client.client_cert_store.create_credentials(
+                host_uri, transient=False
+            )
+
+            async with client:
+                response = await client.request("gemini://example.com/initial")
+                assert response.status == StatusCode.SUCCESS
+                assert await response.text() == "Success Content"
+                assert call_count == 2
+
+                # Verify that the same certificate was used for the initial request and the redirected request
+                assert len(response.history) == 1
+                assert response.history[0].client_cert_used is True
+                assert response.history[0].client_cert_path == cert_path
+
+                assert response.client_cert_used is True
+                assert response.client_cert_path == cert_path
+
+    asyncio.run(run())
+
+
+##############################################################################
+def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that a certificate generated for a specific path (e.g. /join) is
+    automatically reused for a redirect target on a sibling path (e.g. /davep)
+    on the same host/port.
+    """
+
+    async def run() -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ssl_obj = MockSSLObject()
+
+            # Connection sequence:
+            # 1. First request to /join -> returns 60 (Certificate required)
+            # 2. Retry to /join (with cert) -> returns 30 /davep
+            # 3. Request to /davep -> returns 20 Success
+            reader1 = MockStreamReader([b"60 Certificate required for join\r\n"])
+            writer1 = MockStreamWriter(ssl_obj)
+
+            reader2 = MockStreamReader([b"30 gemini://example.com/davep\r\n"])
+            writer2 = MockStreamWriter(ssl_obj)
+
+            reader3 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader3.set_body(b"Dave's Page")
+            writer3 = MockStreamWriter(ssl_obj)
+
+            connections = [
+                (reader1, writer1),
+                (reader2, writer2),
+                (reader3, writer3),
+            ]
+            call_count = 0
+            ssl_contexts_used = []
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                nonlocal call_count
+                conn = connections[call_count]
+                call_count += 1
+                if "ssl" in kwargs:
+                    ssl_contexts_used.append(kwargs["ssl"])
+                return conn
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            async def on_cert_required(
+                uri: GeminiURI, store: Any
+            ) -> Literal["transient"]:
+                return "transient"
+
+            client = Client(
+                verify_mode="off",
+                client_cert_store_path=tmpdir,
+                on_client_certificate_required=on_cert_required,
+            )
+
+            async with client:
+                response = await client.request("gemini://example.com/join")
+                assert response.status == StatusCode.SUCCESS
+                assert await response.text() == "Dave's Page"
+                assert call_count == 3
+
+                # The first request was the initial /join without cert.
+                # The second request was the retry of /join with cert.
+                # The third request was the redirect to /davep, which should reuse the cert.
+                assert len(response.history) == 1
+                assert response.history[0].client_cert_used is True
+                # The final response should have reused the same certificate
+                assert response.client_cert_used is True
+                assert response.client_cert_path == response.history[0].client_cert_path
+
+    asyncio.run(run())
+
+
+##############################################################################
+def test_register_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test register_credentials CRUD and file copying behavior."""
+
+    async def run() -> None:
+        with (
+            tempfile.TemporaryDirectory() as tmpdir1,
+            tempfile.TemporaryDirectory() as tmpdir2,
+        ):
+            # Generate a cert in tmpdir1
+            store1 = FileClientCertificateStore(tmpdir1)
+            uri = GeminiURI("gemini://example.com/join")
+            cert_path, key_path = await store1.create_credentials(uri)
+
+            # Register it in store2 (which uses tmpdir2)
+            store2 = FileClientCertificateStore(tmpdir2)
+            uri2 = GeminiURI("gemini://example.com/davep")
+            await store2.register_credentials(
+                uri2, cert_path, key_path, transient=False
+            )
+
+            # Check that the credentials were copied to store2's directory
+            retrieved = await store2.get_credentials(uri2)
+            assert retrieved is not None
+            c_path, k_path = retrieved
+            assert c_path.parent == Path(tmpdir2)
+            assert k_path.parent == Path(tmpdir2)
+            assert c_path.exists()
+            assert k_path.exists()
+
+            # Test transient registration
+            uri3 = GeminiURI("gemini://example.com/transient")
+            await store2.register_credentials(uri3, cert_path, key_path, transient=True)
+            retrieved_transient = await store2.get_credentials(uri3)
+            assert retrieved_transient is not None
+            assert retrieved_transient[0] == cert_path
+            assert retrieved_transient[1] == key_path
+
+            await store2.close()
+
+    asyncio.run(run())
+
+
+##############################################################################
+def test_client_cert_manual_registration_in_callback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that manual registration in the callback correctly retries with the registered cert."""
+
+    async def run() -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ssl_obj = MockSSLObject()
+
+            # Connection sequence:
+            # 1. Request to /davep -> returns 60 (Certificate required)
+            # 2. Retry to /davep (with the registered /join certificate) -> returns 20 Success
+            reader1 = MockStreamReader([b"60 Certificate required\r\n"])
+            writer1 = MockStreamWriter(ssl_obj)
+
+            reader2 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader2.set_body(b"Dave's Content")
+            writer2 = MockStreamWriter(ssl_obj)
+
+            connections = [
+                (reader1, writer1),
+                (reader2, writer2),
+            ]
+            call_count = 0
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                nonlocal call_count
+                conn = connections[call_count]
+                call_count += 1
+                return conn
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(
+                verify_mode="off",
+                client_cert_store_path=tmpdir,
+            )
+
+            # Pre-populate /join
+            join_uri = GeminiURI("gemini://example.com/join")
+            cert_path, key_path = await client.client_cert_store.create_credentials(
+                join_uri
+            )
+
+            async def on_cert_required(
+                uri: GeminiURI, store: Any
+            ) -> Literal["persistent"]:
+                # Retrieve the /join credentials and register them for /davep
+                creds = await store.get_credentials(
+                    GeminiURI("gemini://example.com/join")
+                )
+                assert creds is not None
+                await store.register_credentials(uri, creds[0], creds[1])
+                return "persistent"
+
+            client._on_client_certificate_required = on_cert_required
+
+            async with client:
+                response = await client.request("gemini://example.com/davep")
+                assert response.status == StatusCode.SUCCESS
+                assert await response.text() == "Dave's Content"
+                assert call_count == 2
+                # The certificate used should be the /join certificate
+                assert response.client_cert_used is True
+                # It should point to the newly registered path in the store dir
+                retrieved_davep = await client.client_cert_store.get_credentials(
+                    GeminiURI("gemini://example.com/davep")
+                )
+                assert retrieved_davep is not None
+                assert response.client_cert_path == retrieved_davep[0]
 
     asyncio.run(run())
