@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v032" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.3.2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v031" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -879,6 +890,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v032" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.3.2
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v031" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -965,6 +987,16 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v032">v0.3.2</h2>
+<p><strong>Released: 2026-07-11</strong></p>
+<ul>
+<li>Updated redirect certificate handling to automatically register/re-bind an
+  inherited client certificate to the final landing URI's scope upon
+  successful completion (status code 2x or 3x) of a redirect chain. This
+  allows future direct requests to the target URI to automatically reuse the
+  certificate without going through the initial redirect flow again.
+  (<a href="https://github.com/davep/wasat/pull/17">#17</a>)</li>
+</ul>
 <h2 id="v031">v0.3.1</h2>
 <p><strong>Released: 2026-07-11</strong></p>
 <ul>

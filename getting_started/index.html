@@ -1180,7 +1180,8 @@
     <span class="k">return</span> <span class="s2">&quot;transient&quot;</span>
 </code></pre></div>
 <h3 id="redirection-and-certificate-reuse">Redirection and Certificate Reuse</h3>
-<p>When a request is redirected (e.g. from <code>gemini://example.com/join</code> to <code>gemini://example.com/dashboard</code>), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port. This ensures user session continuity and prevents triggering the certificate callback multiple times for different paths within the same domain.</p>
+<p>When a request is redirected (e.g. from <code>gemini://example.com/join</code> to <code>gemini://example.com/dashboard</code>), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port.</p>
+<p>Additionally, to ensure user session continuity across subsequent visits, once the redirect chain succeeds (returning a success or redirect status code), Wasat will automatically register/re-bind the certificate to the landed URI's scope. This ensures that future direct requests to the target URI will automatically present the certificate without needing to go through the initial redirect flow again.</p>
 <h3 id="manual-certificate-handling">Manual Certificate Handling</h3>
 <p>If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">StatusCode</span>
