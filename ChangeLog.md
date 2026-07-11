@@ -1,6 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.3.2
+
+**Released: 2026-07-11**
 
 - Updated redirect certificate handling to automatically register/re-bind an
   inherited client certificate to the final landing URI's scope upon
