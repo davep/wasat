@@ -1,5 +1,14 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+- Updated redirect certificate handling to automatically register/re-bind an
+  inherited client certificate to the final landing URI's scope upon
+  successful completion (status code 2x or 3x) of a redirect chain. This
+  allows future direct requests to the target URI to automatically reuse the
+  certificate without going through the initial redirect flow again.
+  ([#17](https://github.com/davep/wasat/pull/17))
+
 ## v0.3.1
 
 **Released: 2026-07-11**

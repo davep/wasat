@@ -479,7 +479,8 @@ def test_client_cert_parent_scope_redirect(monkeypatch: pytest.MonkeyPatch) -> N
 def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a certificate generated for a specific path (e.g. /join) is
     automatically reused for a redirect target on a sibling path (e.g. /davep)
-    on the same host/port.
+    on the same host/port, and is successfully re-bound to the sibling path
+    for future direct requests.
     """
 
     async def run() -> None:
@@ -489,7 +490,8 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
             # Connection sequence:
             # 1. First request to /join -> returns 60 (Certificate required)
             # 2. Retry to /join (with cert) -> returns 30 /davep
-            # 3. Request to /davep -> returns 20 Success
+            # 3. Request to /davep (inherited cert) -> returns 20 Success
+            # 4. Direct request to /davep (should automatically reuse the re-bound cert) -> returns 20 Success
             reader1 = MockStreamReader([b"60 Certificate required for join\r\n"])
             writer1 = MockStreamWriter(ssl_obj)
 
@@ -500,10 +502,15 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
             reader3.set_body(b"Dave's Page")
             writer3 = MockStreamWriter(ssl_obj)
 
+            reader4 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader4.set_body(b"Dave's Page (Direct)")
+            writer4 = MockStreamWriter(ssl_obj)
+
             connections = [
                 (reader1, writer1),
                 (reader2, writer2),
                 (reader3, writer3),
+                (reader4, writer4),
             ]
             call_count = 0
             ssl_contexts_used = []
@@ -545,6 +552,17 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
                 # The final response should have reused the same certificate
                 assert response.client_cert_used is True
                 assert response.client_cert_path == response.history[0].client_cert_path
+
+                cert_path = response.client_cert_path
+
+                # Perform a direct request to /davep. It should automatically reuse the cert
+                # without requiring a redirect chain or triggering a client cert callback again.
+                response2 = await client.request("gemini://example.com/davep")
+                assert response2.status == StatusCode.SUCCESS
+                assert await response2.text() == "Dave's Page (Direct)"
+                assert response2.client_cert_used is True
+                assert response2.client_cert_path == cert_path
+                assert call_count == 4
 
     asyncio.run(run())
 

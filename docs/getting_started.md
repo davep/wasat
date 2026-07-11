@@ -137,7 +137,9 @@ async def handle_cert_request(uri: GeminiURI, store: ClientCertificateStore) -> 
 
 ### Redirection and Certificate Reuse
 
-When a request is redirected (e.g. from `gemini://example.com/join` to `gemini://example.com/dashboard`), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port. This ensures user session continuity and prevents triggering the certificate callback multiple times for different paths within the same domain.
+When a request is redirected (e.g. from `gemini://example.com/join` to `gemini://example.com/dashboard`), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port.
+
+Additionally, to ensure user session continuity across subsequent visits, once the redirect chain succeeds (returning a success or redirect status code), Wasat will automatically register/re-bind the certificate to the landed URI's scope. This ensures that future direct requests to the target URI will automatically present the certificate without needing to go through the initial redirect flow again.
 
 ### Manual Certificate Handling
 

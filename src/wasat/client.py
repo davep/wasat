@@ -420,6 +420,8 @@ class Client:
         """
         ssl_context = self._ssl_context
         cert_path: Path | None = None
+        key_path: Path | None = None
+        cert_inherited = False
         if ssl_context is None:
             cert_path = self._client_cert
             key_path = self._client_key
@@ -443,6 +445,7 @@ class Client:
                             )
                             if prev_creds is not None:
                                 cert_path, key_path = prev_creds
+                                cert_inherited = True
                                 break
 
             ssl_context = self._create_ssl_context(
@@ -458,6 +461,24 @@ class Client:
 
             await self._send_request_line(uri, writer)
             status_code, meta = await self._read_response_line(reader)
+
+            # If the certificate was inherited from a redirect, and the request succeeded
+            # or was redirected successfully, register/re-bind the certificate to this URI.
+            if (
+                cert_inherited
+                and cert_path is not None
+                and key_path is not None
+                and self._client_cert_store is not None
+                and (status_code.is_success or status_code.is_redirect)
+            ):
+                is_transient = False
+                if isinstance(self._client_cert_store, FileClientCertificateStore):
+                    temp_dir = self._client_cert_store._temp_dir
+                    if temp_dir is not None and cert_path.is_relative_to(temp_dir):
+                        is_transient = True
+                await self._client_cert_store.register_credentials(
+                    uri, cert_path, key_path, transient=is_transient
+                )
 
             if status_code.is_success:
                 wrapped_reader = WrappedStreamReader(reader, writer)
