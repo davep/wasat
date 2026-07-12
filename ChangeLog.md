@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unrleased
+## v0.4.0
 
-**Released: WiP**
+**Released: 2026-07-12**
 
 - Added a new `replace` method to `GeminiURI` to allow creating a copy of a
   URI with specified components replaced, including removing optional
