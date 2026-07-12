@@ -30,7 +30,12 @@ type ClientCertCallback = Callable[
     [GeminiURI, ClientCertificateStore],
     Coroutine[None, None, Literal["transient", "persistent", "ignore"]],
 ]
-"""Async callback function signature for resolving a client certificate requirement."""
+"""Async callback function signature for resolving a client certificate requirement.
+
+This callback is invoked when a client certificate is required. It receives the
+requested [GeminiURI][wasat.uri.GeminiURI] and the [ClientCertificateStore][wasat.certs.ClientCertificateStore]
+instance to query or update.
+"""
 
 _transient_dirs: list[Path] = []
 """Global registry of transient certificate directories to clean up at process exit."""
@@ -138,7 +143,9 @@ def generate_self_signed_cert(
         A tuple containing (cert_pem, key_pem) as bytes.
 
     Raises:
-        ValueError: If key_type, key size, curve, or country code is unsupported.
+        ValueError: If the key type is unsupported, the RSA key size is not
+            one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+            or 'secp384r1', or the country code is not exactly two characters.
     """
     private_key: ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey
     if key_type == "ecdsa":
@@ -287,6 +294,14 @@ class ClientCertificateStore(Protocol):
 
         Returns:
             A tuple of (cert_path, key_path) representing the generated certificate and key.
+
+        Raises:
+            ValueError: If the key type is unsupported, the RSA key size is not
+                one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+                or 'secp384r1', or the country code is not exactly two characters.
+            OSError: If creating directories or writing the certificate or key file
+                to disk fails.
+            RuntimeError: If saving the credentials or updating the store index fails.
         """
         ...
 
@@ -305,6 +320,13 @@ class ClientCertificateStore(Protocol):
             cert_path: Path to the existing client certificate.
             key_path: Path to the existing private key.
             transient: If True, registers as transient.
+
+        Raises:
+            FileNotFoundError: If the registry is persistent, and the source files do
+                not exist at the specified paths.
+            OSError: If copying the certificate or private key files fails, or if creating
+                the persistent store directory fails.
+            RuntimeError: If registering or persisting the credentials in the store index fails.
         """
         ...
 
@@ -316,6 +338,9 @@ class ClientCertificateStore(Protocol):
 
         Returns:
             True if deleted, False if no matching scope was found.
+
+        Raises:
+            RuntimeError: If updating the store index fails.
         """
         ...
 
@@ -491,6 +516,14 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         Returns:
             A tuple of (cert_path, key_path) representing the generated certificate and key.
+
+        Raises:
+            ValueError: If the key type is unsupported, the RSA key size is not
+                one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+                or 'secp384r1', or the country code is not exactly two characters.
+            OSError: If creating the persistent store directory or the temporary transient
+                directory fails, or if writing the certificate or key file to disk fails.
+            RuntimeError: If saving the updated index (`certs.json`) file to disk fails.
         """
         host = uri.host
         cn = common_name or host
@@ -567,6 +600,14 @@ class FileClientCertificateStore(ClientCertificateStore):
             cert_path: Path to the existing client certificate.
             key_path: Path to the existing private key.
             transient: If True, registers as transient.
+
+        Raises:
+            FileNotFoundError: If `transient` is False, and the source certificate file
+                or private key file does not exist at the specified paths.
+            OSError: If `transient` is False, and copying the certificate or private key
+                files fails, or if creating the persistent store directory fails.
+            RuntimeError: If `transient` is False, and saving the updated index (`certs.json`)
+                file to disk fails.
         """
         host = uri.host
         port = uri.port
@@ -610,6 +651,9 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         Returns:
             True if deleted, False if no matching scope was found.
+
+        Raises:
+            RuntimeError: If saving the updated index (`certs.json`) file to disk fails.
         """
         async with self._lock:
             candidates = get_candidate_scopes(uri)
