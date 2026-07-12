@@ -2568,6 +2568,9 @@
     <div class="doc doc-contents ">
 
         <p>Async callback function signature for resolving a client certificate requirement.</p>
+<p>This callback is invoked when a client certificate is required. It receives the
+requested <a class="autorefs autorefs-internal" title="            GeminiURI" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> and the <a class="autorefs autorefs-internal" title="            ClientCertificateStore" href="#wasat.certs.ClientCertificateStore">ClientCertificateStore</a>
+instance to query or update.</p>
     </div>
 
 </div>
@@ -2903,6 +2906,52 @@ certificate will expire on 9999-12-31.</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the key type is unsupported, the RSA key size is not
+one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+or 'secp384r1', or the country code is not exactly two characters.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#OSError">OSError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If creating directories or writing the certificate or key file
+to disk fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If saving the credentials or updating the store index fails.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -2974,6 +3023,29 @@ certificate will expire on 9999-12-31.</p>
             <td>
               <div class="doc-md-description">
                 <p>True if deleted, False if no matching scope was found.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If updating the store index fails.</p>
               </div>
             </td>
           </tr>
@@ -3255,6 +3327,51 @@ scopes).</p>
             </td>
             <td>
                   <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError">FileNotFoundError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the registry is persistent, and the source files do
+not exist at the specified paths.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#OSError">OSError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If copying the certificate or private key files fails, or if creating
+the persistent store directory fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If registering or persisting the credentials in the store index fails.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -3662,6 +3779,52 @@ certificate will expire on 9999-12-31.</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the key type is unsupported, the RSA key size is not
+one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+or 'secp384r1', or the country code is not exactly two characters.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#OSError">OSError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If creating the persistent store directory or the temporary transient
+directory fails, or if writing the certificate or key file to disk fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If saving the updated index (<code>certs.json</code>) file to disk fails.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -3733,6 +3896,29 @@ certificate will expire on 9999-12-31.</p>
             <td>
               <div class="doc-md-description">
                 <p>True if deleted, False if no matching scope was found.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If saving the updated index (<code>certs.json</code>) file to disk fails.</p>
               </div>
             </td>
           </tr>
@@ -4018,6 +4204,52 @@ scopes).</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError">FileNotFoundError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>transient</code> is False, and the source certificate file
+or private key file does not exist at the specified paths.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#OSError">OSError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>transient</code> is False, and copying the certificate or private key
+files fails, or if creating the persistent store directory fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>transient</code> is False, and saving the updated index (<code>certs.json</code>)
+file to disk fails.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -4273,7 +4505,9 @@ will expire on 9999-12-31.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If key_type, key size, curve, or country code is unsupported.</p>
+                <p>If the key type is unsupported, the RSA key size is not
+one of 2048, 3072, or 4096, the ECDSA curve is not 'secp256r1'
+or 'secp384r1', or the country code is not exactly two characters.</p>
               </div>
             </td>
           </tr>

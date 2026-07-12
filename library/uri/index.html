@@ -1704,7 +1704,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the URI is invalid or has an incorrect scheme.</p>
+                <p>If the URI is empty, the scheme is missing or is not 'gemini',
+the host is missing or invalid, or if parsing of the URI fails.</p>
               </div>
             </td>
           </tr>
@@ -2031,7 +2032,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the resulting URI is invalid.</p>
+                <p>If the resulting URI is invalid (e.g., if the replaced host or
+port is invalid).</p>
               </div>
             </td>
           </tr>
@@ -2128,7 +2130,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the resolved URI is invalid.</p>
+                <p>If the resolved target URI is invalid, or if the relative URI
+cannot be parsed or resolved against the base URI.</p>
               </div>
             </td>
           </tr>
@@ -2210,6 +2213,29 @@
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            URIError (wasat.exceptions.URIError)" href="../exceptions/#wasat.exceptions.URIError">URIError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the resulting URI has an invalid or empty host.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -2277,6 +2303,29 @@
             <td>
               <div class="doc-md-description">
                 <p>A new GeminiURI instance with the updated path.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            URIError (wasat.exceptions.URIError)" href="../exceptions/#wasat.exceptions.URIError">URIError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the resulting URI path is invalid.</p>
               </div>
             </td>
           </tr>
@@ -2358,6 +2407,29 @@
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            URIError (wasat.exceptions.URIError)" href="../exceptions/#wasat.exceptions.URIError">URIError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the resulting URI has an invalid or empty port.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -2425,6 +2497,29 @@
             <td>
               <div class="doc-md-description">
                 <p>A new GeminiURI instance with the updated query.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            URIError (wasat.exceptions.URIError)" href="../exceptions/#wasat.exceptions.URIError">URIError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the resulting URI query is invalid.</p>
               </div>
             </td>
           </tr>
