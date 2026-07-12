@@ -1,5 +1,24 @@
 # Wasat ChangeLog
 
+## Unrleased
+
+**Released: WiP**
+
+- Added a new `replace` method to `GeminiURI` to allow creating a copy of a
+  URI with specified components replaced, including removing optional
+  components like path or query by setting them to `None`.
+  ([#19](https://github.com/davep/wasat/pull/19))
+- Added component-specific builder methods `with_host`, `with_port`, and
+  `with_path` to `GeminiURI`.
+  ([#19](https://github.com/davep/wasat/pull/19))
+- Updated `with_query` on `GeminiURI` to allow setting, replacing, or
+  clearing (by passing `None`) the query parameter.
+  ([#19](https://github.com/davep/wasat/pull/19))
+- Updated `GeminiURI` constructor's internal error handling to catch
+  `ValueError` and other parsing anomalies (e.g. from negative/out-of-range
+  ports) raised by `urlparse`, converting them into `URIError`.
+  ([#19](https://github.com/davep/wasat/pull/19))
+
 ## v0.3.2
 
 **Released: 2026-07-11**

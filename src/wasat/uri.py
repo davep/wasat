@@ -26,6 +26,15 @@ def _normalise_scheme(uri: str) -> str:
 
 
 ##############################################################################
+class _UnsetType:
+    """Sentinel class to distinguish between omitted arguments and None."""
+
+
+_UNSET: Final[_UnsetType] = _UnsetType()
+"""Sentinel value to indicate that an argument has not been provided."""
+
+
+##############################################################################
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
@@ -67,29 +76,30 @@ class GeminiURI:
 
         try:
             parsed = urlparse(to_parse)
+            if (scheme := parsed.scheme.lower()) == "https" and cleaned.startswith(
+                GEMINI_PREFIX
+            ):
+                scheme = GEMINI_SCHEME
+
+            if not scheme:
+                raise URIError("URI scheme is missing")
+            if scheme != GEMINI_SCHEME:
+                raise URIError(
+                    f"Invalid URI scheme: '{scheme}'. Expected '{GEMINI_SCHEME}'"
+                )
+
+            if not parsed.hostname:
+                raise URIError("URI host is missing or invalid")
+
+            self._scheme = scheme
+            self._host = parsed.hostname
+            self._port = parsed.port if parsed.port is not None else GEMINI_DEFAULT_PORT
+            self._path = parsed.path or "/"
+            self._query = parsed.query if parsed.query else None
+        except URIError:
+            raise
         except Exception as e:
             raise URIError(f"Failed to parse URI: {e}") from e
-
-        if (scheme := parsed.scheme.lower()) == "https" and cleaned.startswith(
-            GEMINI_PREFIX
-        ):
-            scheme = GEMINI_SCHEME
-
-        if not scheme:
-            raise URIError("URI scheme is missing")
-        if scheme != GEMINI_SCHEME:
-            raise URIError(
-                f"Invalid URI scheme: '{scheme}'. Expected '{GEMINI_SCHEME}'"
-            )
-
-        if not parsed.hostname:
-            raise URIError("URI host is missing or invalid")
-
-        self._scheme = scheme
-        self._host = parsed.hostname
-        self._port = parsed.port if parsed.port is not None else GEMINI_DEFAULT_PORT
-        self._path = parsed.path or "/"
-        self._query = parsed.query if parsed.query else None
 
     @property
     def scheme(self) -> str:
@@ -116,21 +126,94 @@ class GeminiURI:
         """The query string or None."""
         return self._query
 
-    def with_query(self, query: str) -> Self:
-        """Return a new GeminiURI with the query parameter replaced or set.
+    def replace(
+        self,
+        *,
+        host: str | _UnsetType = _UNSET,
+        port: int | _UnsetType = _UNSET,
+        path: str | None | _UnsetType = _UNSET,
+        query: str | None | _UnsetType = _UNSET,
+    ) -> Self:
+        """Create a new GeminiURI by replacing specific parts of this URI.
 
         Args:
-            query: The new query string (will be URL-encoded).
+            host: The new hostname, or _UNSET to keep the current host.
+            port: The new port number, or _UNSET to keep the current port.
+            path: The new path, None to clear the path, or _UNSET to keep current.
+            query: The new query string, None to clear the query, or _UNSET to keep current.
+
+        Returns:
+            A new GeminiURI instance with the replaced components.
+
+        Raises:
+            URIError: If the resulting URI is invalid.
+        """
+        new_host = self._host if isinstance(host, _UnsetType) else host
+        new_port = self._port if isinstance(port, _UnsetType) else port
+
+        if isinstance(path, _UnsetType):
+            new_path = self._path
+        else:
+            if not path:
+                new_path = "/"
+            elif not path.startswith("/"):
+                new_path = "/" + path
+            else:
+                new_path = path
+
+        if isinstance(query, _UnsetType):
+            new_query = self._query
+        else:
+            new_query = quote(query, safe="~()*!.'") if query is not None else None
+
+        port_str = f":{new_port}" if new_port != GEMINI_DEFAULT_PORT else ""
+        query_str = f"?{new_query}" if new_query else ""
+        new_uri_str = f"{GEMINI_PREFIX}{new_host}{port_str}{new_path}{query_str}"
+        return self.__class__(new_uri_str)
+
+    def with_host(self, host: str) -> Self:
+        """Return a new GeminiURI with the host replaced.
+
+        Args:
+            host: The new hostname.
+
+        Returns:
+            A new GeminiURI instance with the updated host.
+        """
+        return self.replace(host=host)
+
+    def with_port(self, port: int) -> Self:
+        """Return a new GeminiURI with the port replaced.
+
+        Args:
+            port: The new port number.
+
+        Returns:
+            A new GeminiURI instance with the updated port.
+        """
+        return self.replace(port=port)
+
+    def with_path(self, path: str | None) -> Self:
+        """Return a new GeminiURI with the path replaced or cleared.
+
+        Args:
+            path: The new path, or None to clear/reset the path.
+
+        Returns:
+            A new GeminiURI instance with the updated path.
+        """
+        return self.replace(path=path)
+
+    def with_query(self, query: str | None) -> Self:
+        """Return a new GeminiURI with the query parameter replaced, set or cleared.
+
+        Args:
+            query: The new query string (will be URL-encoded), or None to clear.
 
         Returns:
             A new GeminiURI instance with the updated query.
         """
-        encoded_query = quote(query, safe="~()*!.'")
-        port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
-        new_uri_str = (
-            f"{GEMINI_PREFIX}{self._host}{port_str}{self._path}?{encoded_query}"
-        )
-        return self.__class__(new_uri_str)
+        return self.replace(query=query)
 
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
