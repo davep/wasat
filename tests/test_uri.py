@@ -139,5 +139,80 @@ class TestGeminiURI:
         with pytest.raises(URIError, match="Failed to parse URI"):
             GeminiURI(invalid_uri)
 
+    def test_replace_method(self) -> None:
+        """Test replacing parts of a GeminiURI using the replace method."""
+        uri = GeminiURI("gemini://example.com:1966/path/to/resource?query")
+
+        # Replace host
+        assert uri.replace(host="newhost.org") == GeminiURI(
+            "gemini://newhost.org:1966/path/to/resource?query"
+        )
+
+        # Replace port
+        assert uri.replace(port=2000) == GeminiURI(
+            "gemini://example.com:2000/path/to/resource?query"
+        )
+
+        # Replace path
+        assert uri.replace(path="/new/path") == GeminiURI(
+            "gemini://example.com:1966/new/path?query"
+        )
+
+        # Clear path (sets to /)
+        assert uri.replace(path=None) == GeminiURI("gemini://example.com:1966/?query")
+
+        # Replace query
+        assert uri.replace(query="new_query") == GeminiURI(
+            "gemini://example.com:1966/path/to/resource?new_query"
+        )
+
+        # Clear query
+        assert uri.replace(query=None) == GeminiURI(
+            "gemini://example.com:1966/path/to/resource"
+        )
+
+        # Replace multiple
+        assert uri.replace(
+            host="other.net", port=1965, path=None, query=None
+        ) == GeminiURI("gemini://other.net/")
+
+    def test_builder_methods(self) -> None:
+        """Test builder methods for modifying a GeminiURI."""
+        uri = GeminiURI("gemini://example.com:1966/path/to/resource?query")
+
+        # with_host
+        assert uri.with_host("newhost.org") == GeminiURI(
+            "gemini://newhost.org:1966/path/to/resource?query"
+        )
+
+        # with_port
+        assert uri.with_port(2000) == GeminiURI(
+            "gemini://example.com:2000/path/to/resource?query"
+        )
+
+        # with_path
+        assert uri.with_path("/new/path") == GeminiURI(
+            "gemini://example.com:1966/new/path?query"
+        )
+        assert uri.with_path(None) == GeminiURI("gemini://example.com:1966/?query")
+
+        # with_query
+        assert uri.with_query("new_query") == GeminiURI(
+            "gemini://example.com:1966/path/to/resource?new_query"
+        )
+        assert uri.with_query(None) == GeminiURI(
+            "gemini://example.com:1966/path/to/resource"
+        )
+
+    def test_replace_invalid(self) -> None:
+        """Test that replace raises URIError when given invalid values."""
+        uri = GeminiURI("gemini://example.com/")
+
+        with pytest.raises(URIError):
+            uri.replace(host="")
+
+        with pytest.raises(URIError):
+            uri.replace(port=-1)
+
 
 ### test_uri.py ends here
