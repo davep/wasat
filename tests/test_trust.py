@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 # Local imports.
-from wasat import FileTrustStore
+from wasat import Client, FileTrustStore
 
 
 ##############################################################################
@@ -82,6 +82,28 @@ class TestFileTrustStore:
                 assert (
                     await trust_store.verify("untrusted.com", 1965, cert_der) is False
                 )
+
+        asyncio.run(run())
+
+    def test_client_trust_store_property(self) -> None:
+        """Test that the trust_store property is correctly exposed on the Client."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                hosts_file = Path(tmpdir) / "known_hosts"
+                trust_store = FileTrustStore(hosts_file)
+
+                # Client with TOFU mode and custom trust store
+                client_tofu = Client(verify_mode="tofu", trust_store=trust_store)
+                assert client_tofu.trust_store is trust_store
+
+                # Client with default TOFU mode
+                client_default = Client(verify_mode="tofu")
+                assert isinstance(client_default.trust_store, FileTrustStore)
+
+                # Client with CA verification mode should have None trust store
+                client_ca = Client(verify_mode="ca")
+                assert client_ca.trust_store is None
 
         asyncio.run(run())
 

@@ -389,6 +389,14 @@ class Client:
                 )
 
     @property
+    def trust_store(self) -> TrustStore | None:
+        """The trust store used by this client for TOFU verification.
+
+        This will be `None` if not in TOFU mode.
+        """
+        return self._trust_store
+
+    @property
     def client_cert_store(self) -> ClientCertificateStore:
         """The client certificate store used by this client.
 
