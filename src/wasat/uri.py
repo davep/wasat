@@ -45,7 +45,8 @@ class GeminiURI:
             uri: The raw URI string or an existing GeminiURI to clone.
 
         Raises:
-            URIError: If the URI is invalid or has an incorrect scheme.
+            URIError: If the URI is empty, the scheme is missing or is not 'gemini',
+                the host is missing or invalid, or if parsing of the URI fails.
         """
 
         self._scheme: str
@@ -146,7 +147,8 @@ class GeminiURI:
             A new GeminiURI instance with the replaced components.
 
         Raises:
-            URIError: If the resulting URI is invalid.
+            URIError: If the resulting URI is invalid (e.g., if the replaced host or
+                port is invalid).
         """
         new_host = self._host if isinstance(host, _UnsetType) else host
         new_port = self._port if isinstance(port, _UnsetType) else port
@@ -179,6 +181,9 @@ class GeminiURI:
 
         Returns:
             A new GeminiURI instance with the updated host.
+
+        Raises:
+            URIError: If the resulting URI has an invalid or empty host.
         """
         return self.replace(host=host)
 
@@ -190,6 +195,9 @@ class GeminiURI:
 
         Returns:
             A new GeminiURI instance with the updated port.
+
+        Raises:
+            URIError: If the resulting URI has an invalid or empty port.
         """
         return self.replace(port=port)
 
@@ -201,6 +209,9 @@ class GeminiURI:
 
         Returns:
             A new GeminiURI instance with the updated path.
+
+        Raises:
+            URIError: If the resulting URI path is invalid.
         """
         return self.replace(path=path)
 
@@ -212,6 +223,9 @@ class GeminiURI:
 
         Returns:
             A new GeminiURI instance with the updated query.
+
+        Raises:
+            URIError: If the resulting URI query is invalid.
         """
         return self.replace(query=query)
 
@@ -225,7 +239,8 @@ class GeminiURI:
             A new GeminiURI representing the resolved target.
 
         Raises:
-            URIError: If the resolved URI is invalid.
+            URIError: If the resolved target URI is invalid, or if the relative URI
+                cannot be parsed or resolved against the base URI.
         """
         base_str = str(self)
         base_http = base_str.replace(GEMINI_PREFIX, "https://", 1)
