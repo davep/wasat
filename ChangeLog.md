@@ -1,5 +1,16 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `get_hosts` asynchronous method to the `TrustStore` protocol and
+  `FileTrustStore` implementation to retrieve all stored host and port
+  combinations from the trust store.
+  ([#22](https://github.com/davep/wasat/pull/22))
+- Added `trust_store` public property to the `Client` class to expose the underlying trust store.
+  ([#22](https://github.com/davep/wasat/pull/22))
+
 ## v0.4.0
 
 **Released: 2026-07-12**

@@ -69,6 +69,14 @@ class TrustStore(Protocol):
         """
         ...
 
+    async def get_hosts(self) -> list[tuple[str, int]]:
+        """Retrieve all host and port combinations stored in the trust store.
+
+        Returns:
+            A list of (host, port) tuples representing the known hosts.
+        """
+        ...
+
 
 ##############################################################################
 class FileTrustStore(TrustStore):
@@ -191,6 +199,16 @@ class FileTrustStore(TrustStore):
             await self._ensure_loaded()
             self._cache[(host.lower(), port)] = fingerprint
             await asyncio.to_thread(self._save_sync)
+
+    async def get_hosts(self) -> list[tuple[str, int]]:
+        """Retrieve all host and port combinations stored in the trust store.
+
+        Returns:
+            A list of (host, port) tuples representing the known hosts.
+        """
+        async with self._lock:
+            await self._ensure_loaded()
+            return list(self._cache.keys())
 
 
 ### trust.py ends here
