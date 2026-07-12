@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v040" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.4.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v032" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -890,6 +901,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v040" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.4.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v032" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -987,6 +1009,24 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v040">v0.4.0</h2>
+<p><strong>Released: 2026-07-12</strong></p>
+<ul>
+<li>Added a new <code>replace</code> method to <code>GeminiURI</code> to allow creating a copy of a
+  URI with specified components replaced, including removing optional
+  components like path or query by setting them to <code>None</code>.
+  (<a href="https://github.com/davep/wasat/pull/19">#19</a>)</li>
+<li>Added component-specific builder methods <code>with_host</code>, <code>with_port</code>, and
+  <code>with_path</code> to <code>GeminiURI</code>.
+  (<a href="https://github.com/davep/wasat/pull/19">#19</a>)</li>
+<li>Updated <code>with_query</code> on <code>GeminiURI</code> to allow setting, replacing, or
+  clearing (by passing <code>None</code>) the query parameter.
+  (<a href="https://github.com/davep/wasat/pull/19">#19</a>)</li>
+<li>Updated <code>GeminiURI</code> constructor's internal error handling to catch
+  <code>ValueError</code> and other parsing anomalies (e.g. from negative/out-of-range
+  ports) raised by <code>urlparse</code>, converting them into <code>URIError</code>.
+  (<a href="https://github.com/davep/wasat/pull/19">#19</a>)</li>
+</ul>
 <h2 id="v032">v0.3.2</h2>
 <p><strong>Released: 2026-07-11</strong></p>
 <ul>
