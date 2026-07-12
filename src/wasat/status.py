@@ -126,7 +126,7 @@ class StatusCode(IntEnum):
             The resolved StatusCode.
 
         Raises:
-            ValueError: If the status code or its group is invalid.
+            ValueError: If the status code or its group/category (1-6) is invalid.
         """
         try:
             return cls(value)

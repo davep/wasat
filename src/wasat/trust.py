@@ -51,6 +51,9 @@ class TrustStore(Protocol):
             host: The remote hostname.
             port: The remote port.
             cert_der: The DER-encoded certificate.
+
+        Raises:
+            RuntimeError: If saving the certificate fingerprint to the trust store fails.
         """
         ...
 
@@ -179,6 +182,9 @@ class FileTrustStore(TrustStore):
             host: The remote hostname.
             port: The remote port.
             cert_der: The DER-encoded certificate.
+
+        Raises:
+            RuntimeError: If saving the updated known hosts file to disk fails.
         """
         fingerprint = get_cert_fingerprint(cert_der)
         async with self._lock:

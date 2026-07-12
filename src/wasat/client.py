@@ -417,6 +417,9 @@ class Client:
             ConnectionError: On connection/network failure.
             SecurityError: On certificate validation failure.
             ProtocolError: On protocol format violations.
+            ValueError: If client certificate generation parameters are invalid.
+            OSError: If creating directories or writing client certificate files fails.
+            RuntimeError: If saving the updated client certificate store index fails.
         """
         ssl_context = self._ssl_context
         cert_path: Path | None = None
@@ -558,6 +561,9 @@ class Client:
             SecurityError: If TLS/certificate check fails.
             ProtocolError: If the server response violates the Gemini protocol.
             RedirectError: If redirect limits are exceeded or loops are detected.
+            ValueError: If client certificate generation parameters are invalid.
+            OSError: If creating directories or writing client certificate files fails.
+            RuntimeError: If saving the updated client certificate store index fails.
         """
         requested_uri = GeminiURI(uri)
         current_uri = requested_uri
