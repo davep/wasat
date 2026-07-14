@@ -1,5 +1,12 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Relaxed the type of the parameters for `GeminiURI.__init__`.
+  ([#24](https://github.com/davep/wasat/pull/24))
+
 ## v0.5.0
 
 **Released: 2026-07-13**
