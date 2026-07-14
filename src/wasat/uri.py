@@ -106,6 +106,22 @@ class GeminiURI:
         except Exception as e:
             raise URIError(f"Failed to parse URI: {e}") from e
 
+    @classmethod
+    def with_default_scheme(cls, uri: str) -> Self:
+        """Add the Gemini scheme to a URI if it is missing.
+
+        Args:
+            uri: The URI string to check and potentially modify.
+
+        Returns:
+            A new GeminiURI instance with the scheme added if it was missing.
+
+        Raises:
+            URIError: If the URI is empty, the scheme is not 'gemini',
+                the host is missing or invalid, or if parsing of the URI fails.
+        """
+        return cls(uri if urlparse(uri).scheme else f"{GEMINI_PREFIX}{uri}")
+
     @property
     def scheme(self) -> str:
         """The URI scheme (always 'gemini')."""

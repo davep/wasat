@@ -214,5 +214,28 @@ class TestGeminiURI:
         with pytest.raises(URIError):
             uri.replace(port=-1)
 
+    def test_maybe_adding_scheme(self) -> None:
+        """Test that a scheme is added if missing when creating a GeminiURI."""
+        uri = GeminiURI.with_default_scheme("example.com/path")
+        assert uri.scheme == "gemini"
+        assert uri.host == "example.com"
+        assert uri.path == "/path"
+        assert str(uri) == "gemini://example.com/path"
+
+    def test_maybe_adding_scheme_with_existing_scheme(self) -> None:
+        """Test that an existing scheme is preserved when creating a GeminiURI."""
+        uri = GeminiURI.with_default_scheme("gemini://example.com/path")
+        assert uri.scheme == "gemini"
+        assert uri.host == "example.com"
+        assert uri.path == "/path"
+        assert str(uri) == "gemini://example.com/path"
+
+    def test_maybe_adding_scheme_invalid(self) -> None:
+        """Test that invalid URIs raise URIError when using maybe_adding_scheme."""
+        with pytest.raises(URIError):
+            GeminiURI.with_default_scheme("http://example.com/path")
+        with pytest.raises(URIError):
+            GeminiURI.with_default_scheme("")
+
 
 ### test_uri.py ends here
