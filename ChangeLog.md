@@ -1,5 +1,13 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed `GeminiURI.with_default_scheme` treating `example.com` in
+  `example.com:1966` as a scheme.
+  ([#27](https://github.com/davep/wasat/pull/27))
+
 ## v0.6.0
 
 **Released: 2026-07-14**

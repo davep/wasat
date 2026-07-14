@@ -214,21 +214,30 @@ class TestGeminiURI:
         with pytest.raises(URIError):
             uri.replace(port=-1)
 
-    def test_maybe_adding_scheme(self) -> None:
+    @pytest.mark.parametrize(
+        "text, scheme, port, host, path",
+        [
+            ("example.com", "gemini", GEMINI_DEFAULT_PORT, "example.com", "/"),
+            ("example.com/path", "gemini", GEMINI_DEFAULT_PORT, "example.com", "/path"),
+            ("example.com:1967/path", "gemini", 1967, "example.com", "/path"),
+            (
+                "gemini://example.com/path",
+                "gemini",
+                GEMINI_DEFAULT_PORT,
+                "example.com",
+                "/path",
+            ),
+        ],
+    )
+    def test_maybe_adding_scheme(
+        self, text: str, scheme: str, port: int, host: str, path: str
+    ) -> None:
         """Test that a scheme is added if missing when creating a GeminiURI."""
-        uri = GeminiURI.with_default_scheme("example.com/path")
-        assert uri.scheme == "gemini"
-        assert uri.host == "example.com"
-        assert uri.path == "/path"
-        assert str(uri) == "gemini://example.com/path"
-
-    def test_maybe_adding_scheme_with_existing_scheme(self) -> None:
-        """Test that an existing scheme is preserved when creating a GeminiURI."""
-        uri = GeminiURI.with_default_scheme("gemini://example.com/path")
-        assert uri.scheme == "gemini"
-        assert uri.host == "example.com"
-        assert uri.path == "/path"
-        assert str(uri) == "gemini://example.com/path"
+        uri = GeminiURI.with_default_scheme(text)
+        assert uri.scheme == scheme
+        assert uri.port == port
+        assert uri.host == host
+        assert uri.path == path
 
     def test_maybe_adding_scheme_invalid(self) -> None:
         """Test that invalid URIs raise URIError when using maybe_adding_scheme."""

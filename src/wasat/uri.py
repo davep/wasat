@@ -7,7 +7,16 @@ from __future__ import annotations
 ##############################################################################
 # Python imports.
 from typing import Final, Self
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import (
+    quote,
+    urljoin,
+    urlparse,
+    uses_fragment,
+    uses_netloc,
+    uses_params,
+    uses_query,
+    uses_relative,
+)
 
 ##############################################################################
 # Local imports.
@@ -106,6 +115,20 @@ class GeminiURI:
         except Exception as e:
             raise URIError(f"Failed to parse URI: {e}") from e
 
+    _KNOWN_SCHEMES: Final[set[str]] = set(
+        scheme
+        for scheme in (
+            GEMINI_SCHEME,
+            *uses_netloc,
+            *uses_params,
+            *uses_relative,
+            *uses_query,
+            *uses_fragment,
+        )
+        if scheme
+    )
+    """Set of known URI schemes for validation."""
+
     @classmethod
     def with_default_scheme(cls, uri: str) -> Self:
         """Add the Gemini scheme to a URI if it is missing.
@@ -120,7 +143,11 @@ class GeminiURI:
             URIError: If the URI is empty, the scheme is not 'gemini',
                 the host is missing or invalid, or if parsing of the URI fails.
         """
-        return cls(uri if urlparse(uri).scheme else f"{GEMINI_PREFIX}{uri}")
+        if (uri := _normalise_scheme(uri.strip())) and (
+            not (scheme := urlparse(uri).scheme) or scheme not in cls._KNOWN_SCHEMES
+        ):
+            uri = f"{GEMINI_PREFIX}{uri}"
+        return cls(uri)
 
     @property
     def scheme(self) -> str:
