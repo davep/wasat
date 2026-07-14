@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.6.1
 
-**Released: WiP**
+**Released: 2026-07-14**
 
 - Fixed `GeminiURI.with_default_scheme` treating `example.com` in
   `example.com:1966` as a scheme.
