@@ -1,6 +1,10 @@
 """Gemini URI representation and parsing."""
 
 ##############################################################################
+# Future imports.
+from __future__ import annotations
+
+##############################################################################
 # Python imports.
 from typing import Final, Self
 from urllib.parse import quote, urljoin, urlparse
@@ -38,7 +42,7 @@ _UNSET: Final[_UnsetType] = _UnsetType()
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
-    def __init__(self, uri: str | Self) -> None:
+    def __init__(self, uri: str | GeminiURI) -> None:
         """Initialise and validate a Gemini URI.
 
         Args:
