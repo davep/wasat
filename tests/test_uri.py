@@ -261,21 +261,34 @@ class TestGeminiURI:
         assert len(uri) == len(str(uri))
 
     @pytest.mark.parametrize(
-        "uri, bytes_left",
+        "uri, bytes_left, too_long",
         [
-            (GeminiURI("gemini://example.com/abc"), 1000),
-            (GeminiURI("gemini://example.com:1966/path"), 994),
+            (GeminiURI("gemini://example.com/abc"), 1000, False),
+            (GeminiURI("gemini://example.com:1966/path"), 994, False),
+            (
+                GeminiURI("gemini://example.com/").with_query(
+                    "q"
+                    * (
+                        GeminiURI.MAXIMUM_LENGTH
+                        - len(GeminiURI("gemini://example.com/"))
+                    )
+                ),
+                0,
+                True,
+            ),
             (
                 GeminiURI("gemini://example.com/").with_query(
                     "q" * GeminiURI.MAXIMUM_LENGTH
                 ),
                 0,
+                True,
             ),
         ],
     )
-    def test_bytes_left(self, uri: GeminiURI, bytes_left: int) -> None:
+    def test_bytes_left(self, uri: GeminiURI, bytes_left: int, too_long: bool) -> None:
         """Test that bytes_left returns the correct number of characters left for a given max length."""
         assert uri.bytes_left == bytes_left
+        assert uri.is_too_long is too_long
 
 
 ### test_uri.py ends here
