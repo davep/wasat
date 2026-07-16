@@ -335,5 +335,9 @@ class GeminiURI:
         """Return the hash value of the URI."""
         return hash((self._scheme, self._host, self._port, self._path, self._query))
 
+    def __len__(self) -> int:
+        """Return the length of the string representation of the URI."""
+        return len(str(self))
+
 
 ### uri.py ends here
