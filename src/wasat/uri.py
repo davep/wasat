@@ -315,6 +315,11 @@ class GeminiURI:
         """The number of left left before reaching the maximum URI length."""
         return max(0, self.MAXIMUM_LENGTH - len(self))
 
+    @cached_property
+    def is_too_long(self) -> bool:
+        """Is the URI too long to be valid?"""
+        return len(self) > self.MAXIMUM_LENGTH
+
     def __str__(self) -> str:
         """Return the string representation of the URI."""
         port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
