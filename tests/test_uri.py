@@ -246,5 +246,19 @@ class TestGeminiURI:
         with pytest.raises(URIError):
             GeminiURI.with_default_scheme("")
 
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            (GeminiURI("gemini://example.com/path")),
+            (GeminiURI("gemini://example.com:1966/path")),
+            (GeminiURI("gemini://example.com/")),
+            (GeminiURI("gemini://example.com")),
+            (GeminiURI("gemini://example.com").with_query("query")),
+        ],
+    )
+    def test_len(self, uri: GeminiURI) -> None:
+        """Test that the length of a GeminiURI is the length of its string representation."""
+        assert len(uri) == len(str(uri))
+
 
 ### test_uri.py ends here
