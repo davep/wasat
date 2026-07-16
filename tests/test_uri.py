@@ -246,5 +246,49 @@ class TestGeminiURI:
         with pytest.raises(URIError):
             GeminiURI.with_default_scheme("")
 
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            (GeminiURI("gemini://example.com/path")),
+            (GeminiURI("gemini://example.com:1966/path")),
+            (GeminiURI("gemini://example.com/")),
+            (GeminiURI("gemini://example.com")),
+            (GeminiURI("gemini://example.com").with_query("query")),
+        ],
+    )
+    def test_len(self, uri: GeminiURI) -> None:
+        """Test that the length of a GeminiURI is the length of its string representation."""
+        assert len(uri) == len(str(uri))
+
+    @pytest.mark.parametrize(
+        "uri, bytes_left, too_long",
+        [
+            (GeminiURI("gemini://example.com/abc"), 1000, False),
+            (GeminiURI("gemini://example.com:1966/path"), 994, False),
+            (
+                GeminiURI("gemini://example.com/").with_query(
+                    "q"
+                    * (
+                        GeminiURI.MAXIMUM_LENGTH
+                        - len(GeminiURI("gemini://example.com/"))
+                    )
+                ),
+                0,
+                True,
+            ),
+            (
+                GeminiURI("gemini://example.com/").with_query(
+                    "q" * GeminiURI.MAXIMUM_LENGTH
+                ),
+                0,
+                True,
+            ),
+        ],
+    )
+    def test_bytes_left(self, uri: GeminiURI, bytes_left: int, too_long: bool) -> None:
+        """Test that bytes_left returns the correct number of characters left for a given max length."""
+        assert uri.bytes_left == bytes_left
+        assert uri.is_too_long is too_long
+
 
 ### test_uri.py ends here

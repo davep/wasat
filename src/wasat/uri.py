@@ -6,6 +6,7 @@ from __future__ import annotations
 
 ##############################################################################
 # Python imports.
+from functools import cached_property
 from typing import Final, Self
 from urllib.parse import (
     quote,
@@ -50,6 +51,9 @@ _UNSET: Final[_UnsetType] = _UnsetType()
 ##############################################################################
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
+
+    MAXIMUM_LENGTH: Final[int] = 1024
+    """The maximum length of a Gemini URI string."""
 
     def __init__(self, uri: str | GeminiURI) -> None:
         """Initialise and validate a Gemini URI.
@@ -306,6 +310,16 @@ class GeminiURI:
                 f"Failed to resolve relative URI '{relative_uri}' against base '{base_str}': {e}"
             ) from e
 
+    @cached_property
+    def bytes_left(self) -> int:
+        """The number of left left before reaching the maximum URI length."""
+        return max(0, self.MAXIMUM_LENGTH - len(self))
+
+    @cached_property
+    def is_too_long(self) -> bool:
+        """Is the URI too long to be valid?"""
+        return len(self) > self.MAXIMUM_LENGTH
+
     def __str__(self) -> str:
         """Return the string representation of the URI."""
         port_str = f":{self._port}" if self._port != GEMINI_DEFAULT_PORT else ""
@@ -334,6 +348,10 @@ class GeminiURI:
     def __hash__(self) -> int:
         """Return the hash value of the URI."""
         return hash((self._scheme, self._host, self._port, self._path, self._query))
+
+    def __len__(self) -> int:
+        """Return the length of the string representation of the URI."""
+        return len(str(self))
 
 
 ### uri.py ends here
