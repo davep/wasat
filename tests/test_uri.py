@@ -260,5 +260,22 @@ class TestGeminiURI:
         """Test that the length of a GeminiURI is the length of its string representation."""
         assert len(uri) == len(str(uri))
 
+    @pytest.mark.parametrize(
+        "uri, bytes_left",
+        [
+            (GeminiURI("gemini://example.com/abc"), 1000),
+            (GeminiURI("gemini://example.com:1966/path"), 994),
+            (
+                GeminiURI("gemini://example.com/").with_query(
+                    "q" * GeminiURI.MAXIMUM_LENGTH
+                ),
+                0,
+            ),
+        ],
+    )
+    def test_bytes_left(self, uri: GeminiURI, bytes_left: int) -> None:
+        """Test that bytes_left returns the correct number of characters left for a given max length."""
+        assert uri.bytes_left == bytes_left
+
 
 ### test_uri.py ends here

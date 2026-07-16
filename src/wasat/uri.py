@@ -51,6 +51,9 @@ _UNSET: Final[_UnsetType] = _UnsetType()
 class GeminiURI:
     """Represents a validated Gemini protocol URI."""
 
+    MAXIMUM_LENGTH: Final[int] = 1024
+    """The maximum length of a Gemini URI string."""
+
     def __init__(self, uri: str | GeminiURI) -> None:
         """Initialise and validate a Gemini URI.
 
@@ -305,6 +308,11 @@ class GeminiURI:
             raise URIError(
                 f"Failed to resolve relative URI '{relative_uri}' against base '{base_str}': {e}"
             ) from e
+
+    @property
+    def bytes_left(self) -> int:
+        """The number of left left before reaching the maximum URI length."""
+        return max(0, self.MAXIMUM_LENGTH - len(self))
 
     def __str__(self) -> str:
         """Return the string representation of the URI."""
