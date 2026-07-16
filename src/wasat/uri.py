@@ -6,6 +6,7 @@ from __future__ import annotations
 
 ##############################################################################
 # Python imports.
+from functools import cached_property
 from typing import Final, Self
 from urllib.parse import (
     quote,
@@ -309,7 +310,7 @@ class GeminiURI:
                 f"Failed to resolve relative URI '{relative_uri}' against base '{base_str}': {e}"
             ) from e
 
-    @property
+    @cached_property
     def bytes_left(self) -> int:
         """The number of left left before reaching the maximum URI length."""
         return max(0, self.MAXIMUM_LENGTH - len(self))
