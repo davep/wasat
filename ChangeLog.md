@@ -1,5 +1,18 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `GeminiURI.MAXIMUM_LENGTH`.
+  ([#29](https://github.com/davep/wasat/pull/29))
+- Added `len` support to `GeminiURI` (reports the byte length of the URI).
+  ([#29](https://github.com/davep/wasat/pull/29))
+- Added `GeminiURI.bytes_left`.
+  ([#29](https://github.com/davep/wasat/pull/29))
+- Added `GeminiURI.too_long`.
+  ([#29](https://github.com/davep/wasat/pull/29))
+
 ## v0.6.1
 
 **Released: 2026-07-14**
