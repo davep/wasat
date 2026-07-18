@@ -280,6 +280,17 @@ class GeminiURI:
         """
         return self.replace(query=query)
 
+    def without_query(self) -> Self:
+        """Return a new GeminiURI with the query parameter removed.
+
+        Returns:
+            A new GeminiURI instance without the query string.
+
+        Raises:
+            URIError: If the resulting URI is invalid.
+        """
+        return self.replace(query=None)
+
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
 

@@ -290,5 +290,17 @@ class TestGeminiURI:
         assert uri.bytes_left == bytes_left
         assert uri.is_too_long is too_long
 
+    @pytest.mark.parametrize(
+        "initial, result",
+        [
+            ("gemini://example.com/path?query", "gemini://example.com/path"),
+            ("gemini://example.com/?query", "gemini://example.com/"),
+            ("gemini://example.com/", "gemini://example.com/"),
+        ],
+    )
+    def test_without_query(self, initial: str, result: str) -> None:
+        """Test that without_query returns a GeminiURI without the query string."""
+        assert GeminiURI(initial).without_query() == GeminiURI(result)
+
 
 ### test_uri.py ends here
