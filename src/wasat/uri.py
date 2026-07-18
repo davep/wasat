@@ -291,7 +291,7 @@ class GeminiURI:
         Raises:
             URIError: If the resulting URI is invalid.
         """
-        return self.replace(query=None)
+        return self.with_query(None)
 
     @property
     def parent(self) -> Self:
@@ -300,7 +300,7 @@ class GeminiURI:
         Note:
             Any query will be removed.
         """
-        return self.without_query.replace(path=str(Path(self._path).parent))
+        return self.without_query.with_path(str(Path(self._path).parent))
 
     @property
     def root(self) -> Self:
