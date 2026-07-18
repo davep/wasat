@@ -302,5 +302,23 @@ class TestGeminiURI:
         """Test that without_query returns a GeminiURI without the query string."""
         assert GeminiURI(initial).without_query() == GeminiURI(result)
 
+    @pytest.mark.parametrize(
+        "initial, result",
+        [
+            ("gemini://example.com/path/to/resource", "gemini://example.com/path/to"),
+            ("gemini://example.com/path/to/resource/", "gemini://example.com/path/to"),
+            (
+                "gemini://example.com/path/to/resource.gmi",
+                "gemini://example.com/path/to",
+            ),
+            ("gemini://example.com/path/", "gemini://example.com/"),
+            ("gemini://example.com/file.gmi", "gemini://example.com/"),
+            ("gemini://example.com/", "gemini://example.com/"),
+        ],
+    )
+    def test_parent(self, initial: str, result: str) -> None:
+        """Test that parent returns the parent GeminiURI."""
+        assert GeminiURI(initial).parent == GeminiURI(result)
+
 
 ### test_uri.py ends here

@@ -7,6 +7,7 @@ from __future__ import annotations
 ##############################################################################
 # Python imports.
 from functools import cached_property
+from pathlib import Path
 from typing import Final, Self
 from urllib.parse import (
     quote,
@@ -290,6 +291,15 @@ class GeminiURI:
             URIError: If the resulting URI is invalid.
         """
         return self.replace(query=None)
+
+    @property
+    def parent(self) -> Self:
+        """The URI representing the parent directory of this URI's path.
+
+        Note:
+            Any query will be removed.
+        """
+        return self.without_query().replace(path=str(Path(self._path).parent))
 
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
