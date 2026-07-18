@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v0.8.0
 
-**Released: WiP**
+**Released: 2026-07-18**
 
 - Added `GeminiURI.without_query`.
   ([#32](https://github.com/davep/wasat/pull/32))
