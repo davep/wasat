@@ -306,7 +306,15 @@ class TestGeminiURI:
         "initial, result",
         [
             ("gemini://example.com/path/to/resource", "gemini://example.com/path/to"),
+            (
+                "gemini://example.com/path/to/resource/?foo",
+                "gemini://example.com/path/to",
+            ),
             ("gemini://example.com/path/to/resource/", "gemini://example.com/path/to"),
+            (
+                "gemini://example.com/path/to/resource?foo",
+                "gemini://example.com/path/to",
+            ),
             (
                 "gemini://example.com/path/to/resource.gmi",
                 "gemini://example.com/path/to",
@@ -314,6 +322,7 @@ class TestGeminiURI:
             ("gemini://example.com/path/", "gemini://example.com/"),
             ("gemini://example.com/file.gmi", "gemini://example.com/"),
             ("gemini://example.com/", "gemini://example.com/"),
+            ("gemini://example.com/?foo", "gemini://example.com/"),
         ],
     )
     def test_parent(self, initial: str, result: str) -> None:
