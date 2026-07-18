@@ -300,7 +300,7 @@ class TestGeminiURI:
     )
     def test_without_query(self, initial: str, result: str) -> None:
         """Test that without_query returns a GeminiURI without the query string."""
-        assert GeminiURI(initial).without_query() == GeminiURI(result)
+        assert GeminiURI(initial).without_query == GeminiURI(result)
 
     @pytest.mark.parametrize(
         "initial, result",

@@ -281,6 +281,7 @@ class GeminiURI:
         """
         return self.replace(query=query)
 
+    @property
     def without_query(self) -> Self:
         """Return a new GeminiURI with the query parameter removed.
 
@@ -299,7 +300,7 @@ class GeminiURI:
         Note:
             Any query will be removed.
         """
-        return self.without_query().replace(path=str(Path(self._path).parent))
+        return self.without_query.replace(path=str(Path(self._path).parent))
 
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
