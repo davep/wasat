@@ -1,5 +1,14 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `GeminiURI.without_query`.
+  ([#32](https://github.com/davep/wasat/pull/32))
+- Added `GeminiURI.parent` ([#32](https://github.com/davep/wasat/pull/32))
+- Added `GeminiURI.root` ([#32](https://github.com/davep/wasat/pull/32))
+
 ## v0.7.0
 
 **Released: 2026-07-16**
