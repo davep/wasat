@@ -320,5 +320,23 @@ class TestGeminiURI:
         """Test that parent returns the parent GeminiURI."""
         assert GeminiURI(initial).parent == GeminiURI(result)
 
+    @pytest.mark.parametrize(
+        "initial",
+        [
+            "gemini://example.com/path/to/resource",
+            "gemini://example.com/path/to/resource?foo",
+            "gemini://example.com/path/to/resource/",
+            "gemini://example.com/path/to/resource.gmi",
+            "gemini://example.com/path/",
+            "gemini://example.com/file.gmi",
+            "gemini://example.com/file.gmi?foo",
+            "gemini://example.com/",
+            "gemini://example.com/?foo",
+        ],
+    )
+    def test_root(self, initial: str) -> None:
+        """Test that root returns the root GeminiURI."""
+        assert GeminiURI(initial).root == GeminiURI("gemini://example.com/")
+
 
 ### test_uri.py ends here

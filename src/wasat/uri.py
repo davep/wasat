@@ -302,6 +302,15 @@ class GeminiURI:
         """
         return self.without_query.replace(path=str(Path(self._path).parent))
 
+    @property
+    def root(self) -> Self:
+        """The URI representing the root directory of this URI's host.
+
+        Note:
+            Any query will be removed.
+        """
+        return self.without_query.with_path(None)
+
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
 
