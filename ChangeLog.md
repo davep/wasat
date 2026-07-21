@@ -1,5 +1,11 @@
 # Wasat ChangeLog
 
+## v1.0.0
+
+**Released: 2026-07-21**
+
+- Promoted to "stable". ([#34](https://github.com/davep/wasat/pull/34))
+
 ## v0.8.0
 
 **Released: 2026-07-18**
