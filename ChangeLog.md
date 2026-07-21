@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.0.1
 
-**Released: WiP**
+**Released: 2026-07-21**
 
 - Fixed unhandled `ssl.SSLEOFError`, `ssl.SSLError`, and `OSError`
   exceptions during request dispatch and response header reading by mapping
