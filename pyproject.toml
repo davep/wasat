@@ -1,6 +1,6 @@
 [project]
 name = "wasat"
-version = "0.8.0"
+version = "1.0.0"
 description = "An async client library for the Gemini protocol"
 readme = "README.md"
 authors = [
@@ -15,11 +15,14 @@ keywords = [
     "API",
     "async",
     "client",
-    "library",
+    "Gemini Protocol",
     "Gemini",
+    "library",
+    "Small Web",
+    "smolweb",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
