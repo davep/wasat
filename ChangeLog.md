@@ -1,5 +1,13 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed unhandled `ssl.SSLEOFError`, `ssl.SSLError`, and `OSError`
+  exceptions during request dispatch and response header reading by mapping
+  them to `ConnectionError`. ([#36](https://github.com/davep/wasat/pull/36))
+
 ## v1.0.0
 
 **Released: 2026-07-21**

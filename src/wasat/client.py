@@ -24,6 +24,7 @@ from .exceptions import (
     RedirectError,
     SecurityError,
     URIError,
+    WasatError,
 )
 from .response import Response
 from .status import StatusCode
@@ -259,9 +260,15 @@ class Client:
         Args:
             uri: The target GeminiURI.
             writer: The StreamWriter representing the established connection.
+
+        Raises:
+            ConnectionError: If sending the request line fails due to connection loss.
         """
-        writer.write(f"{uri}\r\n".encode())
-        await writer.drain()
+        try:
+            writer.write(f"{uri}\r\n".encode())
+            await writer.drain()
+        except (OSError, ssl.SSLError) as e:
+            raise ConnectionError(f"Failed to send request line: {e}") from e
 
     async def _read_response_line(
         self, reader: asyncio.StreamReader
@@ -285,7 +292,11 @@ class Client:
                 raise ProtocolError(
                     "Response line exceeds maximum allowed limit"
                 ) from e
-            except (asyncio.IncompleteReadError, ConnectionResetError) as e:
+            except (
+                asyncio.IncompleteReadError,
+                OSError,
+                ssl.SSLError,
+            ) as e:
                 raise ConnectionError(
                     "Connection closed by server before sending response"
                 ) from e
@@ -546,6 +557,16 @@ class Client:
 
                 return response
 
+        except WasatError:
+            writer.close()
+            with suppress(Exception):
+                await writer.wait_closed()
+            raise
+        except (OSError, ssl.SSLError) as e:
+            writer.close()
+            with suppress(Exception):
+                await writer.wait_closed()
+            raise ConnectionError(f"Connection failed during request: {e}") from e
         except Exception:
             writer.close()
             with suppress(Exception):

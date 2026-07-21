@@ -2,6 +2,7 @@
 
 import asyncio
 import pathlib
+import ssl
 import sys
 import tempfile
 from pathlib import Path
@@ -12,6 +13,7 @@ import pytest
 from wasat import (
     GEMINI_DEFAULT_PORT,
     Client,
+    ConnectionError,
     FileTrustStore,
     GeminiURI,
     RedirectError,
@@ -129,6 +131,60 @@ class TestClient:
 
             text = await response.text()
             assert text == "Hello from Gemini!"
+            assert writer.closed
+
+        asyncio.run(run())
+
+    def test_ssl_eof_error_on_read(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ssl.SSLEOFError when reading response line raises ConnectionError."""
+
+        async def run() -> None:
+            class FailingReader(MockStreamReader):
+                async def readuntil(self, separator: bytes = b"\n") -> bytes:
+                    raise ssl.SSLEOFError("EOF occurred in violation of protocol")
+
+            reader = FailingReader([])
+            writer = MockStreamWriter(self.ssl_obj)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(verify_mode="off")
+            with pytest.raises(
+                ConnectionError,
+                match="Connection closed by server before sending response",
+            ):
+                await client.request("gemini://example.com/")
+            assert writer.closed
+
+        asyncio.run(run())
+
+    def test_ssl_eof_error_on_write(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ssl.SSLEOFError when sending request line raises ConnectionError."""
+
+        async def run() -> None:
+            reader = MockStreamReader([])
+            writer = MockStreamWriter(self.ssl_obj)
+
+            async def failing_drain() -> None:
+                raise ssl.SSLEOFError("EOF occurred in violation of protocol")
+
+            monkeypatch.setattr(writer, "drain", failing_drain)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(verify_mode="off")
+            with pytest.raises(ConnectionError, match="Failed to send request line"):
+                await client.request("gemini://example.com/")
             assert writer.closed
 
         asyncio.run(run())
