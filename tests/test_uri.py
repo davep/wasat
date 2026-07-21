@@ -290,5 +290,62 @@ class TestGeminiURI:
         assert uri.bytes_left == bytes_left
         assert uri.is_too_long is too_long
 
+    @pytest.mark.parametrize(
+        "initial, result",
+        [
+            ("gemini://example.com/path?query", "gemini://example.com/path"),
+            ("gemini://example.com/?query", "gemini://example.com/"),
+            ("gemini://example.com/", "gemini://example.com/"),
+        ],
+    )
+    def test_without_query(self, initial: str, result: str) -> None:
+        """Test that without_query returns a GeminiURI without the query string."""
+        assert GeminiURI(initial).without_query == GeminiURI(result)
+
+    @pytest.mark.parametrize(
+        "initial, result",
+        [
+            ("gemini://example.com/path/to/resource", "gemini://example.com/path/to"),
+            (
+                "gemini://example.com/path/to/resource/?foo",
+                "gemini://example.com/path/to",
+            ),
+            ("gemini://example.com/path/to/resource/", "gemini://example.com/path/to"),
+            (
+                "gemini://example.com/path/to/resource?foo",
+                "gemini://example.com/path/to",
+            ),
+            (
+                "gemini://example.com/path/to/resource.gmi",
+                "gemini://example.com/path/to",
+            ),
+            ("gemini://example.com/path/", "gemini://example.com/"),
+            ("gemini://example.com/file.gmi", "gemini://example.com/"),
+            ("gemini://example.com/", "gemini://example.com/"),
+            ("gemini://example.com/?foo", "gemini://example.com/"),
+        ],
+    )
+    def test_parent(self, initial: str, result: str) -> None:
+        """Test that parent returns the parent GeminiURI."""
+        assert GeminiURI(initial).parent == GeminiURI(result)
+
+    @pytest.mark.parametrize(
+        "initial",
+        [
+            "gemini://example.com/path/to/resource",
+            "gemini://example.com/path/to/resource?foo",
+            "gemini://example.com/path/to/resource/",
+            "gemini://example.com/path/to/resource.gmi",
+            "gemini://example.com/path/",
+            "gemini://example.com/file.gmi",
+            "gemini://example.com/file.gmi?foo",
+            "gemini://example.com/",
+            "gemini://example.com/?foo",
+        ],
+    )
+    def test_root(self, initial: str) -> None:
+        """Test that root returns the root GeminiURI."""
+        assert GeminiURI(initial).root == GeminiURI("gemini://example.com/")
+
 
 ### test_uri.py ends here

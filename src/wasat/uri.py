@@ -7,6 +7,7 @@ from __future__ import annotations
 ##############################################################################
 # Python imports.
 from functools import cached_property
+from pathlib import Path
 from typing import Final, Self
 from urllib.parse import (
     quote,
@@ -279,6 +280,36 @@ class GeminiURI:
             URIError: If the resulting URI query is invalid.
         """
         return self.replace(query=query)
+
+    @property
+    def without_query(self) -> Self:
+        """Return a new GeminiURI with the query parameter removed.
+
+        Returns:
+            A new GeminiURI instance without the query string.
+
+        Raises:
+            URIError: If the resulting URI is invalid.
+        """
+        return self.with_query(None)
+
+    @property
+    def parent(self) -> Self:
+        """The URI representing the parent directory of this URI's path.
+
+        Note:
+            Any query will be removed.
+        """
+        return self.without_query.with_path(str(Path(self._path).parent))
+
+    @property
+    def root(self) -> Self:
+        """The URI representing the root directory of this URI's host.
+
+        Note:
+            Any query will be removed.
+        """
+        return self.without_query.with_path(None)
 
     def resolve(self, relative_uri: str) -> Self:
         """Resolve a relative URI string against this URI as a base.
