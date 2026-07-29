@@ -46,6 +46,12 @@ def get_args() -> Namespace:
         action="store_true",
         help="Enable verbose output.",
     )
+    parser.add_argument(
+        "--verify-mode",
+        choices=["tofu", "ca", "off"],
+        default="tofu",
+        help="Certificate verification mode: tofu, ca, or off (default: tofu).",
+    )
 
     return parser.parse_args()
 
@@ -89,7 +95,7 @@ async def run_cli() -> None:
     args = get_args()
 
     client = Client(
-        verify_mode="tofu",
+        verify_mode=args.verify_mode,
         on_client_certificate_required=cli_on_client_certificate_required,
     )
 
