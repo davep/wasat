@@ -261,3 +261,51 @@ def test_cli_verbose_output_with_redirect(
     assert "Status: 20 (SUCCESS)" in captured.out
     assert "Meta: text/gemini" in captured.out
     assert "Hello redirect verbose!" in captured.out
+
+
+@pytest.mark.parametrize("verify_mode", ["tofu", "ca", "off"])
+def test_cli_verify_mode_option(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    verify_mode: str,
+) -> None:
+    """Test that CLI --verify-mode passes the chosen verification mode to Client.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+        verify_mode: The verification mode parameter value to test.
+    """
+    monkeypatch.setattr(
+        "sys.argv",
+        ["wasat", "--verify-mode", verify_mode, "gemini://example.com/index.gmi"],
+    )
+
+    uri = GeminiURI("gemini://example.com/index.gmi")
+    resp = DummyResponse(
+        StatusCode.SUCCESS, "text/gemini", "Hello verify mode!", uri=uri
+    )
+
+    created_client_verify_mode: str | None = None
+
+    class MockClient:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            nonlocal created_client_verify_mode
+            created_client_verify_mode = kwargs.get("verify_mode")
+
+        async def request(self, uri: Any) -> DummyResponse:
+            return resp
+
+        async def __aenter__(self) -> MockClient:
+            return self
+
+        async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+            pass
+
+    monkeypatch.setattr("wasat.__main__.Client", MockClient)
+
+    asyncio.run(run_cli())
+
+    assert created_client_verify_mode == verify_mode
+    captured = capsys.readouterr()
+    assert "Hello verify mode!" in captured.out

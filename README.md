@@ -9,8 +9,7 @@ certificate management.
 - **Async All the Way**: Built on top of Python's standard `asyncio` loop
   with streaming/chunking support.
 - **Type Safe**: Fully typed API.
-- **TOFU (Trust-On-First-Use) Support**: Secure by default with a built-in
-  file-based TOFU store and custom interactive trust confirmation hooks.
+- **TOFU & Hybrid Verification**: Supports CA, TOFU, and Hybrid (CA validation with TOFU fallback) verification modes with built-in file-based trust stores and interactive hooks.
 - **Auto Redirect Handling**: Automatically handles temporary and permanent
   redirects (with protection against loops and infinite redirect limits),
   caching permanent redirects locally.

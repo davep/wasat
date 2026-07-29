@@ -136,7 +136,7 @@ class Client:
     def __init__(
         self,
         *,
-        verify_mode: Literal["ca", "tofu", "off"] = "ca",
+        verify_mode: Literal["ca", "tofu", "off", "hybrid"] = "ca",
         trust_store: TrustStore | None = None,
         trust_store_path: str | Path | None = None,
         client_cert: str | Path | None = None,
@@ -158,6 +158,7 @@ class Client:
                 - 'ca': Trust certificates signed by system CAs.
                 - 'tofu': Trust-On-First-Use validation.
                 - 'off': Disable certificate verification (insecure).
+                - 'hybrid': Combine CA validation with TOFU fallback.
             trust_store: Custom TrustStore instance for TOFU mode.
             trust_store_path: Filepath for the default FileTrustStore in TOFU mode.
             client_cert: Path to client TLS certificate (for client auth).
@@ -175,7 +176,7 @@ class Client:
             ssl_context: Pre-configured ssl.SSLContext. Overrides verify_mode/cert config.
         """
         self._verify_mode = verify_mode
-        """The verification mode: 'ca', 'tofu', or 'off'."""
+        """The verification mode: 'ca', 'tofu', 'off', or 'hybrid'."""
         self._trust_store = trust_store
         """The trust store instance for TOFU verification."""
         self._client_cert = Path(client_cert) if client_cert is not None else None
@@ -205,8 +206,8 @@ class Client:
         self._ssl_context = ssl_context
         """A pre-configured SSL context to override default TLS configuration."""
 
-        # Set up default trust store for TOFU if none is specified
-        if self._verify_mode == "tofu" and self._trust_store is None:
+        # Set up default trust store for TOFU or hybrid if none is specified
+        if self._verify_mode in ("tofu", "hybrid") and self._trust_store is None:
             self._trust_store = FileTrustStore(
                 trust_store_path or _get_default_trust_store_path()
             )
@@ -219,12 +220,14 @@ class Client:
         self,
         client_cert: Path | None = None,
         client_key: Path | None = None,
+        verify_mode_override: Literal["ca", "tofu", "off", "hybrid"] | None = None,
     ) -> ssl.SSLContext:
         """Create and configure the SSLContext based on verification settings.
 
         Args:
             client_cert: Optional path to the client certificate PEM file.
             client_key: Optional path to the client private key PEM file.
+            verify_mode_override: Optional mode override for SSLContext creation.
 
         Returns:
             A configured ssl.SSLContext instance.
@@ -233,11 +236,13 @@ class Client:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
 
-        if self._verify_mode == "ca":
+        mode = verify_mode_override or self._verify_mode
+
+        if mode == "ca":
             context.check_hostname = True
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_default_certs()
-        elif self._verify_mode in ("tofu", "off"):
+        elif mode in ("tofu", "off", "hybrid"):
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
 
@@ -470,12 +475,37 @@ class Client:
                                 cert_inherited = True
                                 break
 
-            ssl_context = self._create_ssl_context(
+        if ssl_context is None and self._verify_mode == "hybrid":
+            ca_ssl_context = self._create_ssl_context(
                 client_cert=cert_path,
                 client_key=key_path,
+                verify_mode_override="ca",
             )
+            try:
+                reader, writer = await self._connect(uri, ca_ssl_context)
+                if self._trust_store is not None:
+                    transport = writer.transport
+                    ssl_object = transport.get_extra_info("ssl_object")
+                    if ssl_object is not None:
+                        cert_der = ssl_object.getpeercert(binary_form=True)
+                        if cert_der:
+                            await self._trust_store.save(uri.host, uri.port, cert_der)
+            except SecurityError:
+                tofu_ssl_context = self._create_ssl_context(
+                    client_cert=cert_path,
+                    client_key=key_path,
+                    verify_mode_override="tofu",
+                )
+                reader, writer = await self._connect(uri, tofu_ssl_context)
+                await self._verify_tofu(uri, writer)
+        else:
+            if ssl_context is None:
+                ssl_context = self._create_ssl_context(
+                    client_cert=cert_path,
+                    client_key=key_path,
+                )
 
-        reader, writer = await self._connect(uri, ssl_context)
+            reader, writer = await self._connect(uri, ssl_context)
 
         try:
             if self._verify_mode == "tofu":
