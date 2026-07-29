@@ -66,9 +66,16 @@ async def download_file():
 
 ---
 
-## Custom Trust Verification and TOFU
+## Custom Trust Verification, TOFU, and Hybrid Mode
 
-By default, Wasat employs a Trust-On-First-Use (TOFU) security model via [FileTrustStore][wasat.trust.FileTrustStore]. When a new certificate is encountered, you can customise the behaviour by providing an asynchronous `on_new_certificate` callback to the [Client][wasat.client.Client]:
+Wasat supports multiple certificate verification modes via `verify_mode`:
+
+- `"hybrid"`: Combines system CA validation with TOFU fallback. It validates certificates signed by system CAs (e.g. Let's Encrypt) automatically and falls back to TOFU for self-signed certificates.
+- `"tofu"`: Strict Trust-On-First-Use validation using [FileTrustStore][wasat.trust.FileTrustStore].
+- `"ca"`: Validates certificates strictly against system CAs.
+- `"off"`: Disables certificate verification.
+
+When a new self-signed certificate is encountered in `"tofu"` or `"hybrid"` mode, you can customise the behaviour by providing an asynchronous `on_new_certificate` callback to the [Client][wasat.client.Client]:
 
 ```python
 async def confirm_cert(host: str, port: int, fingerprint: str) -> bool:
@@ -78,7 +85,7 @@ async def confirm_cert(host: str, port: int, fingerprint: str) -> bool:
     return response == "y"
 
 client = Client(
-    verify_mode="tofu",
+    verify_mode="hybrid",
     on_new_certificate=confirm_cert
 )
 ```

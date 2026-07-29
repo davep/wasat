@@ -48,9 +48,9 @@ def get_args() -> Namespace:
     )
     parser.add_argument(
         "--verify-mode",
-        choices=["tofu", "ca", "off"],
+        choices=["tofu", "ca", "off", "hybrid"],
         default="tofu",
-        help="Certificate verification mode: tofu, ca, or off (default: tofu).",
+        help="Certificate verification mode: tofu, ca, off, or hybrid (default: tofu).",
     )
 
     return parser.parse_args()

@@ -470,5 +470,153 @@ class TestClient:
             Path("/home/mockuser") / ".config" / "wasat" / "known_hosts"
         )
 
+    def test_hybrid_mode_ca_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test hybrid mode when CA verification succeeds."""
+
+        async def run() -> None:
+            saved_hosts: list[tuple[str, int, bytes]] = []
+
+            class MockTrustStore:
+                async def save(self, host: str, port: int, cert_der: bytes) -> None:
+                    saved_hosts.append((host, port, cert_der))
+
+                async def verify(self, host: str, port: int, cert_der: bytes) -> bool:
+                    return True
+
+                async def get_fingerprint(self, host: str, port: int) -> str | None:
+                    return None
+
+                async def get_hosts(self) -> list[tuple[str, int]]:
+                    return []
+
+            mock_store = MockTrustStore()
+
+            class MockSSLObject:
+                def getpeercert(self, binary_form: bool = False) -> bytes:
+                    return b"mock_ca_cert_der"
+
+            class MockTransport:
+                def get_extra_info(self, name: str) -> Any:
+                    if name == "ssl_object":
+                        return MockSSLObject()
+                    return None
+
+            class MockWriter:
+                def __init__(self) -> None:
+                    self.transport = MockTransport()
+
+                def write(self, data: bytes) -> None:
+                    pass
+
+                async def drain(self) -> None:
+                    pass
+
+                def close(self) -> None:
+                    pass
+
+                async def wait_closed(self) -> None:
+                    pass
+
+            class MockReader:
+                async def readuntil(self, separator: bytes = b"\r\n") -> bytes:
+                    return b"20 text/gemini\r\n"
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[MockReader, MockWriter]:
+                # CA mode succeeds
+                if ssl_context.verify_mode == ssl.CERT_REQUIRED:
+                    return MockReader(), MockWriter()
+                raise SecurityError("CA handshake failed")
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+
+            client = Client(verify_mode="hybrid", trust_store=mock_store)
+            async with client:
+                resp = await client.request("gemini://example.com/")
+                assert resp.status == StatusCode.SUCCESS
+                await resp.close()
+
+            assert len(saved_hosts) == 1
+            assert saved_hosts[0][0] == "example.com"
+            assert saved_hosts[0][2] == b"mock_ca_cert_der"
+
+        asyncio.run(run())
+
+    def test_hybrid_mode_tofu_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test hybrid mode falling back to TOFU when CA verification fails."""
+
+        async def run() -> None:
+            tofu_verified = False
+
+            class MockTrustStore:
+                async def save(self, host: str, port: int, cert_der: bytes) -> None:
+                    pass
+
+                async def verify(self, host: str, port: int, cert_der: bytes) -> bool:
+                    nonlocal tofu_verified
+                    tofu_verified = True
+                    return True
+
+                async def get_fingerprint(self, host: str, port: int) -> str | None:
+                    return None
+
+                async def get_hosts(self) -> list[tuple[str, int]]:
+                    return []
+
+            mock_store = MockTrustStore()
+
+            class MockSSLObject:
+                def getpeercert(self, binary_form: bool = False) -> bytes:
+                    return b"mock_self_signed_cert_der"
+
+            class MockTransport:
+                def get_extra_info(self, name: str) -> Any:
+                    if name == "ssl_object":
+                        return MockSSLObject()
+                    return None
+
+            class MockWriter:
+                def __init__(self) -> None:
+                    self.transport = MockTransport()
+
+                def write(self, data: bytes) -> None:
+                    pass
+
+                async def drain(self) -> None:
+                    pass
+
+                def close(self) -> None:
+                    pass
+
+                async def wait_closed(self) -> None:
+                    pass
+
+            class MockReader:
+                async def readuntil(self, separator: bytes = b"\r\n") -> bytes:
+                    return b"20 text/gemini\r\n"
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[MockReader, MockWriter]:
+                # Fail CA verification, succeed TOFU verification
+                if ssl_context.verify_mode == ssl.CERT_REQUIRED:
+                    raise SecurityError(
+                        "CA verification failed: self-signed certificate"
+                    )
+                return MockReader(), MockWriter()
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+
+            client = Client(verify_mode="hybrid", trust_store=mock_store)
+            async with client:
+                resp = await client.request("gemini://selfsigned.example.com/")
+                assert resp.status == StatusCode.SUCCESS
+                await resp.close()
+
+            assert tofu_verified is True
+
+        asyncio.run(run())
+
 
 ### test_client.py ends here

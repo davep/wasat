@@ -7,6 +7,9 @@
 - Added `--verify-mode` to the CLI of the library so the certificate
   verification mode can be tested.
   ([#39](https://github.com/davep/wasat/pull/39))
+- Added `hybrid` certificate verification mode to `Client` to combine system
+  CA validation with TOFU fallback.
+  ([#39](https://github.com/davep/wasat/pull/39))
 
 ## v1.0.1
 
