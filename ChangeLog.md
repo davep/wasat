@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.3.0
 
-**Released: WiP**
+**Released: 2026-07-30**
 
 - Refined `hybrid` certificate verification mode to only fall back to TOFU
   when CA validation fails due to an untrusted root or self-signed
