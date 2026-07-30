@@ -1,5 +1,17 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Refined `hybrid` certificate verification mode to only fall back to TOFU
+  when CA validation fails due to an untrusted root or self-signed
+  certificate. Certificate failures caused by expiration, hostname mismatch,
+  or revocation now immediately raise `SecurityError`.
+  ([#41](https://github.com/davep/wasat/pull/41))
+- Added `VerifyMode` as a type and exported it at the top level.
+  ([#41](https://github.com/davep/wasat/pull/41))
+
 ## v1.2.0
 
 **Released: 2026-07-30**
