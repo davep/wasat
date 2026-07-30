@@ -10,6 +10,7 @@ from typing import Literal, Protocol, Self
 
 ##############################################################################
 # Local imports.
+from .certs import ServerCertificate
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
 from .trust import get_cert_fingerprint
@@ -72,6 +73,8 @@ class Response:
         """The path to the client certificate used for the connection, or None."""
         self._server_cert_der = server_cert_der
         """The raw DER-encoded server TLS certificate, or None if unavailable."""
+        self._server_cert: ServerCertificate | None = None
+        """The parsed server TLS certificate information, or None if unavailable."""
         self._verification_method = verification_method
         """The method used to verify the server TLS certificate, or None."""
         self._body: bytes | None = None
@@ -111,6 +114,13 @@ class Response:
     def server_cert_der(self) -> bytes | None:
         """The raw DER-encoded server TLS certificate, or None if unavailable."""
         return self._server_cert_der
+
+    @property
+    def server_cert(self) -> ServerCertificate | None:
+        """The parsed server TLS certificate information, or None if unavailable."""
+        if self._server_cert is None and self._server_cert_der is not None:
+            self._server_cert = ServerCertificate.from_der(self._server_cert_der)
+        return self._server_cert
 
     @property
     def server_cert_fingerprint(self) -> str | None:

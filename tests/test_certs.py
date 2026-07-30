@@ -13,6 +13,7 @@ from wasat import (
     Client,
     FileClientCertificateStore,
     GeminiURI,
+    ServerCertificate,
     StatusCode,
     generate_self_signed_cert,
 )
@@ -685,3 +686,34 @@ def test_client_cert_manual_registration_in_callback(
                 assert response.client_cert_path == retrieved_davep[0]
 
     asyncio.run(run())
+
+
+class TestServerCertificate:
+    """Test suite for ServerCertificate wrapper."""
+
+    def test_server_certificate_properties(self) -> None:
+        """Test properties of ServerCertificate."""
+        from cryptography.hazmat.primitives import serialization
+
+        cert_pem, _ = generate_self_signed_cert(
+            common_name="test.example.com", domain="test.example.com"
+        )
+        cert_x509 = x509.load_pem_x509_certificate(cert_pem)
+        der_bytes = cert_x509.public_bytes(serialization.Encoding.DER)
+
+        server_cert = ServerCertificate.from_der(der_bytes)
+
+        assert server_cert.raw_der == der_bytes
+        assert server_cert.subject_common_name == "test.example.com"
+        assert server_cert.issuer_common_name == "test.example.com"
+        assert "CN=test.example.com" in server_cert.subject
+        assert "CN=test.example.com" in server_cert.issuer
+        assert isinstance(server_cert.not_before, datetime)
+        assert isinstance(server_cert.not_after, datetime)
+        assert server_cert.subject_alternative_names == ("test.example.com",)
+        assert isinstance(server_cert.serial_number, int)
+        assert isinstance(server_cert.fingerprint, str)
+        assert len(server_cert.fingerprint) == 64
+        assert server_cert.is_expired is False
+        assert server_cert.is_self_signed is True
+        assert server_cert.raw_x509 == cert_x509
