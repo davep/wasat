@@ -22,7 +22,7 @@ from .certs import (
     FileClientCertificateStore,
     generate_self_signed_cert,
 )
-from .client import Client
+from .client import Client, VerifyMode
 from .exceptions import (
     ConnectionError,
     ProtocolError,
@@ -56,6 +56,7 @@ __all__ = [
     "ConnectionError",
     "SecurityError",
     "RedirectError",
+    "VerifyMode",
 ]
 
 ### __init__.py ends here

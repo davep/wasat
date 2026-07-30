@@ -38,6 +38,10 @@ type NewCertCallback = Callable[[str, int, str], Coroutine[None, None, bool]]
 """Async callback function signature for verifying a new certificate."""
 
 ##############################################################################
+type VerifyMode = Literal["ca", "tofu", "off", "hybrid"]
+"""Type alias for the certificate verification mode."""
+
+##############################################################################
 _DEFAULT_STORE_DIR: Final[str] = "wasat"
 """The default directory name for storing known hosts."""
 _DEFAULT_STORE_FILE: Final[str] = "known_hosts"
@@ -150,7 +154,7 @@ class Client:
     def __init__(
         self,
         *,
-        verify_mode: Literal["ca", "tofu", "off", "hybrid"] = "ca",
+        verify_mode: VerifyMode = "ca",
         trust_store: TrustStore | None = None,
         trust_store_path: str | Path | None = None,
         client_cert: str | Path | None = None,
@@ -236,7 +240,7 @@ class Client:
         self,
         client_cert: Path | None = None,
         client_key: Path | None = None,
-        verify_mode_override: Literal["ca", "tofu", "off", "hybrid"] | None = None,
+        verify_mode_override: VerifyMode | None = None,
     ) -> ssl.SSLContext:
         """Create and configure the SSLContext based on verification settings.
 
