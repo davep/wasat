@@ -169,5 +169,26 @@ class TestResponse:
         assert r.client_cert_path == cert_path
         assert r.client_cert_used
 
+    def test_server_cert_properties(self) -> None:
+        """Test server_cert_der, server_cert_fingerprint, and verification_method properties."""
+        # Test default values.
+        r_default = Response(StatusCode.SUCCESS, "")
+        assert r_default.server_cert_der is None
+        assert r_default.server_cert_fingerprint is None
+        assert r_default.verification_method is None
+
+        # Test populated values.
+        cert_der = b"mock_server_cert_der_bytes"
+        r = Response(
+            StatusCode.SUCCESS,
+            "",
+            server_cert_der=cert_der,
+            verification_method="ca",
+        )
+        assert r.server_cert_der == cert_der
+        assert r.verification_method == "ca"
+        assert r.server_cert_fingerprint is not None
+        assert len(r.server_cert_fingerprint) == 64
+
 
 ### test_response.py ends here

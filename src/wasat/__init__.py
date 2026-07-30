@@ -31,7 +31,7 @@ from .exceptions import (
     URIError,
     WasatError,
 )
-from .response import Response
+from .response import Response, VerificationMethod
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore
 from .uri import GEMINI_DEFAULT_PORT, GeminiURI
@@ -57,6 +57,7 @@ __all__ = [
     "SecurityError",
     "RedirectError",
     "VerifyMode",
+    "VerificationMethod",
 ]
 
 ### __init__.py ends here

@@ -6,13 +6,18 @@ from __future__ import annotations
 # Python imports.
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Protocol, Self
+from typing import Literal, Protocol, Self
 
 ##############################################################################
 # Local imports.
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
+from .trust import get_cert_fingerprint
 from .uri import GeminiURI
+
+##############################################################################
+type VerificationMethod = Literal["ca", "tofu", "off"]
+"""Type alias for server certificate verification method."""
 
 
 ##############################################################################
@@ -35,6 +40,8 @@ class Response:
         history: list[Response] | None = None,
         requested_uri: GeminiURI | None = None,
         client_cert_path: Path | None = None,
+        server_cert_der: bytes | None = None,
+        verification_method: VerificationMethod | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -46,6 +53,8 @@ class Response:
             history: A history of response objects from any redirections.
             requested_uri: The originally requested Gemini URI.
             client_cert_path: The path to the client certificate used for the connection.
+            server_cert_der: The raw DER-encoded server TLS certificate, or None.
+            verification_method: The method used to verify the server TLS certificate, or None.
         """
         self._status = status
         """The Gemini status code of the response."""
@@ -61,6 +70,10 @@ class Response:
         """The originally requested Gemini URI, or None if not set."""
         self._client_cert_path = client_cert_path
         """The path to the client certificate used for the connection, or None."""
+        self._server_cert_der = server_cert_der
+        """The raw DER-encoded server TLS certificate, or None if unavailable."""
+        self._verification_method = verification_method
+        """The method used to verify the server TLS certificate, or None."""
         self._body: bytes | None = None
         """The cached response body bytes, or None if not read yet."""
 
@@ -93,6 +106,23 @@ class Response:
     def client_cert_used(self) -> bool:
         """Whether a client certificate was used for the connection."""
         return self._client_cert_path is not None
+
+    @property
+    def server_cert_der(self) -> bytes | None:
+        """The raw DER-encoded server TLS certificate, or None if unavailable."""
+        return self._server_cert_der
+
+    @property
+    def server_cert_fingerprint(self) -> str | None:
+        """The SHA-256 fingerprint of the server certificate, or None if unavailable."""
+        if self._server_cert_der is None:
+            return None
+        return get_cert_fingerprint(self._server_cert_der)
+
+    @property
+    def verification_method(self) -> VerificationMethod | None:
+        """The method used to verify the server TLS certificate, or None."""
+        return self._verification_method
 
     @property
     def meta(self) -> str:

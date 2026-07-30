@@ -11,6 +11,15 @@
   ([#41](https://github.com/davep/wasat/pull/41))
 - Added `VerifyMode` as a type and exported it at the top level.
   ([#41](https://github.com/davep/wasat/pull/41))
+- Added `server_cert_der`, `server_cert_fingerprint`, and
+  `verification_method` properties to `Response` to expose server TLS
+  certificate details and the verification method used.
+  ([#43](https://github.com/davep/wasat/pull/43))
+- Added `VerificationMethod` type alias and exported it at the top level.
+  ([#43](https://github.com/davep/wasat/pull/43))
+- Updated the CLI (`wasat`) to display `Verification Method` and
+  `Certificate Fingerprint` when running in verbose (`-v` / `--verbose`) mode.
+  ([#43](https://github.com/davep/wasat/pull/43))
 
 ## v1.2.0
 

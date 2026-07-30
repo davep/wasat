@@ -24,6 +24,8 @@ class DummyResponse:
         uri: GeminiURI | None = None,
         history: list[Any] | None = None,
         requested_uri: GeminiURI | None = None,
+        verification_method: str | None = None,
+        server_cert_fingerprint: str | None = None,
     ) -> None:
         """Initialise dummy response.
 
@@ -34,6 +36,8 @@ class DummyResponse:
             uri: The Gemini URI of response.
             history: Optional redirection history.
             requested_uri: Optional originally requested URI.
+            verification_method: Optional certificate verification method.
+            server_cert_fingerprint: Optional server certificate fingerprint.
         """
         self.status = status
         self.meta = meta
@@ -41,6 +45,8 @@ class DummyResponse:
         self.uri = uri
         self.history = history if history is not None else []
         self.requested_uri = requested_uri
+        self.verification_method = verification_method
+        self.server_cert_fingerprint = server_cert_fingerprint
 
     async def text(self) -> str:
         """Get the text body.
@@ -198,7 +204,14 @@ def test_cli_verbose_output(
     monkeypatch.setattr("sys.argv", ["wasat", "-v", "gemini://example.com/index.gmi"])
 
     uri = GeminiURI("gemini://example.com/index.gmi")
-    resp = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Hello verbose!", uri=uri)
+    resp = DummyResponse(
+        StatusCode.SUCCESS,
+        "text/gemini",
+        "Hello verbose!",
+        uri=uri,
+        verification_method="tofu",
+        server_cert_fingerprint="abc123def456",
+    )
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
         return resp
@@ -210,6 +223,8 @@ def test_cli_verbose_output(
     captured = capsys.readouterr()
     assert "--- Gemini Response ---" in captured.out
     assert "URI: gemini://example.com/index.gmi" in captured.out
+    assert "Verification Method: tofu" in captured.out
+    assert "Certificate Fingerprint: sha256:abc123def456" in captured.out
     assert "Status: 20 (SUCCESS)" in captured.out
     assert "Meta: text/gemini" in captured.out
     assert "Hello verbose!" in captured.out

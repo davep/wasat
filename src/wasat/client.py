@@ -28,7 +28,7 @@ from .exceptions import (
     URIError,
     WasatError,
 )
-from .response import Response
+from .response import Response, VerificationMethod
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
 from .uri import GeminiURI
@@ -539,6 +539,8 @@ class Client:
                                 cert_inherited = True
                                 break
 
+        verification_method: VerificationMethod | None = None
+
         if ssl_context is None and self._verify_mode == "hybrid":
             ca_ssl_context = self._create_ssl_context(
                 client_cert=cert_path,
@@ -547,6 +549,7 @@ class Client:
             )
             try:
                 reader, writer = await self._connect(uri, ca_ssl_context)
+                verification_method = "ca"
                 if self._trust_store is not None:
                     transport = writer.transport
                     ssl_object = transport.get_extra_info("ssl_object")
@@ -564,18 +567,37 @@ class Client:
                 )
                 reader, writer = await self._connect(uri, tofu_ssl_context)
                 await self._verify_tofu(uri, writer)
+                verification_method = "tofu"
         else:
             if ssl_context is None:
                 ssl_context = self._create_ssl_context(
                     client_cert=cert_path,
                     client_key=key_path,
                 )
+                if self._verify_mode in ("ca", "tofu", "off"):
+                    verification_method = self._verify_mode
+            else:
+                if self._verify_mode == "tofu":
+                    verification_method = "tofu"
+                elif ssl_context.verify_mode == ssl.CERT_REQUIRED:
+                    verification_method = "ca"
+                else:
+                    verification_method = "off"
 
             reader, writer = await self._connect(uri, ssl_context)
 
         try:
             if self._verify_mode == "tofu":
                 await self._verify_tofu(uri, writer)
+
+            server_cert_der: bytes | None = None
+            if verification_method != "off":
+                transport = writer.transport
+                ssl_object = transport.get_extra_info("ssl_object")
+                if ssl_object is not None:
+                    cert_bytes = ssl_object.getpeercert(binary_form=True)
+                    if isinstance(cert_bytes, bytes) and cert_bytes:
+                        server_cert_der = cert_bytes
 
             await self._send_request_line(uri, writer)
             status_code, meta = await self._read_response_line(reader)
@@ -608,6 +630,8 @@ class Client:
                     history=history,
                     requested_uri=requested_uri,
                     client_cert_path=cert_path,
+                    server_cert_der=server_cert_der,
+                    verification_method=verification_method,
                 )
             else:
                 writer.close()
@@ -622,6 +646,8 @@ class Client:
                     history=history,
                     requested_uri=requested_uri,
                     client_cert_path=cert_path,
+                    server_cert_der=server_cert_der,
+                    verification_method=verification_method,
                 )
 
                 # Handle client certificate required status

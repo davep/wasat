@@ -131,6 +131,9 @@ class TestClient:
             assert response.status == StatusCode.SUCCESS
             assert response.mime_type == "text/gemini"
             assert response.uri == GeminiURI("gemini://example.com/index.gmi")
+            assert response.verification_method == "off"
+            assert response.server_cert_der is None
+            assert response.server_cert_fingerprint is None
 
             text = await response.text()
             assert text == "Hello from Gemini!"
@@ -374,6 +377,9 @@ class TestClient:
                 client = Client(verify_mode="tofu", trust_store=trust_store)
                 resp1 = await client.request("gemini://example.com/index.gmi")
                 assert resp1.status == StatusCode.SUCCESS
+                assert resp1.verification_method == "tofu"
+                assert resp1.server_cert_der == cert_der1
+                assert resp1.server_cert_fingerprint == get_cert_fingerprint(cert_der1)
 
                 # Verify saved fingerprint in store
                 fingerprint1 = await trust_store.get_fingerprint(
@@ -538,6 +544,11 @@ class TestClient:
             async with client:
                 resp = await client.request("gemini://example.com/")
                 assert resp.status == StatusCode.SUCCESS
+                assert resp.verification_method == "ca"
+                assert resp.server_cert_der == b"mock_ca_cert_der"
+                assert resp.server_cert_fingerprint == get_cert_fingerprint(
+                    b"mock_ca_cert_der"
+                )
                 await resp.close()
 
             assert len(saved_hosts) == 1
@@ -615,6 +626,11 @@ class TestClient:
             async with client:
                 resp = await client.request("gemini://selfsigned.example.com/")
                 assert resp.status == StatusCode.SUCCESS
+                assert resp.verification_method == "tofu"
+                assert resp.server_cert_der == b"mock_self_signed_cert_der"
+                assert resp.server_cert_fingerprint == get_cert_fingerprint(
+                    b"mock_self_signed_cert_der"
+                )
                 await resp.close()
 
             assert tofu_verified is True
@@ -708,6 +724,32 @@ class TestClient:
             async with client:
                 with pytest.raises(SecurityError, match="hostname"):
                     await client.request("gemini://mismatch.example.com/")
+
+        asyncio.run(run())
+
+    def test_ca_verification_method_and_cert_details(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test ca verify_mode exposes verification_method and server cert details."""
+
+        async def run() -> None:
+            cert_der = b"ca_server_cert_bytes"
+            ssl_obj = MockSSLObject(cert_der)
+            reader = MockStreamReader([b"20 text/gemini\r\n"])
+            writer = MockStreamWriter(ssl_obj)
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+
+            client = Client(verify_mode="ca")
+            resp = await client.request("gemini://example.com/")
+            assert resp.verification_method == "ca"
+            assert resp.server_cert_der == cert_der
+            assert resp.server_cert_fingerprint == get_cert_fingerprint(cert_der)
 
         asyncio.run(run())
 
