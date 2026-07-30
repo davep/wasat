@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.3.1
 
-**Released: WiP**
+**Released: 2026-07-30**
 
 - Added `ServerCertificate` class and `Response.server_cert` property to
   provide high-level access to parsed server TLS certificate attributes
