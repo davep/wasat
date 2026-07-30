@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.2.0
 
-**Released: WiP**
+**Released: 2026-07-30**
 
 - Added `--verify-mode` to the CLI of the library so the certificate
   verification mode can be tested.
