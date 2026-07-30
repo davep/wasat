@@ -1,5 +1,7 @@
 """Client certificate generation and storage management for Gemini connections."""
 
+from __future__ import annotations
+
 ##############################################################################
 # Python imports.
 import asyncio
@@ -23,6 +25,7 @@ from cryptography.x509.oid import NameOID
 
 ##############################################################################
 # Local imports.
+from .trust import get_cert_fingerprint
 from .uri import GeminiURI
 
 ##############################################################################
@@ -695,7 +698,113 @@ class FileClientCertificateStore(ClientCertificateStore):
                     if self._temp_dir in _transient_dirs:
                         _transient_dirs.remove(self._temp_dir)
                 self._temp_dir = None
-                self._transient_index.clear()
+
+
+##############################################################################
+class ServerCertificate:
+    """Representation of a server TLS X.509 certificate."""
+
+    def __init__(self, raw_der: bytes) -> None:
+        """Initialise the ServerCertificate object.
+
+        Args:
+            raw_der: The raw DER-encoded certificate bytes.
+        """
+        self._raw_der = raw_der
+        """The raw DER-encoded certificate bytes."""
+        self._cert = x509.load_der_x509_certificate(raw_der)
+        """The parsed cryptography X.509 Certificate object."""
+
+    @classmethod
+    def from_der(cls, cert_der: bytes) -> ServerCertificate:
+        """Construct a ServerCertificate instance from raw DER bytes.
+
+        Args:
+            cert_der: The raw DER-encoded certificate bytes.
+
+        Returns:
+            A new ServerCertificate instance.
+        """
+        return cls(cert_der)
+
+    @property
+    def raw_der(self) -> bytes:
+        """The raw DER-encoded certificate bytes."""
+        return self._raw_der
+
+    @property
+    def subject_common_name(self) -> str | None:
+        """The Common Name (CN) from the certificate subject, or None if not present."""
+        attributes = self._cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+        if not attributes:
+            return None
+        value = attributes[0].value
+        return str(value) if isinstance(value, str | bytes) else None
+
+    @property
+    def issuer_common_name(self) -> str | None:
+        """The Common Name (CN) from the certificate issuer, or None if not present."""
+        attributes = self._cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)
+        if not attributes:
+            return None
+        value = attributes[0].value
+        return str(value) if isinstance(value, str | bytes) else None
+
+    @property
+    def subject(self) -> str:
+        """The certificate subject formatted as an RFC 4514 string."""
+        return self._cert.subject.rfc4514_string()
+
+    @property
+    def issuer(self) -> str:
+        """The certificate issuer formatted as an RFC 4514 string."""
+        return self._cert.issuer.rfc4514_string()
+
+    @property
+    def not_before(self) -> datetime:
+        """The UTC timestamp from which the certificate is valid."""
+        return self._cert.not_valid_before_utc
+
+    @property
+    def not_after(self) -> datetime:
+        """The UTC timestamp at which the certificate expires."""
+        return self._cert.not_valid_after_utc
+
+    @property
+    def subject_alternative_names(self) -> tuple[str, ...]:
+        """Tuple of Subject Alternative Names (DNS names) in the certificate."""
+        try:
+            extension = self._cert.extensions.get_extension_for_class(
+                x509.SubjectAlternativeName
+            )
+            return tuple(extension.value.get_values_for_type(x509.DNSName))
+        except x509.ExtensionNotFound:
+            return ()
+
+    @property
+    def serial_number(self) -> int:
+        """The certificate serial number."""
+        return self._cert.serial_number
+
+    @property
+    def fingerprint(self) -> str:
+        """The hex-encoded SHA-256 fingerprint of the certificate."""
+        return get_cert_fingerprint(self._raw_der)
+
+    @property
+    def is_expired(self) -> bool:
+        """Whether the certificate is currently expired."""
+        return datetime.now(UTC) > self.not_after
+
+    @property
+    def is_self_signed(self) -> bool:
+        """Whether the certificate is self-signed (subject equals issuer)."""
+        return self._cert.subject == self._cert.issuer
+
+    @property
+    def raw_x509(self) -> x509.Certificate:
+        """The underlying cryptography X.509 Certificate instance."""
+        return self._cert
 
 
 ### certs.py ends here

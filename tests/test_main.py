@@ -26,6 +26,7 @@ class DummyResponse:
         requested_uri: GeminiURI | None = None,
         verification_method: str | None = None,
         server_cert_fingerprint: str | None = None,
+        server_cert: Any | None = None,
     ) -> None:
         """Initialise dummy response.
 
@@ -38,6 +39,7 @@ class DummyResponse:
             requested_uri: Optional originally requested URI.
             verification_method: Optional certificate verification method.
             server_cert_fingerprint: Optional server certificate fingerprint.
+            server_cert: Optional server certificate object.
         """
         self.status = status
         self.meta = meta
@@ -47,6 +49,7 @@ class DummyResponse:
         self.requested_uri = requested_uri
         self.verification_method = verification_method
         self.server_cert_fingerprint = server_cert_fingerprint
+        self.server_cert = server_cert
 
     async def text(self) -> str:
         """Get the text body.
@@ -324,3 +327,105 @@ def test_cli_verify_mode_option(
     assert created_client_verify_mode == verify_mode
     captured = capsys.readouterr()
     assert "Hello verify mode!" in captured.out
+
+
+def test_cli_show_cert(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --show-cert prints server certificate information.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+
+    from wasat import ServerCertificate, generate_self_signed_cert
+
+    cert_pem, _ = generate_self_signed_cert(
+        common_name="cli.example.com", domain="cli.example.com"
+    )
+    cert_x509 = x509.load_pem_x509_certificate(cert_pem)
+    der_bytes = cert_x509.public_bytes(serialization.Encoding.DER)
+    server_cert = ServerCertificate.from_der(der_bytes)
+
+    monkeypatch.setattr(
+        "sys.argv", ["wasat", "--show-cert", "gemini://cli.example.com/"]
+    )
+
+    uri = GeminiURI("gemini://cli.example.com/")
+    resp = DummyResponse(
+        StatusCode.SUCCESS,
+        "text/gemini",
+        "Hello cert!",
+        uri=uri,
+        server_cert=server_cert,
+    )
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return resp
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Server Certificate ---" in captured.out
+    assert "Subject CN: cli.example.com" in captured.out
+    assert "Issuer CN: cli.example.com" in captured.out
+    assert "SANs: cli.example.com" in captured.out
+    assert "Fingerprint: sha256:" in captured.out
+    assert "Hello cert!" in captured.out
+
+
+def test_cli_show_cert_with_verbose(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --show-cert and -v prints response headers and certificate info.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+
+    from wasat import ServerCertificate, generate_self_signed_cert
+
+    cert_pem, _ = generate_self_signed_cert(
+        common_name="verbose.example.com", domain="verbose.example.com"
+    )
+    cert_x509 = x509.load_pem_x509_certificate(cert_pem)
+    der_bytes = cert_x509.public_bytes(serialization.Encoding.DER)
+    server_cert = ServerCertificate.from_der(der_bytes)
+
+    monkeypatch.setattr(
+        "sys.argv", ["wasat", "-v", "--show-cert", "gemini://verbose.example.com/"]
+    )
+
+    uri = GeminiURI("gemini://verbose.example.com/")
+    resp = DummyResponse(
+        StatusCode.SUCCESS,
+        "text/gemini",
+        "Hello verbose cert!",
+        uri=uri,
+        verification_method="tofu",
+        server_cert_fingerprint="123456",
+        server_cert=server_cert,
+    )
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return resp
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Gemini Response ---" in captured.out
+    assert "URI: gemini://verbose.example.com/" in captured.out
+    assert "Verification Method: tofu" in captured.out
+    assert "--- Server Certificate ---" in captured.out
+    assert "Subject CN: verbose.example.com" in captured.out
+    assert "Hello verbose cert!" in captured.out

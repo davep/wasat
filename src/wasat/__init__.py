@@ -20,6 +20,7 @@ from .certs import (
     ClientCertCallback,
     ClientCertificateStore,
     FileClientCertificateStore,
+    ServerCertificate,
     generate_self_signed_cert,
 )
 from .client import Client, VerifyMode
@@ -41,6 +42,7 @@ from .uri import GEMINI_DEFAULT_PORT, GeminiURI
 __all__ = [
     "Client",
     "Response",
+    "ServerCertificate",
     "StatusCode",
     "GeminiURI",
     "GEMINI_DEFAULT_PORT",

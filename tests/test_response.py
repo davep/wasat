@@ -190,5 +190,27 @@ class TestResponse:
         assert r.server_cert_fingerprint is not None
         assert len(r.server_cert_fingerprint) == 64
 
+    def test_server_cert_lazy_property(self) -> None:
+        """Test that server_cert lazily loads and caches the ServerCertificate instance."""
+        from cryptography import x509
+        from cryptography.hazmat.primitives import serialization
+
+        from wasat import ServerCertificate, generate_self_signed_cert
+
+        r_default = Response(StatusCode.SUCCESS, "")
+        assert r_default.server_cert is None
+
+        cert_pem, _ = generate_self_signed_cert(common_name="lazy.example.com")
+        cert_x509 = x509.load_pem_x509_certificate(cert_pem)
+        der_bytes = cert_x509.public_bytes(serialization.Encoding.DER)
+
+        r = Response(StatusCode.SUCCESS, "", server_cert_der=der_bytes)
+        assert r._server_cert is None
+
+        cert_obj = r.server_cert
+        assert isinstance(cert_obj, ServerCertificate)
+        assert cert_obj.subject_common_name == "lazy.example.com"
+        assert r.server_cert is cert_obj
+
 
 ### test_response.py ends here

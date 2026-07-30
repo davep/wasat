@@ -1,5 +1,18 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `ServerCertificate` class and `Response.server_cert` property to
+  provide high-level access to parsed server TLS certificate attributes
+  (subject/issuer CNs, validity dates, SANs, serial number, fingerprint, and
+  status checks). Exported `ServerCertificate` as a public type at the top
+  level. ([#45](https://github.com/davep/wasat/pull/45))
+- Updated the CLI (`wasat`) to add a `--show-cert` flag for displaying
+  detailed server TLS certificate information.
+  ([#45](https://github.com/davep/wasat/pull/45))
+
 ## v1.3.0
 
 **Released: 2026-07-30**

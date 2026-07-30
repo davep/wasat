@@ -52,6 +52,11 @@ def get_args() -> Namespace:
         default="tofu",
         help="Certificate verification mode: tofu, ca, off, or hybrid (default: tofu).",
     )
+    parser.add_argument(
+        "--show-cert",
+        action="store_true",
+        help="Display server TLS certificate information.",
+    )
 
     return parser.parse_args()
 
@@ -137,6 +142,29 @@ async def run_cli() -> None:
                         )
                         print(f"Meta: {response.meta}")
                         print("-----------------------")
+
+                    if args.show_cert and response.server_cert is not None:
+                        cert = response.server_cert
+                        print("--- Server Certificate ---")
+                        print(f"Subject: {cert.subject}")
+                        print(f"Issuer: {cert.issuer}")
+                        if cert.subject_common_name:
+                            print(f"Subject CN: {cert.subject_common_name}")
+                        if cert.issuer_common_name:
+                            print(f"Issuer CN: {cert.issuer_common_name}")
+                        print(f"Valid From: {cert.not_before}")
+                        print(f"Valid Until: {cert.not_after}")
+                        sans = (
+                            ", ".join(cert.subject_alternative_names)
+                            if cert.subject_alternative_names
+                            else "None"
+                        )
+                        print(f"SANs: {sans}")
+                        print(f"Serial Number: {cert.serial_number}")
+                        print(f"Fingerprint: sha256:{cert.fingerprint}")
+                        print(f"Self-Signed: {cert.is_self_signed}")
+                        print(f"Expired: {cert.is_expired}")
+                        print("--------------------------")
 
                     if response.status.is_input:
                         prompt = f"{response.meta}: " if response.meta else "Input: "
