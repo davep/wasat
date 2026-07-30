@@ -70,7 +70,7 @@ async def download_file():
 
 Wasat supports multiple certificate verification modes via `verify_mode`:
 
-- `"hybrid"`: Combines system CA validation with TOFU fallback. It validates certificates signed by system CAs (e.g. Let's Encrypt) automatically and falls back to TOFU for self-signed certificates.
+- `"hybrid"`: Combines system CA validation with TOFU fallback. Wasat first attempts to validate certificates using system CAs (e.g. Let's Encrypt). If CA verification fails because the certificate is untrusted or self-signed, it falls back to TOFU validation. If CA verification fails due to certificate expiration, hostname mismatch, or revocation, fallback is denied and a `SecurityError` is raised immediately.
 - `"tofu"`: Strict Trust-On-First-Use validation using [FileTrustStore][wasat.trust.FileTrustStore].
 - `"ca"`: Validates certificates strictly against system CAs.
 - `"off"`: Disables certificate verification.

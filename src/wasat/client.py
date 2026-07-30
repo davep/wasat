@@ -11,6 +11,8 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Final, Literal, Self
 
+from cryptography.hazmat.bindings.openssl.binding import Binding
+
 ##############################################################################
 # Local imports.
 from .certs import (
@@ -42,6 +44,18 @@ _DEFAULT_STORE_FILE: Final[str] = "known_hosts"
 """The default filename for storing known hosts."""
 _DEFAULT_CERTS_DIR: Final[str] = "certs"
 """The default subdirectory name for storing client certificates."""
+
+_openssl_lib = Binding().lib
+
+_UNTRUSTED_CA_VERIFY_CODES: Final[set[int]] = {
+    _openssl_lib.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT,
+    _openssl_lib.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
+    _openssl_lib.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN,
+    _openssl_lib.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
+    _openssl_lib.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE,
+    _openssl_lib.X509_V_ERR_CERT_UNTRUSTED,
+}
+"""OpenSSL X509 verification codes indicating untrusted root or self-signed certificates."""
 
 
 ##############################################################################
@@ -158,7 +172,9 @@ class Client:
                 - 'ca': Trust certificates signed by system CAs.
                 - 'tofu': Trust-On-First-Use validation.
                 - 'off': Disable certificate verification (insecure).
-                - 'hybrid': Combine CA validation with TOFU fallback.
+                - 'hybrid': Combine CA validation with TOFU fallback (falls back to TOFU
+                    only for untrusted root or self-signed certificates; raises SecurityError
+                    for expired certs or hostname mismatches).
             trust_store: Custom TrustStore instance for TOFU mode.
             trust_store_path: Filepath for the default FileTrustStore in TOFU mode.
             client_cert: Path to client TLS certificate (for client auth).
@@ -256,6 +272,50 @@ class Client:
             )
 
         return context
+
+    @staticmethod
+    def _is_untrusted_root_error(error: SecurityError) -> bool:
+        """Check if a SecurityError during CA verification was caused by an untrusted root or self-signed certificate.
+
+        In hybrid verification mode, fallback to TOFU is only performed if CA validation fails
+        due to an untrusted root or self-signed certificate. If CA validation fails due to
+        certificate expiration, hostname mismatch, or revocation, fallback is denied and the error is raised.
+
+        Args:
+            error: The SecurityError raised during CA connection verification.
+
+        Returns:
+            True if the error is due to an untrusted root or self-signed certificate, False otherwise.
+        """
+        cause = error.__cause__
+        target: BaseException = cause if cause is not None else error
+
+        if isinstance(cause, ssl.SSLError):
+            verify_code = getattr(cause, "verify_code", None)
+            if verify_code is not None and isinstance(verify_code, int):
+                return verify_code in _UNTRUSTED_CA_VERIFY_CODES
+
+        msg = str(target).lower()
+        invalid_keywords = (
+            "expired",
+            "hostname",
+            "mismatch",
+            "not yet valid",
+            "revoked",
+        )
+        if any(kw in msg for kw in invalid_keywords):
+            return False
+
+        untrusted_keywords = (
+            "self-signed",
+            "self signed",
+            "unable to get local issuer",
+            "unable to get issuer",
+            "unable to verify the first certificate",
+            "certificate untrusted",
+            "untrusted",
+        )
+        return any(kw in msg for kw in untrusted_keywords)
 
     async def _send_request_line(
         self, uri: GeminiURI, writer: asyncio.StreamWriter
@@ -490,7 +550,9 @@ class Client:
                         cert_der = ssl_object.getpeercert(binary_form=True)
                         if cert_der:
                             await self._trust_store.save(uri.host, uri.port, cert_der)
-            except SecurityError:
+            except SecurityError as e:
+                if not self._is_untrusted_root_error(e):
+                    raise
                 tofu_ssl_context = self._create_ssl_context(
                     client_cert=cert_path,
                     client_key=key_path,

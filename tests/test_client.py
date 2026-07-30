@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from cryptography.hazmat.bindings.openssl.binding import Binding
 
 from wasat import (
     GEMINI_DEFAULT_PORT,
@@ -21,6 +22,8 @@ from wasat import (
     StatusCode,
 )
 from wasat.trust import get_cert_fingerprint
+
+_openssl_lib = Binding().lib
 
 
 class MockSSLObject:
@@ -615,6 +618,96 @@ class TestClient:
                 await resp.close()
 
             assert tofu_verified is True
+
+        asyncio.run(run())
+
+    def test_hybrid_mode_no_fallback_on_expired_cert(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test hybrid mode raises SecurityError on expired CA certificates without falling back to TOFU."""
+
+        async def run() -> None:
+            class MockTrustStore:
+                async def save(self, host: str, port: int, cert_der: bytes) -> None:
+                    pass
+
+                async def verify(self, host: str, port: int, cert_der: bytes) -> bool:
+                    return True
+
+                async def get_fingerprint(self, host: str, port: int) -> str | None:
+                    return None
+
+                async def get_hosts(self) -> list[tuple[str, int]]:
+                    return []
+
+            mock_store = MockTrustStore()
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[Any, Any]:
+                if ssl_context.verify_mode == ssl.CERT_REQUIRED:
+                    ssl_err = ssl.SSLCertVerificationError(
+                        _openssl_lib.X509_V_ERR_CERT_HAS_EXPIRED,
+                        "certificate has expired",
+                    )
+                    sec_err = SecurityError(f"TLS handshake failed: {ssl_err}")
+                    sec_err.__cause__ = ssl_err
+                    raise sec_err
+                raise AssertionError(
+                    "Should not attempt TOFU fallback for expired cert"
+                )
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+
+            client = Client(verify_mode="hybrid", trust_store=mock_store)
+            async with client:
+                with pytest.raises(SecurityError, match="certificate has expired"):
+                    await client.request("gemini://expired.example.com/")
+
+        asyncio.run(run())
+
+    def test_hybrid_mode_no_fallback_on_hostname_mismatch(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test hybrid mode raises SecurityError on hostname mismatch without falling back to TOFU."""
+
+        async def run() -> None:
+            class MockTrustStore:
+                async def save(self, host: str, port: int, cert_der: bytes) -> None:
+                    pass
+
+                async def verify(self, host: str, port: int, cert_der: bytes) -> bool:
+                    return True
+
+                async def get_fingerprint(self, host: str, port: int) -> str | None:
+                    return None
+
+                async def get_hosts(self) -> list[tuple[str, int]]:
+                    return []
+
+            mock_store = MockTrustStore()
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[Any, Any]:
+                if ssl_context.verify_mode == ssl.CERT_REQUIRED:
+                    ssl_err = ssl.SSLCertVerificationError(
+                        _openssl_lib.X509_V_ERR_HOSTNAME_MISMATCH,
+                        "hostname 'mismatch.example.com' doesn't match 'other.example.com'",
+                    )
+                    sec_err = SecurityError(f"TLS handshake failed: {ssl_err}")
+                    sec_err.__cause__ = ssl_err
+                    raise sec_err
+                raise AssertionError(
+                    "Should not attempt TOFU fallback for hostname mismatch"
+                )
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+
+            client = Client(verify_mode="hybrid", trust_store=mock_store)
+            async with client:
+                with pytest.raises(SecurityError, match="hostname"):
+                    await client.request("gemini://mismatch.example.com/")
 
         asyncio.run(run())
 
