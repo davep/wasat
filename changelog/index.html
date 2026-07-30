@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v120" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -989,6 +1000,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v120" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1185,6 +1207,26 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v130">v1.3.0</h2>
+<p><strong>Released: 2026-07-30</strong></p>
+<ul>
+<li>Refined <code>hybrid</code> certificate verification mode to only fall back to TOFU
+  when CA validation fails due to an untrusted root or self-signed
+  certificate. Certificate failures caused by expiration, hostname mismatch,
+  or revocation now immediately raise <code>SecurityError</code>.
+  (<a href="https://github.com/davep/wasat/pull/41">#41</a>)</li>
+<li>Added <code>VerifyMode</code> as a type and exported it at the top level.
+  (<a href="https://github.com/davep/wasat/pull/41">#41</a>)</li>
+<li>Added <code>server_cert_der</code>, <code>server_cert_fingerprint</code>, and
+  <code>verification_method</code> properties to <code>Response</code> to expose server TLS
+  certificate details and the verification method used.
+  (<a href="https://github.com/davep/wasat/pull/43">#43</a>)</li>
+<li>Added <code>VerificationMethod</code> type alias and exported it at the top level.
+  (<a href="https://github.com/davep/wasat/pull/43">#43</a>)</li>
+<li>Updated the CLI (<code>wasat</code>) to display <code>Verification Method</code> and
+  <code>Certificate Fingerprint</code> when running in verbose (<code>-v</code> / <code>--verbose</code>) mode.
+  (<a href="https://github.com/davep/wasat/pull/43">#43</a>)</li>
+</ul>
 <h2 id="v120">v1.2.0</h2>
 <p><strong>Released: 2026-07-30</strong></p>
 <ul>

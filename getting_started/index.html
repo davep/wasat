@@ -1071,7 +1071,7 @@
 <p>The following classes and protocols form the core interface of the library:</p>
 <ul>
 <li><strong><a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a></strong>: The asynchronous client used to configure and dispatch requests.</li>
-<li><strong><a class="autorefs autorefs-internal" title="            Response" href="../library/response/#wasat.response.Response">Response</a></strong>: Represents the server's response, exposing the target URI (<code>uri</code>), the originally requested URI (<code>requested_uri</code>), redirect history (<code>history</code>), the path to any client certificate used (<code>client_cert_path</code>), whether a client certificate was used (<code>client_cert_used</code>), text decoding, and chunked body streaming.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            Response" href="../library/response/#wasat.response.Response">Response</a></strong>: Represents the server's response, exposing the target URI (<code>uri</code>), the originally requested URI (<code>requested_uri</code>), redirect history (<code>history</code>), the path to any client certificate used (<code>client_cert_path</code>), whether a client certificate was used (<code>client_cert_used</code>), server TLS certificate details (<code>server_cert_der</code>, <code>server_cert_fingerprint</code>), certificate verification method (<code>verification_method</code>), text decoding, and chunked body streaming.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a></strong>: A utility class to parse, validate, and resolve Gemini URIs safely.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            StatusCode" href="../library/status/#wasat.status.StatusCode">StatusCode</a></strong>: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            TrustStore" href="../library/trust/#wasat.trust.TrustStore">TrustStore</a></strong>: A protocol defining the trust verification interface.</li>
@@ -1125,7 +1125,7 @@
 <h2 id="custom-trust-verification-tofu-and-hybrid-mode">Custom Trust Verification, TOFU, and Hybrid Mode</h2>
 <p>Wasat supports multiple certificate verification modes via <code>verify_mode</code>:</p>
 <ul>
-<li><code>"hybrid"</code>: Combines system CA validation with TOFU fallback. It validates certificates signed by system CAs (e.g. Let's Encrypt) automatically and falls back to TOFU for self-signed certificates.</li>
+<li><code>"hybrid"</code>: Combines system CA validation with TOFU fallback. Wasat first attempts to validate certificates using system CAs (e.g. Let's Encrypt). If CA verification fails because the certificate is untrusted or self-signed, it falls back to TOFU validation. If CA verification fails due to certificate expiration, hostname mismatch, or revocation, fallback is denied and a <code>SecurityError</code> is raised immediately.</li>
 <li><code>"tofu"</code>: Strict Trust-On-First-Use validation using <a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a>.</li>
 <li><code>"ca"</code>: Validates certificates strictly against system CAs.</li>
 <li><code>"off"</code>: Disables certificate verification.</li>
