@@ -124,9 +124,13 @@ async def run_cli() -> None:
                                     f"{redirect_resp.meta.strip()}"
                                 )
                         print(f"URI: {response.uri}")
-                        if getattr(response, "verification_method", None) is not None:
+                        if response.verification_method is not None:
                             print(
                                 f"Verification Method: {response.verification_method}"
+                            )
+                        if response.server_cert_fingerprint is not None:
+                            print(
+                                f"Certificate Fingerprint: sha256:{response.server_cert_fingerprint}"
                             )
                         print(
                             f"Status: {response.status.value} ({response.status.name})"

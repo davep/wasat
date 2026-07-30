@@ -17,8 +17,8 @@
   ([#43](https://github.com/davep/wasat/pull/43))
 - Added `VerificationMethod` type alias and exported it at the top level.
   ([#43](https://github.com/davep/wasat/pull/43))
-- Updated the CLI (`wasat`) to display `Verification Method` when running in
-  verbose (`-v` / `--verbose`) mode.
+- Updated the CLI (`wasat`) to display `Verification Method` and
+  `Certificate Fingerprint` when running in verbose (`-v` / `--verbose`) mode.
   ([#43](https://github.com/davep/wasat/pull/43))
 
 ## v1.2.0
