@@ -1601,7 +1601,9 @@
 </h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">Client</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="verify_mode (wasat.client.Client(verify_mode))" href="#wasat.client.Client(verify_mode)">verify_mode</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="s2">&quot;tofu&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ca&quot;</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="verify_mode (wasat.client.Client(verify_mode))" href="#wasat.client.Client(verify_mode)">verify_mode</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
+        <span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="s2">&quot;tofu&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;hybrid&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ca&quot;</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="trust_store (wasat.client.Client(trust_store))" href="#wasat.client.Client(trust_store)">trust_store</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            TrustStore (wasat.trust.TrustStore)" href="../trust/#wasat.trust.TrustStore">TrustStore</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="trust_store_path (wasat.client.Client(trust_store_path))" href="#wasat.client.Client(trust_store_path)">trust_store_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="client_cert (wasat.client.Client(client_cert))" href="#wasat.client.Client(client_cert)">client_cert</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1643,14 +1645,15 @@
 <h3 id="wasat.client.Client(verify_mode)" class="doc doc-heading doc-heading-parameter">                  <code>verify_mode</code>
 </h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;ca&#39;, &#39;tofu&#39;, &#39;off&#39;]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;ca&#39;, &#39;tofu&#39;, &#39;off&#39;, &#39;hybrid&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
                 <p>The certificate verification mode:
 - 'ca': Trust certificates signed by system CAs.
 - 'tofu': Trust-On-First-Use validation.
-- 'off': Disable certificate verification (insecure).</p>
+- 'off': Disable certificate verification (insecure).
+- 'hybrid': Combine CA validation with TOFU fallback.</p>
               </div>
             </td>
             <td>

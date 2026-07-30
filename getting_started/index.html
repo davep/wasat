@@ -489,10 +489,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-trust-verification-and-tofu" class="md-nav__link">
+  <a href="#custom-trust-verification-tofu-and-hybrid-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Trust Verification and TOFU
+        Custom Trust Verification, TOFU, and Hybrid Mode
       
     </span>
   </a>
@@ -962,10 +962,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-trust-verification-and-tofu" class="md-nav__link">
+  <a href="#custom-trust-verification-tofu-and-hybrid-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Trust Verification and TOFU
+        Custom Trust Verification, TOFU, and Hybrid Mode
       
     </span>
   </a>
@@ -1122,8 +1122,15 @@
                 <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
 </code></pre></div>
 <hr />
-<h2 id="custom-trust-verification-and-tofu">Custom Trust Verification and TOFU</h2>
-<p>By default, Wasat employs a Trust-On-First-Use (TOFU) security model via <a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a>. When a new certificate is encountered, you can customise the behaviour by providing an asynchronous <code>on_new_certificate</code> callback to the <a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a>:</p>
+<h2 id="custom-trust-verification-tofu-and-hybrid-mode">Custom Trust Verification, TOFU, and Hybrid Mode</h2>
+<p>Wasat supports multiple certificate verification modes via <code>verify_mode</code>:</p>
+<ul>
+<li><code>"hybrid"</code>: Combines system CA validation with TOFU fallback. It validates certificates signed by system CAs (e.g. Let's Encrypt) automatically and falls back to TOFU for self-signed certificates.</li>
+<li><code>"tofu"</code>: Strict Trust-On-First-Use validation using <a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a>.</li>
+<li><code>"ca"</code>: Validates certificates strictly against system CAs.</li>
+<li><code>"off"</code>: Disables certificate verification.</li>
+</ul>
+<p>When a new self-signed certificate is encountered in <code>"tofu"</code> or <code>"hybrid"</code> mode, you can customise the behaviour by providing an asynchronous <code>on_new_certificate</code> callback to the <a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">confirm_cert</span><span class="p">(</span><span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Encountered a new certificate for </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fingerprint: sha256:</span><span class="si">{</span><span class="n">fingerprint</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1131,7 +1138,7 @@
     <span class="k">return</span> <span class="n">response</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span>
-    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">,</span>
+    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;hybrid&quot;</span><span class="p">,</span>
     <span class="n">on_new_certificate</span><span class="o">=</span><span class="n">confirm_cert</span>
 <span class="p">)</span>
 </code></pre></div>
