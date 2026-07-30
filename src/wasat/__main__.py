@@ -124,6 +124,10 @@ async def run_cli() -> None:
                                     f"{redirect_resp.meta.strip()}"
                                 )
                         print(f"URI: {response.uri}")
+                        if getattr(response, "verification_method", None) is not None:
+                            print(
+                                f"Verification Method: {response.verification_method}"
+                            )
                         print(
                             f"Status: {response.status.value} ({response.status.name})"
                         )
