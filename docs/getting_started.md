@@ -11,10 +11,13 @@ The following classes and protocols form the core interface of the library:
 - **[Client][wasat.client.Client]**: The asynchronous client used to configure and dispatch requests.
 - **[Response][wasat.response.Response]**: Represents the server's response, exposing the target URI (`uri`), the originally requested URI (`requested_uri`), redirect history (`history`), the path to any client certificate used (`client_cert_path`), whether a client certificate was used (`client_cert_used`), server TLS certificate details (`server_cert`, `server_cert_der`, `server_cert_fingerprint`), certificate verification method (`verification_method`), text decoding, and chunked body streaming.
 - **[ServerCertificate][wasat.certs.ServerCertificate]**: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via `response.server_cert`.
+- **[ClientCertificate][wasat.certs.ClientCertificate]**: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes.
 - **[GeminiURI][wasat.uri.GeminiURI]**: A utility class to parse, validate, and resolve Gemini URIs safely.
 - **[StatusCode][wasat.status.StatusCode]**: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.
 - **[TrustStore][wasat.trust.TrustStore]**: A protocol defining the trust verification interface.
 - **[FileTrustStore][wasat.trust.FileTrustStore]**: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.
+- **[ClientCertificateStore][wasat.certs.ClientCertificateStore]**: A protocol defining the client certificate storage and management interface.
+- **[FileClientCertificateStore][wasat.certs.FileClientCertificateStore]**: The default file-based store managing client certificates, keys, and scope mappings.
 
 ---
 
@@ -172,6 +175,50 @@ if response.status == StatusCode.CLIENT_CERTIFICATE_REQUIRED:
 
     # Retry the request; the client automatically detects and loads the new cert
     response = await client.request("gemini://example.com/protected")
+```
+
+### Certificate Management and Inspection
+
+The certificate store provides comprehensive APIs for building management interfaces (such as client identity pickers and settings UIs):
+
+```python
+from wasat import FileClientCertificateStore, GeminiURI
+
+store = FileClientCertificateStore("~/.config/my_app/certs")
+
+# 1. Create a standalone persona / certificate
+persona = await store.create_certificate(
+    name="dave_persona",
+    common_name="Dave Pearson",
+    email="dave@example.com",
+    scopes=[
+        "gemini://example.com/forum",
+        "station.martinrue.com:1965/davep",
+    ]
+)
+
+# 2. List all certificates in the store
+certs = await store.list_certificates()
+for cert in certs:
+    print(f"CN: {cert.subject_common_name}")
+    print(f"Fingerprint: {cert.fingerprint}")
+    print(f"Key: {cert.key_type} {cert.key_size}-bit")
+    print(f"Expires: {cert.not_after}")
+    print(f"Associated scopes: {cert.scopes}")
+
+# 3. Look up a certificate by URI, scope, fingerprint, or path
+cert = await store.get_certificate("example.com/forum")
+
+# 4. Associate an existing certificate with additional scopes
+if cert is not None:
+    await store.associate_scope(cert, "gemini://another-capsule.org/blog")
+
+# 5. Disassociate a scope without deleting the certificate files
+await store.disassociate_scope("example.com/forum")
+
+# 6. Delete a certificate and all associated scope mappings
+if cert is not None:
+    await store.delete_certificate(cert)
 ```
 
 ---

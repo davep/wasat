@@ -11,11 +11,13 @@ from cryptography import x509
 
 from wasat import (
     Client,
+    ClientCertificate,
     FileClientCertificateStore,
     GeminiURI,
     ServerCertificate,
     StatusCode,
     generate_self_signed_cert,
+    normalize_scope,
 )
 from wasat.certs import _safe_filename, get_candidate_scopes
 
@@ -717,3 +719,437 @@ class TestServerCertificate:
         assert server_cert.is_expired is False
         assert server_cert.is_self_signed is True
         assert server_cert.raw_x509 == cert_x509
+
+
+##############################################################################
+def test_normalize_scope() -> None:
+    """Test scope normalisation with various input types and formats."""
+    # GeminiURI inputs
+    assert normalize_scope(GeminiURI("gemini://example.com")) == "example.com:1965/"
+    assert normalize_scope(GeminiURI("gemini://example.com/")) == "example.com:1965/"
+    assert (
+        normalize_scope(GeminiURI("gemini://example.com/admin/login"))
+        == "example.com:1965/admin/login"
+    )
+    assert (
+        normalize_scope(GeminiURI("gemini://example.com:1967/admin/login"))
+        == "example.com:1967/admin/login"
+    )
+
+    # String inputs
+    assert normalize_scope("gemini://example.com") == "example.com:1965/"
+    assert normalize_scope("gemini://example.com/foo") == "example.com:1965/foo"
+    assert normalize_scope("gemini://example.com:2000/foo") == "example.com:2000/foo"
+    assert normalize_scope("example.com") == "example.com:1965/"
+    assert normalize_scope("example.com/foo") == "example.com:1965/foo"
+    assert normalize_scope("example.com:1965/foo") == "example.com:1965/foo"
+    assert normalize_scope("example.com:2000/foo") == "example.com:2000/foo"
+    assert normalize_scope("EXAMPLE.COM:1965/Foo") == "example.com:1965/Foo"
+
+
+##############################################################################
+class TestClientCertificate:
+    """Test suite for ClientCertificate wrapper."""
+
+    def test_client_certificate_properties_ecdsa(self) -> None:
+        """Test properties of ClientCertificate with ECDSA key."""
+        cert_pem, key_pem = generate_self_signed_cert(
+            common_name="test_user",
+            key_type="ecdsa",
+            email="test@example.com",
+            user_id="usr_42",
+            domain="auth.example.com",
+            organisation="ACME Corp",
+            country="GB",
+        )
+        client_cert = ClientCertificate(
+            cert_pem=cert_pem,
+            key_pem=key_pem,
+            scopes=["example.com:1965/admin", "example.com:1965/user"],
+        )
+
+        assert client_cert.cert_pem == cert_pem
+        assert client_cert.raw_pem == cert_pem
+        assert client_cert.key_pem == key_pem
+        assert client_cert.cert_path is None
+        assert client_cert.key_path is None
+        assert client_cert.scopes == (
+            "example.com:1965/admin",
+            "example.com:1965/user",
+        )
+        assert client_cert.subject_common_name == "test_user"
+        assert client_cert.issuer_common_name == "test_user"
+        assert client_cert.email == "test@example.com"
+        assert client_cert.user_id == "usr_42"
+        assert client_cert.organisation == "ACME Corp"
+        assert client_cert.country == "GB"
+        assert "CN=test_user" in client_cert.subject
+        assert "CN=test_user" in client_cert.issuer
+        assert isinstance(client_cert.not_before, datetime)
+        assert isinstance(client_cert.not_after, datetime)
+        assert client_cert.is_expired is False
+        assert client_cert.is_self_signed is True
+        assert client_cert.subject_alternative_names == ("auth.example.com",)
+        assert isinstance(client_cert.serial_number, int)
+        assert len(client_cert.fingerprint) == 64
+        assert client_cert.key_type == "ecdsa"
+        assert client_cert.key_size == 256
+        assert isinstance(client_cert.raw_x509, x509.Certificate)
+        assert "test_user" in repr(client_cert)
+
+    def test_client_certificate_properties_rsa(self) -> None:
+        """Test properties of ClientCertificate with RSA key."""
+        cert_pem, key_pem = generate_self_signed_cert(
+            common_name="test_rsa_user",
+            key_type="rsa",
+            rsa_key_size=2048,
+        )
+        client_cert = ClientCertificate(
+            cert_pem=cert_pem,
+            key_pem=key_pem,
+        )
+        assert client_cert.key_type == "rsa"
+        assert client_cert.key_size == 2048
+        assert client_cert.email is None
+        assert client_cert.user_id is None
+        assert client_cert.organisation is None
+        assert client_cert.country is None
+
+    def test_client_certificate_from_file(self) -> None:
+        """Test constructing ClientCertificate from file paths."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cert_pem, key_pem = generate_self_signed_cert("file_user")
+            c_path = Path(tmpdir) / "test.crt"
+            k_path = Path(tmpdir) / "test.key"
+            c_path.write_bytes(cert_pem)
+            k_path.write_bytes(key_pem)
+
+            cert = ClientCertificate.from_file(c_path, k_path, scopes=["example.com/"])
+            assert cert.cert_path == c_path
+            assert cert.key_path == k_path
+            assert cert.cert_pem == cert_pem
+            assert cert.key_pem == key_pem
+            assert cert.scopes == ("example.com/",)
+            assert cert.subject_common_name == "file_user"
+
+
+##############################################################################
+class TestClientCertificateStoreManagement:
+    """Test suite for certificate store listing, multi-scope, and management methods."""
+
+    def test_create_and_list_standalone_and_multiscope_certificates(
+        self,
+    ) -> None:
+        """Test creating standalone and multi-scope certificates and listing them."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                # Initially empty
+                assert await store.list_certificates() == []
+
+                # 1. Create standalone certificate with no scopes
+                standalone = await store.create_certificate(
+                    name="my_persona",
+                    common_name="Dave's Persona",
+                    email="dave@example.com",
+                )
+                assert standalone.subject_common_name == "Dave's Persona"
+                assert standalone.email == "dave@example.com"
+                assert standalone.scopes == ()
+                assert (
+                    standalone.cert_path is not None and standalone.cert_path.exists()
+                )
+                assert standalone.key_path is not None and standalone.key_path.exists()
+
+                # 2. Create multi-scope certificate
+                multi = await store.create_certificate(
+                    name="shared_identity",
+                    scopes=[
+                        GeminiURI("gemini://example.com/admin"),
+                        "gemini://example.com/user",
+                        "station.martinrue.com/davep",
+                    ],
+                    common_name="Shared Identity",
+                )
+                assert multi.scopes == (
+                    "example.com:1965/admin",
+                    "example.com:1965/user",
+                    "station.martinrue.com:1965/davep",
+                )
+
+                # 3. List certificates
+                all_certs = await store.list_certificates()
+                assert len(all_certs) == 2
+
+                cert_names = {c.subject_common_name for c in all_certs}
+                assert cert_names == {"Dave's Persona", "Shared Identity"}
+
+                # Verify that credentials can be retrieved for all scopes of multi
+                creds_admin = await store.get_credentials(
+                    GeminiURI("gemini://example.com/admin/settings")
+                )
+                creds_user = await store.get_credentials(
+                    GeminiURI("gemini://example.com/user/profile")
+                )
+                creds_station = await store.get_credentials(
+                    GeminiURI("gemini://station.martinrue.com/davep/feed.gmi")
+                )
+
+                assert creds_admin is not None
+                assert creds_user is not None
+                assert creds_station is not None
+                assert creds_admin[0] == multi.cert_path
+                assert creds_user[0] == multi.cert_path
+                assert creds_station[0] == multi.cert_path
+
+        asyncio.run(run())
+
+    def test_get_certificate_by_various_identifiers(self) -> None:
+        """Test get_certificate with URI, scope string, fingerprint, and file path."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+                created = await store.create_certificate(
+                    name="ident1",
+                    scopes=["example.com/forum"],
+                    common_name="Forum User",
+                )
+
+                # 1. By GeminiURI
+                by_uri = await store.get_certificate(
+                    GeminiURI("gemini://example.com/forum/topic1")
+                )
+                assert by_uri is not None
+                assert by_uri.subject_common_name == "Forum User"
+
+                # 2. By scope string (with or without port)
+                by_scope = await store.get_certificate("example.com:1965/forum")
+                assert by_scope is not None
+                assert by_scope.subject_common_name == "Forum User"
+
+                by_scope_no_port = await store.get_certificate("example.com/forum")
+                assert by_scope_no_port is not None
+                assert by_scope_no_port.subject_common_name == "Forum User"
+
+                # 3. By SHA-256 fingerprint
+                by_fp = await store.get_certificate(created.fingerprint)
+                assert by_fp is not None
+                assert by_fp.subject_common_name == "Forum User"
+
+                # 4. By Path and filename
+                assert created.cert_path is not None
+                by_path = await store.get_certificate(created.cert_path)
+                assert by_path is not None
+                assert by_path.subject_common_name == "Forum User"
+
+                by_filename = await store.get_certificate(created.cert_path.name)
+                assert by_filename is not None
+                assert by_filename.subject_common_name == "Forum User"
+
+                # Nonexistent identifier
+                assert await store.get_certificate("unknown.domain.org") is None
+                assert await store.get_certificate("0" * 64) is None
+
+        asyncio.run(run())
+
+    def test_associate_and_disassociate_scope(self) -> None:
+        """Test associating new scopes to an existing certificate and disassociating them."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                # Create certificate for scope 1
+                cert = await store.create_certificate(
+                    name="user_cert",
+                    scopes=["example.com/page1"],
+                    common_name="User Cert",
+                )
+
+                # Associate scope 2 using ClientCertificate object
+                await store.associate_scope(cert, "example.com/page2")
+
+                # Associate scope 3 using fingerprint
+                await store.associate_scope(
+                    cert.fingerprint, GeminiURI("gemini://other.org/app")
+                )
+
+                # Verify all scopes resolve to the same certificate files
+                c1 = await store.get_credentials(
+                    GeminiURI("gemini://example.com/page1")
+                )
+                c2 = await store.get_credentials(
+                    GeminiURI("gemini://example.com/page2")
+                )
+                c3 = await store.get_credentials(GeminiURI("gemini://other.org/app"))
+
+                assert c1 is not None and c2 is not None and c3 is not None
+                assert c1[0] == c2[0] == c3[0] == cert.cert_path
+                assert c1[1] == c2[1] == c3[1] == cert.key_path
+
+                # Disassociate scope 2
+                removed = await store.disassociate_scope("example.com/page2")
+                assert removed is True
+
+                # Scope 2 no longer resolves
+                assert (
+                    await store.get_credentials(GeminiURI("gemini://example.com/page2"))
+                    is None
+                )
+
+                # Scope 1 and 3 still resolve and file still exists
+                assert (
+                    await store.get_credentials(GeminiURI("gemini://example.com/page1"))
+                    is not None
+                )
+                assert cert.cert_path is not None and cert.cert_path.exists()
+
+                # Disassociating unknown scope returns False
+                assert await store.disassociate_scope("nonexistent.org") is False
+
+                # Associating non-existent cert raises ValueError
+                with pytest.raises(ValueError):
+                    await store.associate_scope("0" * 64, "some.site.org")
+
+        asyncio.run(run())
+
+    def test_delete_certificate(self) -> None:
+        """Test delete_certificate removes files and all associated scopes."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                cert = await store.create_certificate(
+                    name="to_delete",
+                    scopes=["example.com/a", "example.com/b"],
+                    common_name="To Delete",
+                )
+                cert_path = cert.cert_path
+                key_path = cert.key_path
+                assert cert_path is not None and cert_path.exists()
+                assert key_path is not None and key_path.exists()
+
+                # Delete certificate
+                deleted = await store.delete_certificate(cert)
+                assert deleted is True
+
+                # Files are removed
+                assert not cert_path.exists()
+                assert not key_path.exists()
+
+                # Scopes are removed
+                assert (
+                    await store.get_credentials(GeminiURI("gemini://example.com/a"))
+                    is None
+                )
+                assert (
+                    await store.get_credentials(GeminiURI("gemini://example.com/b"))
+                    is None
+                )
+                assert await store.list_certificates() == []
+
+                # Deleting again returns False
+                assert await store.delete_certificate(cert) is False
+
+        asyncio.run(run())
+
+    def test_delete_exact_scope_shared_file(self) -> None:
+        """Test delete_exact_scope removes the scope and only removes files when last scope is removed."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                cert = await store.create_certificate(
+                    name="shared",
+                    scopes=["example.com/first", "example.com/second"],
+                )
+                cert_path = cert.cert_path
+                key_path = cert.key_path
+                assert cert_path is not None and cert_path.exists()
+                assert key_path is not None and key_path.exists()
+
+                # Delete first scope
+                deleted_first = await store.delete_exact_scope("example.com/first")
+                assert deleted_first is True
+
+                # First scope gone, second scope remains, files still exist
+                assert (
+                    await store.get_credentials(GeminiURI("gemini://example.com/first"))
+                    is None
+                )
+                assert (
+                    await store.get_credentials(
+                        GeminiURI("gemini://example.com/second")
+                    )
+                    is not None
+                )
+                assert cert_path.exists()
+
+                # Delete second (last) scope
+                deleted_second = await store.delete_exact_scope("example.com/second")
+                assert deleted_second is True
+
+                # Second scope gone, files now unlinked
+                assert (
+                    await store.get_credentials(
+                        GeminiURI("gemini://example.com/second")
+                    )
+                    is None
+                )
+                assert not cert_path.exists()
+                assert not key_path.exists()
+
+        asyncio.run(run())
+
+    def test_transient_certificate_management(self) -> None:
+        """Test transient certificate lifecycle and management."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                # Create transient certificate with multiple scopes
+                trans_cert = await store.create_certificate(
+                    name="trans_user",
+                    scopes=["example.com/trans1"],
+                    transient=True,
+                    common_name="Transient User",
+                )
+                assert (
+                    trans_cert.cert_path is not None and trans_cert.cert_path.exists()
+                )
+
+                # Appears in list_certificates
+                listed = await store.list_certificates()
+                assert len(listed) == 1
+                assert listed[0].subject_common_name == "Transient User"
+
+                # Associate additional transient scope
+                await store.associate_scope(trans_cert, "example.com/trans2")
+                assert (
+                    await store.get_credentials(
+                        GeminiURI("gemini://example.com/trans2")
+                    )
+                    is not None
+                )
+
+                # Disassociate transient scope
+                assert await store.disassociate_scope("example.com/trans1") is True
+                assert (
+                    await store.get_credentials(
+                        GeminiURI("gemini://example.com/trans1")
+                    )
+                    is None
+                )
+
+                # Delete transient cert
+                deleted = await store.delete_certificate(trans_cert)
+                assert deleted is True
+                assert not trans_cert.cert_path.exists()
+
+        asyncio.run(run())

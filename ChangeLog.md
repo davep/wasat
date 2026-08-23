@@ -1,5 +1,41 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `ClientCertificate` class representing client TLS certificates and
+  private keys with full access to parsed subject attributes (Common Name,
+  email, user ID, organisation, country), issuer, validity timestamps,
+  expiration and self-signed checks, public key information, SHA-256
+  fingerprint, and associated scopes. Exported `ClientCertificate` as a
+  public type at the top level.
+  ([#48](https://github.com/davep/wasat/pull/48))
+- Added `normalize_scope` helper function to normalise Gemini URIs and scope
+  strings into canonical `host:port/path` format, and exported it at the top
+  level. ([#48](https://github.com/davep/wasat/pull/48))
+- Added `list_certificates` method to the `ClientCertificateStore` protocol
+  and `FileClientCertificateStore` implementation to enumerate all stored
+  and transient client certificates along with their associated scopes.
+  ([#48](https://github.com/davep/wasat/pull/48))
+- Added `get_certificate` method to `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation to retrieve client
+  certificates by URI, scope, SHA-256 fingerprint, or file path/name.
+  ([#48](https://github.com/davep/wasat/pull/48))
+- Added `create_certificate` method to `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation to allow generating standalone
+  identities or associating certificates with multiple scopes.
+  ([#48](https://github.com/davep/wasat/pull/48))
+- Added `associate_scope` and `disassociate_scope` methods to
+  `ClientCertificateStore` protocol and `FileClientCertificateStore`
+  implementation to allow dynamically managing scope bindings for existing
+  certificates without duplicating certificate files on disk.
+  ([#48](https://github.com/davep/wasat/pull/48))
+- Added `delete_certificate` and `delete_exact_scope` methods to
+  `ClientCertificateStore` protocol and `FileClientCertificateStore`
+  implementation for deleting certificates and unbinding specific scopes
+  safely. ([#48](https://github.com/davep/wasat/pull/48))
+
 ## v1.3.1
 
 **Released: 2026-07-30**

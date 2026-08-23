@@ -18,10 +18,12 @@ __licence__ = "MIT"
 # Local imports.
 from .certs import (
     ClientCertCallback,
+    ClientCertificate,
     ClientCertificateStore,
     FileClientCertificateStore,
     ServerCertificate,
     generate_self_signed_cert,
+    normalize_scope,
 )
 from .client import Client, VerifyMode
 from .exceptions import (
@@ -43,6 +45,7 @@ __all__ = [
     "Client",
     "Response",
     "ServerCertificate",
+    "ClientCertificate",
     "StatusCode",
     "GeminiURI",
     "GEMINI_DEFAULT_PORT",
@@ -52,6 +55,7 @@ __all__ = [
     "FileClientCertificateStore",
     "ClientCertCallback",
     "generate_self_signed_cert",
+    "normalize_scope",
     "WasatError",
     "URIError",
     "ProtocolError",
