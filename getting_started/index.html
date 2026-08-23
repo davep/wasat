@@ -555,6 +555,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#certificate-management-and-inspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificate Management and Inspection
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1028,6 +1039,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#certificate-management-and-inspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificate Management and Inspection
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1073,10 +1095,13 @@
 <li><strong><a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a></strong>: The asynchronous client used to configure and dispatch requests.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            Response" href="../library/response/#wasat.response.Response">Response</a></strong>: Represents the server's response, exposing the target URI (<code>uri</code>), the originally requested URI (<code>requested_uri</code>), redirect history (<code>history</code>), the path to any client certificate used (<code>client_cert_path</code>), whether a client certificate was used (<code>client_cert_used</code>), server TLS certificate details (<code>server_cert</code>, <code>server_cert_der</code>, <code>server_cert_fingerprint</code>), certificate verification method (<code>verification_method</code>), text decoding, and chunked body streaming.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ServerCertificate" href="../library/certs/#wasat.certs.ServerCertificate">ServerCertificate</a></strong>: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via <code>response.server_cert</code>.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            ClientCertificate" href="../library/certs/#wasat.certs.ClientCertificate">ClientCertificate</a></strong>: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a></strong>: A utility class to parse, validate, and resolve Gemini URIs safely.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            StatusCode" href="../library/status/#wasat.status.StatusCode">StatusCode</a></strong>: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            TrustStore" href="../library/trust/#wasat.trust.TrustStore">TrustStore</a></strong>: A protocol defining the trust verification interface.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a></strong>: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            ClientCertificateStore" href="../library/certs/#wasat.certs.ClientCertificateStore">ClientCertificateStore</a></strong>: A protocol defining the client certificate storage and management interface.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            FileClientCertificateStore" href="../library/certs/#wasat.certs.FileClientCertificateStore">FileClientCertificateStore</a></strong>: The default file-based store managing client certificates, keys, and scope mappings.</li>
 </ul>
 <hr />
 <h2 id="basic-request">Basic Request</h2>
@@ -1085,23 +1110,23 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">WasatError</span>
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-    <span class="c1"># Use &quot;tofu&quot; verification mode for standard self-signed Gemini certificates</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">)</span>
+    <span class="c1"># Use "tofu" verification mode for standard self-signed Gemini certificates</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Perform the request (resolves host, port, TLS, and redirects)</span>
-        <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://geminiprotocol.net/&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MIME type: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">mime_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">"gemini://geminiprotocol.net/"</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MIME type: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">mime_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># Fetch and decode the response body text</span>
             <span class="n">body</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="n">WasatError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Request failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Request failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
 <hr />
@@ -1116,8 +1141,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span>
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">download_file</span><span class="p">():</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">)</span>
-    <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/large-file.bin&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">"gemini://example.com/large-file.bin"</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">is_success</span><span class="p">:</span>
             <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_chunks</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
                 <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
@@ -1133,13 +1158,13 @@
 </ul>
 <p>When a new self-signed certificate is encountered in <code>"tofu"</code> or <code>"hybrid"</code> mode, you can customise the behaviour by providing an asynchronous <code>on_new_certificate</code> callback to the <a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">confirm_cert</span><span class="p">(</span><span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Encountered a new certificate for </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fingerprint: sha256:</span><span class="si">{</span><span class="n">fingerprint</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Trust this certificate? [y/N]: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">response</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Encountered a new certificate for </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fingerprint: sha256:</span><span class="si">{</span><span class="n">fingerprint</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">"Trust this certificate? [y/N]: "</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span> <span class="o">==</span> <span class="s2">"y"</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span>
-    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;hybrid&quot;</span><span class="p">,</span>
+    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">"hybrid"</span><span class="p">,</span>
     <span class="n">on_new_certificate</span><span class="o">=</span><span class="n">confirm_cert</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1155,14 +1180,14 @@
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_cert_request</span><span class="p">(</span>
     <span class="n">uri</span><span class="p">:</span> <span class="n">GeminiURI</span><span class="p">,</span>
     <span class="n">store</span><span class="p">:</span> <span class="n">ClientCertificateStore</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;transient&quot;</span><span class="p">,</span> <span class="s2">&quot;persistent&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"transient"</span><span class="p">,</span> <span class="s2">"persistent"</span><span class="p">,</span> <span class="s2">"ignore"</span><span class="p">]:</span>
     <span class="c1"># Determine whether to generate a transient/persistent certificate, or ignore.</span>
     <span class="c1"># Transient certificates are stored in a temporary folder and cleaned up at exit.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Server at </span><span class="si">{</span><span class="n">uri</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2"> requested a client certificate.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">&quot;transient&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Server at </span><span class="si">{</span><span class="n">uri</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2"> requested a client certificate."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"transient"</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span>
-    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">,</span>
+    <span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">,</span>
     <span class="n">on_client_certificate_required</span><span class="o">=</span><span class="n">handle_cert_request</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1176,16 +1201,16 @@
   " href="../library/certs/#wasat.certs.ClientCertificateStore.register_credentials">register_credentials</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_cert_request</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="n">GeminiURI</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">ClientCertificateStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="c1"># If visiting your page and the cert is not yet registered, map it from /join</span>
-    <span class="k">if</span> <span class="n">uri</span><span class="o">.</span><span class="n">host</span> <span class="o">==</span> <span class="s2">&quot;station.martinrue.com&quot;</span> <span class="ow">and</span> <span class="n">uri</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/davep&quot;</span><span class="p">):</span>
-        <span class="n">join_uri</span> <span class="o">=</span> <span class="n">GeminiURI</span><span class="p">(</span><span class="s2">&quot;gemini://station.martinrue.com/join&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">uri</span><span class="o">.</span><span class="n">host</span> <span class="o">==</span> <span class="s2">"station.martinrue.com"</span> <span class="ow">and</span> <span class="n">uri</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"/davep"</span><span class="p">):</span>
+        <span class="n">join_uri</span> <span class="o">=</span> <span class="n">GeminiURI</span><span class="p">(</span><span class="s2">"gemini://station.martinrue.com/join"</span><span class="p">)</span>
         <span class="n">join_creds</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">get_credentials</span><span class="p">(</span><span class="n">join_uri</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">join_creds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Register the existing /join cert files for /davep</span>
             <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">register_credentials</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">join_creds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">join_creds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="k">return</span> <span class="s2">&quot;persistent&quot;</span>
+            <span class="k">return</span> <span class="s2">"persistent"</span>
 
     <span class="c1"># Default to generating a new transient cert</span>
-    <span class="k">return</span> <span class="s2">&quot;transient&quot;</span>
+    <span class="k">return</span> <span class="s2">"transient"</span>
 </code></pre></div>
 <h3 id="redirection-and-certificate-reuse">Redirection and Certificate Reuse</h3>
 <p>When a request is redirected (e.g. from <code>gemini://example.com/join</code> to <code>gemini://example.com/dashboard</code>), and a client certificate was successfully used to authenticate a prior request in the redirect chain, Wasat will automatically retrieve and reuse the same certificate for any subsequent redirect targets on the same host and port.</p>
@@ -1194,22 +1219,62 @@
 <p>If you do not register the callback, you can manually generate, store, and present certificates inside your application flow:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">StatusCode</span>
 
-<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">&quot;tofu&quot;</span><span class="p">)</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span>
 
-<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/protected&quot;</span><span class="p">)</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">"gemini://example.com/protected"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">StatusCode</span><span class="o">.</span><span class="n">CLIENT_CERTIFICATE_REQUIRED</span><span class="p">:</span>
     <span class="c1"># Generate a certificate for the host/path scope and save it in the store.</span>
     <span class="c1"># Set valid_days=None to create a certificate that expires on 9999-12-31.</span>
     <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">client_cert_store</span><span class="o">.</span><span class="n">create_credentials</span><span class="p">(</span>
         <span class="n">response</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
         <span class="n">transient</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">common_name</span><span class="o">=</span><span class="s2">&quot;my_identity&quot;</span><span class="p">,</span>
-        <span class="n">email</span><span class="o">=</span><span class="s2">&quot;user@example.com&quot;</span><span class="p">,</span>
+        <span class="n">common_name</span><span class="o">=</span><span class="s2">"my_identity"</span><span class="p">,</span>
+        <span class="n">email</span><span class="o">=</span><span class="s2">"user@example.com"</span><span class="p">,</span>
         <span class="n">valid_days</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">)</span>
 
     <span class="c1"># Retry the request; the client automatically detects and loads the new cert</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">&quot;gemini://example.com/protected&quot;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s2">"gemini://example.com/protected"</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="certificate-management-and-inspection">Certificate Management and Inspection</h3>
+<p>The certificate store provides comprehensive APIs for building management interfaces (such as client identity pickers and settings UIs):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileClientCertificateStore</span><span class="p">,</span> <span class="n">GeminiURI</span>
+
+<span class="n">store</span> <span class="o">=</span> <span class="n">FileClientCertificateStore</span><span class="p">(</span><span class="s2">"~/.config/my_app/certs"</span><span class="p">)</span>
+
+<span class="c1"># 1. Create a standalone persona / certificate</span>
+<span class="n">persona</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">create_certificate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"dave_persona"</span><span class="p">,</span>
+    <span class="n">common_name</span><span class="o">=</span><span class="s2">"Dave Pearson"</span><span class="p">,</span>
+    <span class="n">email</span><span class="o">=</span><span class="s2">"dave@example.com"</span><span class="p">,</span>
+    <span class="n">scopes</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">"gemini://example.com/forum"</span><span class="p">,</span>
+        <span class="s2">"station.martinrue.com:1965/davep"</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># 2. List all certificates in the store</span>
+<span class="n">certs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">list_certificates</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">certs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CN: </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">subject_common_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fingerprint: </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">fingerprint</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Key: </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">key_type</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">key_size</span><span class="si">}</span><span class="s2">-bit"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expires: </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">not_after</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Associated scopes: </span><span class="si">{</span><span class="n">cert</span><span class="o">.</span><span class="n">scopes</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># 3. Look up a certificate by URI, scope, fingerprint, or path</span>
+<span class="n">cert</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">get_certificate</span><span class="p">(</span><span class="s2">"example.com/forum"</span><span class="p">)</span>
+
+<span class="c1"># 4. Associate an existing certificate with additional scopes</span>
+<span class="k">if</span> <span class="n">cert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">associate_scope</span><span class="p">(</span><span class="n">cert</span><span class="p">,</span> <span class="s2">"gemini://another-capsule.org/blog"</span><span class="p">)</span>
+
+<span class="c1"># 5. Disassociate a scope without deleting the certificate files</span>
+<span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">disassociate_scope</span><span class="p">(</span><span class="s2">"example.com/forum"</span><span class="p">)</span>
+
+<span class="c1"># 6. Delete a certificate and all associated scope mappings</span>
+<span class="k">if</span> <span class="n">cert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">delete_certificate</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="exception-hierarchy">Exception Hierarchy</h2>

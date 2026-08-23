@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v140" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.4.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v131" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1011,6 +1022,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v140" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.4.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v131" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1229,6 +1251,41 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v140">v1.4.0</h2>
+<p><strong>Released: 2026-08-23</strong></p>
+<ul>
+<li>Added <code>ClientCertificate</code> class representing client TLS certificates and
+  private keys with full access to parsed subject attributes (Common Name,
+  email, user ID, organisation, country), issuer, validity timestamps,
+  expiration and self-signed checks, public key information, SHA-256
+  fingerprint, and associated scopes. Exported <code>ClientCertificate</code> as a
+  public type at the top level.
+  (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>normalize_scope</code> helper function to normalise Gemini URIs and scope
+  strings into canonical <code>host:port/path</code> format, and exported it at the top
+  level. (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>list_certificates</code> method to the <code>ClientCertificateStore</code> protocol
+  and <code>FileClientCertificateStore</code> implementation to enumerate all stored
+  and transient client certificates along with their associated scopes.
+  (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>get_certificate</code> method to <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation to retrieve client
+  certificates by URI, scope, SHA-256 fingerprint, or file path/name.
+  (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>create_certificate</code> method to <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation to allow generating standalone
+  identities or associating certificates with multiple scopes.
+  (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>associate_scope</code> and <code>disassociate_scope</code> methods to
+  <code>ClientCertificateStore</code> protocol and <code>FileClientCertificateStore</code>
+  implementation to allow dynamically managing scope bindings for existing
+  certificates without duplicating certificate files on disk.
+  (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+<li>Added <code>delete_certificate</code> and <code>delete_exact_scope</code> methods to
+  <code>ClientCertificateStore</code> protocol and <code>FileClientCertificateStore</code>
+  implementation for deleting certificates and unbinding specific scopes
+  safely. (<a href="https://github.com/davep/wasat/pull/48">#48</a>)</li>
+</ul>
 <h2 id="v131">v1.3.1</h2>
 <p><strong>Released: 2026-07-30</strong></p>
 <ul>
