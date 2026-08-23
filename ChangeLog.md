@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.4.0
 
-**Released: WiP**
+**Released: 2026-08-23**
 
 - Added `ClientCertificate` class representing client TLS certificates and
   private keys with full access to parsed subject attributes (Common Name,
