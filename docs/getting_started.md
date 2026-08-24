@@ -221,6 +221,42 @@ if cert is not None:
     await store.delete_certificate(cert)
 ```
 
+### Importing and Exporting Certificates
+
+You can import external certificates (such as identity backups from other Gemini clients, OpenSSL keypairs, or pasted PEM text) and export identities for backup:
+
+```python
+from pathlib import Path
+from wasat import ClientCertificate, FileClientCertificateStore
+
+store = FileClientCertificateStore("~/.config/my_app/certs")
+
+# 1. In-memory or file import (supports combined or separate cert + key)
+cert_bundle = Path("identity.pem").read_text()
+imported_cert = await store.import_certificate(
+    source=cert_bundle,
+    name="imported_identity",
+    scopes=["gemini://example.com/blog"],
+)
+
+# 2. Construct an in-memory ClientCertificate instance directly from PEM
+cert = ClientCertificate.from_pem(cert_bundle)
+
+# 3. Export as a combined .pem backup bundle with strict permissions (0600)
+await store.export_certificate(
+    identifier=imported_cert,
+    target_path="~/backups/identity_backup.pem",
+    combined=True,
+)
+
+# 4. Export as separate .crt and .key files into a directory
+await store.export_certificate(
+    identifier="imported_identity",
+    target_path="~/backups/keys/",
+    combined=False,
+)
+```
+
 ---
 
 ## Exception Hierarchy

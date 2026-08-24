@@ -832,6 +832,140 @@ class TestClientCertificate:
             assert cert.scopes == ("example.com/",)
             assert cert.subject_common_name == "file_user"
 
+    def test_client_certificate_from_file_combined(self) -> None:
+        """Test constructing ClientCertificate from a single combined PEM file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cert_pem, key_pem = generate_self_signed_cert("bundle_user")
+            bundle_path = Path(tmpdir) / "bundle.pem"
+            bundle_path.write_bytes(cert_pem + b"\n" + key_pem)
+
+            cert = ClientCertificate.from_file(
+                bundle_path, scopes=["example.com/bundle"]
+            )
+            assert cert.cert_path == bundle_path
+            assert cert.key_path == bundle_path
+            assert cert.cert_pem == cert_pem
+            assert cert.key_pem == key_pem
+            assert cert.scopes == ("example.com/bundle",)
+            assert cert.subject_common_name == "bundle_user"
+
+    def test_client_certificate_from_file_errors(self) -> None:
+        """Test error conditions for ClientCertificate.from_file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            c_path = Path(tmpdir) / "exists.crt"
+            cert_pem, _ = generate_self_signed_cert("err_user")
+            c_path.write_bytes(cert_pem)
+
+            non_existent_cert = Path(tmpdir) / "does_not_exist.crt"
+            non_existent_key = Path(tmpdir) / "does_not_exist.key"
+
+            with pytest.raises(FileNotFoundError):
+                ClientCertificate.from_file(non_existent_cert)
+
+            with pytest.raises(FileNotFoundError):
+                ClientCertificate.from_file(c_path, non_existent_key)
+
+    def test_client_certificate_from_pem_combined_and_separate(self) -> None:
+        """Test constructing ClientCertificate from in-memory PEM bytes."""
+        cert_pem, key_pem = generate_self_signed_cert("pem_user")
+        combined_pem = cert_pem + b"\n" + key_pem
+
+        # From combined PEM bytes
+        cert_combined = ClientCertificate.from_pem(
+            combined_pem, scopes=["example.com/p"]
+        )
+        assert cert_combined.cert_pem == cert_pem
+        assert cert_combined.key_pem == key_pem
+        assert cert_combined.scopes == ("example.com/p",)
+        assert cert_combined.subject_common_name == "pem_user"
+        assert cert_combined.cert_path is None
+        assert cert_combined.key_path is None
+
+        # From separate PEM bytes
+        cert_separate = ClientCertificate.from_pem(cert_pem, key_pem=key_pem)
+        assert cert_separate.cert_pem == cert_pem
+        assert cert_separate.key_pem == key_pem
+
+        # From cert-only PEM bytes
+        cert_only = ClientCertificate.from_pem(cert_pem)
+        assert cert_only.cert_pem == cert_pem
+        assert cert_only.key_pem is None
+
+    def test_client_certificate_from_pem_str(self) -> None:
+        """Test constructing ClientCertificate from PEM strings."""
+        cert_pem, key_pem = generate_self_signed_cert("str_user")
+        combined_str = (cert_pem + b"\n" + key_pem).decode("utf-8")
+
+        cert = ClientCertificate.from_pem(combined_str)
+        assert cert.cert_pem == cert_pem
+        assert cert.key_pem == key_pem
+        assert cert.subject_common_name == "str_user"
+
+    def test_client_certificate_from_pem_invalid(self) -> None:
+        """Test that invalid PEM data raises ValueError."""
+        with pytest.raises(ValueError):
+            ClientCertificate.from_pem(b"invalid data without cert")
+
+    def test_client_certificate_to_combined_pem(self) -> None:
+        """Test serialising certificate and key to combined PEM bytes."""
+        cert_pem, key_pem = generate_self_signed_cert("dump_user")
+        cert_with_key = ClientCertificate(cert_pem, key_pem=key_pem)
+        combined = cert_with_key.to_combined_pem()
+        assert cert_pem.rstrip() in combined
+        assert key_pem.rstrip() in combined
+
+        cert_without_key = ClientCertificate(cert_pem)
+        assert cert_without_key.to_combined_pem() == cert_pem
+
+    def test_client_certificate_export(self) -> None:
+        """Test exporting ClientCertificate to files and directories."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            cert_pem, key_pem = generate_self_signed_cert("export_user")
+            cert = ClientCertificate(cert_pem, key_pem=key_pem)
+
+            # 1. Combined export to a file path
+            comb_file = tmp / "out_bundle.pem"
+            c_ret, k_ret = cert.export(comb_file, combined=True)
+            assert c_ret == comb_file
+            assert k_ret == comb_file
+            assert comb_file.exists()
+            assert (comb_file.stat().st_mode & 0o777) == 0o600
+            assert cert_pem.rstrip() in comb_file.read_bytes()
+            assert key_pem.rstrip() in comb_file.read_bytes()
+
+            # 2. Combined export to a directory
+            comb_dir = tmp / "combined_dir"
+            comb_dir.mkdir()
+            c_ret2, k_ret2 = cert.export(comb_dir, combined=True)
+            assert c_ret2 == comb_dir / "export_user.pem"
+            assert k_ret2 == comb_dir / "export_user.pem"
+            assert (c_ret2.stat().st_mode & 0o777) == 0o600
+
+            # 3. Separate export with explicit key_path
+            sep_cert_file = tmp / "custom.crt"
+            sep_key_file = tmp / "custom.key"
+            c_ret3, k_ret3 = cert.export(sep_cert_file, key_path=sep_key_file)
+            assert c_ret3 == sep_cert_file
+            assert k_ret3 == sep_key_file
+            assert sep_cert_file.read_bytes() == cert_pem
+            assert sep_key_file.read_bytes() == key_pem
+            assert (sep_key_file.stat().st_mode & 0o777) == 0o600
+
+            # 4. Separate export to directory
+            sep_dir = tmp / "sep_dir"
+            sep_dir.mkdir()
+            c_ret4, k_ret4 = cert.export(sep_dir, combined=False)
+            assert c_ret4 == sep_dir / "export_user.crt"
+            assert k_ret4 == sep_dir / "export_user.key"
+            assert c_ret4.read_bytes() == cert_pem
+            assert k_ret4.read_bytes() == key_pem
+            assert (k_ret4.stat().st_mode & 0o777) == 0o600
+
+            # 5. Combined=True with key_path raises ValueError
+            with pytest.raises(ValueError):
+                cert.export(comb_file, key_path=sep_key_file, combined=True)
+
 
 ##############################################################################
 class TestClientCertificateStoreManagement:
@@ -1204,5 +1338,294 @@ class TestClientCertificateStoreManagement:
                 # Delete unscoped transient certificate by name
                 assert await store.delete_certificate("unscoped_trans_user.crt") is True
                 assert await store.list_certificates() == []
+
+        asyncio.run(run())
+
+
+##############################################################################
+class TestClientCertificateImportExport:
+    """Test suite for ClientCertificateStore import and export operations."""
+
+    def test_store_import_certificate_from_instance(self) -> None:
+        """Test importing a ClientCertificate instance into persistent and transient stores."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+                cert_pem, key_pem = generate_self_signed_cert("instance_user")
+                orig_cert = ClientCertificate(cert_pem, key_pem=key_pem)
+
+                # Persistent import
+                imported = await store.import_certificate(
+                    orig_cert,
+                    name="imported_instance",
+                    scopes=["example.com/instance"],
+                )
+                assert imported.cert_path is not None
+                assert imported.key_path is not None
+                assert imported.cert_path.exists()
+                assert imported.key_path.exists()
+                assert (imported.key_path.stat().st_mode & 0o777) == 0o600
+                assert "example.com:1965/instance" in imported.scopes
+                assert imported.subject_common_name == "instance_user"
+
+                # Transient import
+                trans_imported = await store.import_certificate(
+                    orig_cert,
+                    name="trans_imported",
+                    scopes=["example.com/trans_instance"],
+                    transient=True,
+                )
+                assert trans_imported.cert_path is not None
+                assert trans_imported.key_path is not None
+                assert trans_imported.cert_path.exists()
+                assert trans_imported.key_path.exists()
+                assert (trans_imported.key_path.stat().st_mode & 0o777) == 0o600
+                assert "example.com:1965/trans_instance" in trans_imported.scopes
+
+        asyncio.run(run())
+
+    def test_store_import_certificate_from_separate_files(self) -> None:
+        """Test importing from separate certificate and private key files on disk."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp = Path(tmpdir)
+                store_dir = tmp / "store"
+                external_dir = tmp / "external"
+                external_dir.mkdir()
+
+                cert_pem, key_pem = generate_self_signed_cert("file_import_user")
+                c_src = external_dir / "user.crt"
+                k_src = external_dir / "user.key"
+                c_src.write_bytes(cert_pem)
+                k_src.write_bytes(key_pem)
+
+                store = FileClientCertificateStore(store_dir)
+                imported = await store.import_certificate(
+                    source=c_src,
+                    key_source=k_src,
+                    name="my_imported_user",
+                    scopes=["gemini://example.com/files"],
+                )
+                assert imported.subject_common_name == "file_import_user"
+                assert imported.cert_path == store_dir / "my_imported_user.crt"
+                assert imported.key_path == store_dir / "my_imported_user.key"
+                assert imported.cert_path.read_bytes() == cert_pem
+                assert imported.key_path.read_bytes() == key_pem
+                assert (imported.key_path.stat().st_mode & 0o777) == 0o600
+
+                # Verify lookup by scope
+                creds = await store.get_credentials(
+                    GeminiURI("gemini://example.com/files")
+                )
+                assert creds is not None
+                assert creds[0] == store_dir / "my_imported_user.crt"
+                assert creds[1] == store_dir / "my_imported_user.key"
+
+        asyncio.run(run())
+
+    def test_store_import_certificate_from_combined_file(self) -> None:
+        """Test importing from a single combined PEM file containing cert and key."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp = Path(tmpdir)
+                store_dir = tmp / "store"
+                bundle_file = tmp / "identity.pem"
+
+                cert_pem, key_pem = generate_self_signed_cert("bundle_import_user")
+                bundle_file.write_bytes(cert_pem + b"\n" + key_pem)
+
+                store = FileClientCertificateStore(store_dir)
+                imported = await store.import_certificate(
+                    source=bundle_file,
+                    scopes=["station.martinrue.com:1965/davep"],
+                )
+                assert imported.subject_common_name == "bundle_import_user"
+                assert imported.cert_path == store_dir / "identity.crt"
+                assert imported.key_path == store_dir / "identity.key"
+                assert imported.cert_path.exists()
+                assert imported.key_path.exists()
+                assert (imported.key_path.stat().st_mode & 0o777) == 0o600
+
+        asyncio.run(run())
+
+    def test_store_import_certificate_from_in_memory_pem(self) -> None:
+        """Test importing from in-memory PEM bytes and text."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+                cert_pem, key_pem = generate_self_signed_cert("mem_import_user")
+
+                # 1. Combined bytes import without scopes (standalone)
+                standalone = await store.import_certificate(
+                    source=cert_pem + b"\n" + key_pem,
+                )
+                assert standalone.scopes == ()
+                assert standalone.subject_common_name == "mem_import_user"
+
+                # Verify standalone cert listed
+                all_certs = await store.list_certificates()
+                assert len(all_certs) == 1
+                assert all_certs[0].fingerprint == standalone.fingerprint
+
+                # Retrieve by common name and fingerprint
+                by_cn = await store.get_certificate("mem_import_user")
+                assert by_cn is not None
+                assert by_cn.fingerprint == standalone.fingerprint
+
+                by_fp = await store.get_certificate(standalone.fingerprint)
+                assert by_fp is not None
+                assert by_fp.fingerprint == standalone.fingerprint
+
+                # Associate a scope to the standalone certificate
+                await store.associate_scope(
+                    standalone, "gemini://example.com/standalone_mapped"
+                )
+                updated = await store.get_certificate(standalone.fingerprint)
+                assert updated is not None
+                assert "example.com:1965/standalone_mapped" in updated.scopes
+
+                # 2. Separate str import
+                cert_str = cert_pem.decode("utf-8")
+                key_str = key_pem.decode("utf-8")
+                imported_str = await store.import_certificate(
+                    source=cert_str,
+                    key_source=key_str,
+                    name="str_persona",
+                    scopes=["gemini://example.com/str_scope"],
+                )
+                assert imported_str.cert_path == Path(tmpdir) / "str_persona.crt"
+                assert imported_str.key_path == Path(tmpdir) / "str_persona.key"
+
+        asyncio.run(run())
+
+    def test_store_import_certificate_errors(self) -> None:
+        """Test error conditions when importing certificates into store."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                store = FileClientCertificateStore(tmpdir)
+
+                # Invalid source type
+                with pytest.raises(ValueError):
+                    await store.import_certificate(source=12345)  # type: ignore[arg-type]
+
+                # Invalid PEM content
+                with pytest.raises(ValueError):
+                    await store.import_certificate(source=b"not a valid certificate")
+
+                # Non-existent file
+                non_existent = Path(tmpdir) / "not_there.crt"
+                with pytest.raises(ValueError):
+                    # treated as invalid PEM text
+                    await store.import_certificate(source=str(non_existent))
+
+        asyncio.run(run())
+
+    def test_store_export_certificate(self) -> None:
+        """Test exporting stored certificates using store.export_certificate."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp = Path(tmpdir)
+                store_dir = tmp / "store"
+                export_dir = tmp / "exports"
+                export_dir.mkdir()
+
+                store = FileClientCertificateStore(store_dir)
+                cert = await store.create_certificate(
+                    name="export_test_user",
+                    common_name="Export Test User",
+                    scopes=["gemini://example.com/export_target"],
+                )
+
+                # 1. Export by fingerprint (combined=True)
+                comb_dst = export_dir / "exported_bundle.pem"
+                c_out, k_out = await store.export_certificate(
+                    cert.fingerprint, comb_dst, combined=True
+                )
+                assert c_out == comb_dst
+                assert k_out == comb_dst
+                assert comb_dst.exists()
+                assert (comb_dst.stat().st_mode & 0o777) == 0o600
+
+                # 2. Export by common name (combined=False to directory)
+                sep_dir = export_dir / "sep"
+                sep_dir.mkdir()
+                c_out2, k_out2 = await store.export_certificate(
+                    "Export Test User", sep_dir, combined=False
+                )
+                assert c_out2 == sep_dir / "Export_Test_User.crt"
+                assert k_out2 == sep_dir / "Export_Test_User.key"
+                assert c_out2.exists()
+                assert k_out2.exists()
+                assert (k_out2.stat().st_mode & 0o777) == 0o600
+
+                # 3. Export by scope
+                c_out3, k_out3 = await store.export_certificate(
+                    "example.com/export_target",
+                    export_dir / "scope_cert.crt",
+                    key_path=export_dir / "scope_key.key",
+                )
+                assert c_out3 == export_dir / "scope_cert.crt"
+                assert k_out3 == export_dir / "scope_key.key"
+                assert c_out3.exists()
+                assert k_out3.exists()
+
+                # 4. Export non-existent certificate raises ValueError
+                with pytest.raises(ValueError):
+                    await store.export_certificate(
+                        "non_existent_scope", export_dir / "out.pem"
+                    )
+
+        asyncio.run(run())
+
+    def test_store_roundtrip_import_export(self) -> None:
+        """Test round-trip export from one store and import into another."""
+
+        async def run() -> None:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp = Path(tmpdir)
+                store1_dir = tmp / "store1"
+                store2_dir = tmp / "store2"
+                backup_bundle = tmp / "identity_backup.pem"
+
+                store1 = FileClientCertificateStore(store1_dir)
+                store2 = FileClientCertificateStore(store2_dir)
+
+                # 1. Create in store 1
+                cert1 = await store1.create_certificate(
+                    name="roundtrip_identity",
+                    common_name="Roundtrip Persona",
+                    email="roundtrip@example.com",
+                    scopes=["gemini://capsule.org/account"],
+                )
+
+                # 2. Export as combined bundle
+                await store1.export_certificate(cert1, backup_bundle, combined=True)
+                assert backup_bundle.exists()
+
+                # 3. Import into store 2
+                cert2 = await store2.import_certificate(
+                    backup_bundle,
+                    name="restored_identity",
+                    scopes=["gemini://capsule.org/account"],
+                )
+
+                assert cert2.fingerprint == cert1.fingerprint
+                assert cert2.subject_common_name == cert1.subject_common_name
+                assert cert2.email == cert1.email
+                assert "capsule.org:1965/account" in cert2.scopes
+
+                # 4. Verify credentials look up identically in store 2
+                creds2 = await store2.get_credentials(
+                    GeminiURI("gemini://capsule.org/account/settings")
+                )
+                assert creds2 is not None
+                assert creds2[0] == store2_dir / "restored_identity.crt"
+                assert creds2[1] == store2_dir / "restored_identity.key"
 
         asyncio.run(run())

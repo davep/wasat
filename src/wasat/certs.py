@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import json
+import os
 import re
 import shutil
 import tempfile
@@ -54,6 +55,102 @@ def _cleanup_transient_dirs() -> None:
 
 
 atexit.register(_cleanup_transient_dirs)
+
+_CERT_PATTERN: re.Pattern[bytes] = re.compile(
+    rb"-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----"
+)
+"""Regex pattern for extracting PEM-encoded certificate blocks."""
+
+_KEY_PATTERN: re.Pattern[bytes] = re.compile(
+    rb"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]+?-----END [A-Z0-9 ]*PRIVATE KEY-----"
+)
+"""Regex pattern for extracting PEM-encoded private key blocks."""
+
+
+##############################################################################
+def _split_pem_bundle(pem_data: bytes | str) -> tuple[bytes, bytes | None]:
+    """Split a PEM-encoded byte string or text into certificate and private key blocks.
+
+    Args:
+        pem_data: The PEM-encoded certificate bytes or string.
+
+    Returns:
+        A tuple of (cert_pem_bytes, key_pem_bytes_or_none).
+
+    Raises:
+        ValueError: If no valid certificate block is present in the input.
+    """
+    data_bytes = pem_data.encode("utf-8") if isinstance(pem_data, str) else pem_data
+    cert_matches = _CERT_PATTERN.findall(data_bytes)
+    if not cert_matches:
+        try:
+            x509.load_pem_x509_certificate(data_bytes)
+            cert_bytes = (
+                data_bytes if data_bytes.endswith(b"\n") else data_bytes + b"\n"
+            )
+        except Exception as exc:
+            raise ValueError("No valid PEM certificate found in input") from exc
+    else:
+        cert_bytes = b"\n".join(cert_matches) + b"\n"
+
+    key_match = _KEY_PATTERN.search(data_bytes)
+    key_bytes = key_match.group(0) + b"\n" if key_match else None
+
+    return cert_bytes, key_bytes
+
+
+##############################################################################
+def _extract_key_bytes(key_source: str | Path | bytes) -> bytes:
+    """Extract PEM-encoded private key bytes from a file path, string, or bytes.
+
+    Args:
+        key_source: File path, PEM string, or PEM bytes containing the private key.
+
+    Returns:
+        The extracted PEM-encoded private key bytes.
+
+    Raises:
+        ValueError: If no valid private key can be found.
+        FileNotFoundError: If key_source is a non-existent file path.
+    """
+    data: bytes
+    if isinstance(key_source, Path) or (
+        isinstance(key_source, str)
+        and not key_source.strip().startswith("-----BEGIN")
+        and Path(key_source).exists()
+    ):
+        data = Path(key_source).read_bytes()
+    elif isinstance(key_source, str):
+        data = key_source.encode("utf-8")
+    else:
+        data = key_source
+
+    key_match = _KEY_PATTERN.search(data)
+    if key_match is not None:
+        return key_match.group(0) + b"\n"
+    if b"PRIVATE KEY" in data:
+        return data if data.endswith(b"\n") else data + b"\n"
+    raise ValueError("No valid private key found in key source")
+
+
+##############################################################################
+def _write_secure_file(path: Path, data: bytes) -> None:
+    """Write data to a file on disk with restricted (0600) permissions.
+
+    Args:
+        path: Target file path.
+        data: Binary data to write.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    fd = os.open(path, flags, 0o600)
+    try:
+        with open(fd, "wb", closefd=True) as f:
+            f.write(data)
+    except BaseException:
+        with suppress(Exception):
+            os.close(fd)
+        raise
 
 
 ##############################################################################
@@ -310,30 +407,81 @@ class ClientCertificate:
         cls,
         cert_path: str | Path,
         key_path: str | Path | None = None,
-        scopes: Sequence[str] = (),
+        scopes: Sequence[str | GeminiURI] = (),
     ) -> ClientCertificate:
         """Construct a ClientCertificate instance from PEM files on disk.
 
+        If `key_path` is omitted, `cert_path` is checked for an embedded private
+        key bundle in addition to the certificate.
+
         Args:
-            cert_path: Path to the certificate PEM file.
+            cert_path: Path to the certificate PEM file (or combined bundle).
             key_path: Optional path to the private key PEM file.
-            scopes: Sequence of Gemini scopes associated with this certificate.
+            scopes: Sequence of Gemini scopes or URIs associated with this certificate.
 
         Returns:
             A new ClientCertificate instance.
+
+        Raises:
+            FileNotFoundError: If cert_path or key_path does not exist.
+            ValueError: If no valid certificate block can be parsed.
         """
         c_path = Path(cert_path)
-        cert_pem = c_path.read_bytes()
+        if not c_path.exists():
+            raise FileNotFoundError(f"Certificate file not found: {c_path}")
+
+        cert_pem: bytes
+        key_pem: bytes | None = None
+
         k_path = Path(key_path) if key_path is not None else None
-        key_pem = (
-            k_path.read_bytes() if k_path is not None and k_path.exists() else None
-        )
+        if k_path is not None:
+            if not k_path.exists():
+                raise FileNotFoundError(f"Private key file not found: {k_path}")
+            cert_pem, _ = _split_pem_bundle(c_path.read_bytes())
+            key_pem = _extract_key_bytes(k_path)
+        else:
+            cert_pem, key_pem = _split_pem_bundle(c_path.read_bytes())
+            if key_pem is not None:
+                k_path = c_path
+
         return cls(
             cert_pem=cert_pem,
             key_pem=key_pem,
             cert_path=c_path,
             key_path=k_path,
-            scopes=tuple(scopes),
+            scopes=tuple(str(s) for s in scopes),
+        )
+
+    @classmethod
+    def from_pem(
+        cls,
+        cert_pem: bytes | str,
+        *,
+        key_pem: bytes | str | None = None,
+        scopes: Sequence[str | GeminiURI] = (),
+    ) -> ClientCertificate:
+        """Construct a ClientCertificate instance from PEM bytes or text.
+
+        Args:
+            cert_pem: PEM-encoded certificate bytes or string (can be a combined
+                certificate and private key bundle).
+            key_pem: Optional separate PEM-encoded private key bytes or string.
+            scopes: Sequence of Gemini scopes or URIs associated with this certificate.
+
+        Returns:
+            A new ClientCertificate instance.
+
+        Raises:
+            ValueError: If no valid certificate block is present in the input.
+        """
+        parsed_cert, parsed_key = _split_pem_bundle(cert_pem)
+        if key_pem is not None:
+            parsed_key = _extract_key_bytes(key_pem)
+
+        return cls(
+            cert_pem=parsed_cert,
+            key_pem=parsed_key,
+            scopes=tuple(str(s) for s in scopes),
         )
 
     @property
@@ -498,6 +646,97 @@ class ClientCertificate:
             return public_key.key_size
         return None
 
+    def to_combined_pem(self) -> bytes:
+        """Combine certificate and private key into a single PEM byte sequence.
+
+        Returns:
+            PEM-encoded bytes containing the certificate and, if available,
+            the private key.
+        """
+        if self._key_pem:
+            cert_part = self._cert_pem.rstrip(b"\r\n")
+            key_part = self._key_pem.rstrip(b"\r\n")
+            return cert_part + b"\n" + key_part + b"\n"
+        return self._cert_pem
+
+    def export(
+        self,
+        target_path: str | Path,
+        *,
+        key_path: str | Path | None = None,
+        combined: bool = False,
+    ) -> tuple[Path, Path | None]:
+        """Export certificate and private key to disk with safe file permissions.
+
+        When exporting private keys, files are written with restricted permissions (0600).
+
+        Args:
+            target_path: File or directory destination for the exported certificate.
+            key_path: Optional specific file destination for the private key.
+            combined: If True, writes certificate and key into a single combined PEM file.
+
+        Returns:
+            A tuple of (cert_path, key_path) representing the exported files.
+
+        Raises:
+            ValueError: If combined is True and key_path is also specified.
+            OSError: If creating directories or writing files fails.
+        """
+        if combined and key_path is not None:
+            raise ValueError("Cannot specify separate key_path when combined=True")
+
+        base_name = _safe_filename(
+            self.subject_common_name or f"cert_{self.fingerprint[:8]}"
+        )
+        t_path = Path(target_path)
+
+        if combined:
+            if t_path.is_dir() or (
+                not t_path.exists() and str(target_path).endswith(("/", "\\"))
+            ):
+                out_file = t_path / f"{base_name}.pem"
+            else:
+                out_file = t_path
+
+            pem_data = self.to_combined_pem()
+            if self._key_pem is not None:
+                _write_secure_file(out_file, pem_data)
+                return out_file, out_file
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            out_file.write_bytes(pem_data)
+            return out_file, None
+
+        if key_path is not None:
+            c_file = t_path
+            k_file = Path(key_path)
+            c_file.parent.mkdir(parents=True, exist_ok=True)
+            c_file.write_bytes(self._cert_pem)
+            if self._key_pem is not None:
+                _write_secure_file(k_file, self._key_pem)
+                return c_file, k_file
+            return c_file, None
+
+        if t_path.is_dir() or (
+            not t_path.exists() and str(target_path).endswith(("/", "\\"))
+        ):
+            c_file = t_path / f"{base_name}.crt"
+            c_file.parent.mkdir(parents=True, exist_ok=True)
+            c_file.write_bytes(self._cert_pem)
+            if self._key_pem is not None:
+                k_file = t_path / f"{base_name}.key"
+                _write_secure_file(k_file, self._key_pem)
+                return c_file, k_file
+            return c_file, None
+
+        c_file = t_path
+        c_file.parent.mkdir(parents=True, exist_ok=True)
+        c_file.write_bytes(self._cert_pem)
+        if self._key_pem is not None:
+            k_file = t_path.with_suffix(".key")
+            _write_secure_file(k_file, self._key_pem)
+            return c_file, k_file
+        return c_file, None
+
     def __repr__(self) -> str:
         """Representation of the ClientCertificate instance."""
         cn = self.subject_common_name or ""
@@ -577,6 +816,63 @@ class ClientCertificateStore(Protocol):
             OSError: If creating directories or writing the certificate or key file
                 to disk fails.
             RuntimeError: If saving the credentials or updating the store index fails.
+        """
+        ...
+
+    async def import_certificate(
+        self,
+        source: str | Path | bytes | ClientCertificate,
+        *,
+        key_source: str | Path | bytes | None = None,
+        name: str | None = None,
+        scopes: Sequence[str | GeminiURI] = (),
+        transient: bool = False,
+    ) -> ClientCertificate:
+        """Import an existing client certificate and key into the store.
+
+        Args:
+            source: File path, PEM string/bytes, or ClientCertificate instance.
+            key_source: Optional separate file path or PEM string/bytes for the private key.
+            name: Optional base name for the imported certificate files in the store.
+                If omitted, derived from the certificate common name, fingerprint, or source filename.
+            scopes: Optional sequence of Gemini scopes or URIs to associate with the imported certificate.
+            transient: If True, imports the certificate into transient storage.
+
+        Returns:
+            The imported ClientCertificate instance.
+
+        Raises:
+            ValueError: If the certificate cannot be parsed.
+            FileNotFoundError: If a specified file path does not exist.
+            OSError: If reading or writing files fails.
+            RuntimeError: If saving the store index fails.
+        """
+        ...
+
+    async def export_certificate(
+        self,
+        identifier: str | Path | GeminiURI | ClientCertificate,
+        target_path: str | Path,
+        *,
+        key_path: str | Path | None = None,
+        combined: bool = False,
+    ) -> tuple[Path, Path | None]:
+        """Export a stored client certificate and its private key to disk.
+
+        Args:
+            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+                fingerprint, or file path/name).
+            target_path: File or directory destination for the exported certificate.
+            key_path: Optional specific file destination for the private key.
+            combined: If True, exports certificate and key into a single combined PEM file.
+
+        Returns:
+            A tuple of (cert_path, key_path) representing the exported files.
+
+        Raises:
+            ValueError: If the certificate cannot be found in the store, or if combined is
+                True and key_path is specified.
+            OSError: If creating directories or writing files fails.
         """
         ...
 
@@ -839,6 +1135,16 @@ class FileClientCertificateStore(ClientCertificateStore):
                     key_p = p.with_suffix(".key")
                     if key_p.exists():
                         cert_to_key[cert_rel] = key_p.name
+            for p in self.store_dir.glob("*.pem"):
+                cert_rel = p.name
+                if cert_rel not in cert_to_scopes:
+                    cert_to_scopes[cert_rel] = []
+                if cert_rel not in cert_to_key:
+                    key_p = p.with_suffix(".key")
+                    if key_p.exists():
+                        cert_to_key[cert_rel] = key_p.name
+                    else:
+                        cert_to_key[cert_rel] = cert_rel
 
         results: list[ClientCertificate] = []
         for cert_rel, scopes in cert_to_scopes.items():
@@ -852,17 +1158,12 @@ class FileClientCertificateStore(ClientCertificateStore):
                 else None
             )
             try:
-                cert_pem = cert_path.read_bytes()
-                key_pem = key_path.read_bytes() if key_path is not None else None
-                results.append(
-                    ClientCertificate(
-                        cert_pem=cert_pem,
-                        key_pem=key_pem,
-                        cert_path=cert_path,
-                        key_path=key_path,
-                        scopes=tuple(sorted(scopes)),
-                    )
+                cert = ClientCertificate.from_file(
+                    cert_path=cert_path,
+                    key_path=key_path if key_path != cert_path else None,
+                    scopes=tuple(sorted(scopes)),
                 )
+                results.append(cert)
             except Exception:
                 continue
 
@@ -882,25 +1183,25 @@ class FileClientCertificateStore(ClientCertificateStore):
                     key_p = p.with_suffix(".key")
                     if key_p.exists():
                         transient_to_key[p] = key_p
+            for p in self._temp_dir.glob("*.pem"):
+                if p not in transient_to_scopes:
+                    transient_to_scopes[p] = []
+                if p not in transient_to_key:
+                    key_p = p.with_suffix(".key")
+                    if key_p.exists():
+                        transient_to_key[p] = key_p
+                    else:
+                        transient_to_key[p] = p
 
         for c_p, scopes in transient_to_scopes.items():
             transient_key_path = transient_to_key.get(c_p)
             try:
-                cert_pem = c_p.read_bytes()
-                key_pem = (
-                    transient_key_path.read_bytes()
-                    if transient_key_path is not None and transient_key_path.exists()
-                    else None
+                cert = ClientCertificate.from_file(
+                    cert_path=c_p,
+                    key_path=transient_key_path if transient_key_path != c_p else None,
+                    scopes=tuple(sorted(scopes)),
                 )
-                results.append(
-                    ClientCertificate(
-                        cert_pem=cert_pem,
-                        key_pem=key_pem,
-                        cert_path=c_p,
-                        key_path=transient_key_path,
-                        scopes=tuple(sorted(scopes)),
-                    )
-                )
+                results.append(cert)
             except Exception:
                 continue
 
@@ -957,11 +1258,15 @@ class FileClientCertificateStore(ClientCertificateStore):
                 if cert.fingerprint.lower() == ident_str.lower():
                     return cert
 
-        # Check by filename / path
+        # Check by filename / path / stem / common name
         for cert in all_certs:
             if cert.cert_path and (
-                cert.cert_path.name == ident_str or str(cert.cert_path) == ident_str
+                cert.cert_path.name == ident_str
+                or cert.cert_path.stem == ident_str
+                or str(cert.cert_path) == ident_str
             ):
+                return cert
+            if cert.subject_common_name and cert.subject_common_name == ident_str:
                 return cert
 
         # Check by exact scope match in certs scopes
@@ -1069,7 +1374,7 @@ class FileClientCertificateStore(ClientCertificateStore):
                 key_path = self._temp_dir / f"{safe_base}.key"
 
                 await asyncio.to_thread(cert_path.write_bytes, cert_pem)
-                await asyncio.to_thread(key_path.write_bytes, key_pem)
+                await asyncio.to_thread(_write_secure_file, key_path, key_pem)
 
                 for scope in normalized_scopes:
                     self._transient_index[scope] = (cert_path, key_path)
@@ -1091,7 +1396,7 @@ class FileClientCertificateStore(ClientCertificateStore):
                 key_path = self.store_dir / key_file
 
                 await asyncio.to_thread(cert_path.write_bytes, cert_pem)
-                await asyncio.to_thread(key_path.write_bytes, key_pem)
+                await asyncio.to_thread(_write_secure_file, key_path, key_pem)
 
                 for scope in normalized_scopes:
                     self._index[scope] = {
@@ -1107,6 +1412,177 @@ class FileClientCertificateStore(ClientCertificateStore):
                     key_path=key_path,
                     scopes=tuple(sorted(normalized_scopes)),
                 )
+
+    async def import_certificate(
+        self,
+        source: str | Path | bytes | ClientCertificate,
+        *,
+        key_source: str | Path | bytes | None = None,
+        name: str | None = None,
+        scopes: Sequence[str | GeminiURI] = (),
+        transient: bool = False,
+    ) -> ClientCertificate:
+        """Import an existing client certificate and key into the store.
+
+        Args:
+            source: File path, PEM string/bytes, or ClientCertificate instance.
+            key_source: Optional separate file path or PEM string/bytes for the private key.
+            name: Optional base name for the imported certificate files in the store.
+                If omitted, derived from the certificate common name, fingerprint, or source filename.
+            scopes: Optional sequence of Gemini scopes or URIs to associate with the imported certificate.
+            transient: If True, imports the certificate into transient storage.
+
+        Returns:
+            The imported ClientCertificate instance.
+
+        Raises:
+            ValueError: If the certificate cannot be parsed.
+            FileNotFoundError: If a specified file path does not exist.
+            OSError: If reading or writing files fails.
+            RuntimeError: If saving the store index fails.
+        """
+        cert_pem: bytes
+        key_pem: bytes | None = None
+        default_name: str | None = None
+
+        if isinstance(source, ClientCertificate):
+            cert_pem = source.cert_pem
+            key_pem = source.key_pem
+            default_name = source.subject_common_name
+            if key_source is not None:
+                key_pem = _extract_key_bytes(key_source)
+        elif isinstance(source, Path) or (
+            isinstance(source, str)
+            and not source.strip().startswith("-----BEGIN")
+            and Path(source).exists()
+        ):
+            src_path = Path(source)
+            default_name = src_path.stem
+            if key_source is not None:
+                cert_pem, _ = _split_pem_bundle(src_path.read_bytes())
+                key_pem = _extract_key_bytes(key_source)
+            else:
+                cert_pem, key_pem = _split_pem_bundle(src_path.read_bytes())
+        elif isinstance(source, str | bytes):
+            cert_pem, extracted_key = _split_pem_bundle(source)
+            key_pem = (
+                _extract_key_bytes(key_source)
+                if key_source is not None
+                else extracted_key
+            )
+        else:
+            raise ValueError(f"Unsupported certificate source type: {type(source)}")
+
+        parsed_x509 = x509.load_pem_x509_certificate(cert_pem)
+        cn_attrs = parsed_x509.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+        cn = str(cn_attrs[0].value) if cn_attrs else None
+
+        chosen_name = (
+            name
+            or default_name
+            or cn
+            or f"cert_{get_cert_fingerprint(parsed_x509.public_bytes(serialization.Encoding.DER))[:8]}"
+        )
+        safe_base = _safe_filename(chosen_name)
+        normalized_scopes = [normalize_scope(s) for s in scopes]
+
+        async with self._lock:
+            if transient:
+                if self._temp_dir is None:
+                    temp_dir_path = await asyncio.to_thread(
+                        tempfile.mkdtemp, prefix="wasat_transient_"
+                    )
+                    self._temp_dir = Path(temp_dir_path)
+                    _transient_dirs.append(self._temp_dir)
+
+                cert_path = self._temp_dir / f"{safe_base}.crt"
+                key_path = self._temp_dir / f"{safe_base}.key" if key_pem else None
+
+                await asyncio.to_thread(cert_path.write_bytes, cert_pem)
+                if key_pem and key_path:
+                    await asyncio.to_thread(_write_secure_file, key_path, key_pem)
+
+                for scope in normalized_scopes:
+                    self._transient_index[scope] = (
+                        cert_path,
+                        key_path if key_path else cert_path,
+                    )
+
+                return ClientCertificate(
+                    cert_pem=cert_pem,
+                    key_pem=key_pem,
+                    cert_path=cert_path,
+                    key_path=key_path,
+                    scopes=tuple(sorted(normalized_scopes)),
+                )
+            else:
+                await self._ensure_loaded()
+                self.store_dir.mkdir(parents=True, exist_ok=True)
+                cert_file = f"{safe_base}.crt"
+                key_file = f"{safe_base}.key" if key_pem else None
+
+                cert_path = self.store_dir / cert_file
+                key_path = self.store_dir / key_file if key_file else None
+
+                await asyncio.to_thread(cert_path.write_bytes, cert_pem)
+                if key_pem and key_path:
+                    await asyncio.to_thread(_write_secure_file, key_path, key_pem)
+
+                for scope in normalized_scopes:
+                    self._index[scope] = {
+                        "cert": cert_file,
+                        "key": key_file or "",
+                    }
+                await asyncio.to_thread(self._save_sync)
+
+                return ClientCertificate(
+                    cert_pem=cert_pem,
+                    key_pem=key_pem,
+                    cert_path=cert_path,
+                    key_path=key_path,
+                    scopes=tuple(sorted(normalized_scopes)),
+                )
+
+    async def export_certificate(
+        self,
+        identifier: str | Path | GeminiURI | ClientCertificate,
+        target_path: str | Path,
+        *,
+        key_path: str | Path | None = None,
+        combined: bool = False,
+    ) -> tuple[Path, Path | None]:
+        """Export a stored client certificate and its private key to disk.
+
+        Args:
+            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+                fingerprint, or file path/name).
+            target_path: File or directory destination for the exported certificate.
+            key_path: Optional specific file destination for the private key.
+            combined: If True, exports certificate and key into a single combined PEM file.
+
+        Returns:
+            A tuple of (cert_path, key_path) representing the exported files.
+
+        Raises:
+            ValueError: If the certificate cannot be found in the store, or if combined is
+                True and key_path is specified.
+            OSError: If creating directories or writing files fails.
+        """
+        cert: ClientCertificate | None
+        if isinstance(identifier, ClientCertificate):
+            cert = identifier
+        else:
+            cert = await self.get_certificate(identifier)
+
+        if cert is None:
+            raise ValueError(f"Certificate not found in store for: {identifier}")
+
+        return await asyncio.to_thread(
+            cert.export,
+            target_path=target_path,
+            key_path=key_path,
+            combined=combined,
+        )
 
     async def associate_scope(
         self,
