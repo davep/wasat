@@ -874,6 +874,15 @@ class FileClientCertificateStore(ClientCertificateStore):
                 transient_to_scopes.setdefault(c_p, []).append(scope)
                 transient_to_key[c_p] = k_p
 
+        if self._temp_dir is not None and self._temp_dir.exists():
+            for p in self._temp_dir.glob("*.crt"):
+                if p not in transient_to_scopes:
+                    transient_to_scopes[p] = []
+                if p not in transient_to_key:
+                    key_p = p.with_suffix(".key")
+                    if key_p.exists():
+                        transient_to_key[p] = key_p
+
         for c_p, scopes in transient_to_scopes.items():
             transient_key_path = transient_to_key.get(c_p)
             try:
