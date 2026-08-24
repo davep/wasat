@@ -4,6 +4,31 @@
 
 **Released: WiP**
 
+- Added `ClientCertificate.from_pem` constructor to instantiate client
+  certificates from in-memory PEM text or bytes, supporting combined
+  bundles, separate certificate and private key inputs, or certificate-only
+  data. ([#52](https://github.com/davep/wasat/pull/52))
+- Updated `ClientCertificate.from_file` to automatically detect and extract
+  private keys from single combined `.pem` files when `key_path` is omitted.
+  ([#52](https://github.com/davep/wasat/pull/52))
+- Added `ClientCertificate.to_combined_pem` method to serialise certificate
+  and private key pairs into a single PEM byte sequence.
+  ([#52](https://github.com/davep/wasat/pull/52))
+- Added `ClientCertificate.export` method to export certificates and private
+  keys to disk with restricted permissions (`0600`) on private keys.
+  ([#52](https://github.com/davep/wasat/pull/52))
+- Added `import_certificate` method to `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation to import certificates from
+  file paths, raw PEM bytes or strings, or `ClientCertificate` instances,
+  with optional scope associations and safe file permissions.
+  ([#52](https://github.com/davep/wasat/pull/52))
+- Added `export_certificate` method to `ClientCertificateStore` protocol and
+  `FileClientCertificateStore` implementation to look up certificates by
+  fingerprint, common name, file stem, or scope and export them as combined
+  bundles or separate files. ([#52](https://github.com/davep/wasat/pull/52))
+- Enhanced `FileClientCertificateStore.get_certificate` to support lookup by
+  certificate subject Common Name and file stem.
+  ([#52](https://github.com/davep/wasat/pull/52))
 - Fixed an issue where unscoped transient certificates were omitted from
   `list_certificates` in `FileClientCertificateStore` and could not be
   retrieved or managed via `get_certificate`, `associate_scope`, or
