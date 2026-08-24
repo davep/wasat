@@ -117,8 +117,8 @@ class GeminiURI:
             self._query = parsed.query if parsed.query else None
         except URIError:
             raise
-        except Exception as e:
-            raise URIError(f"Failed to parse URI: {e}") from e
+        except Exception as error:
+            raise URIError(f"Failed to parse URI: {error}") from error
 
     _KNOWN_SCHEMES: Final[set[str]] = set(
         scheme
@@ -336,10 +336,10 @@ class GeminiURI:
             resolved_http = urljoin(base_http, relative_http)
             resolved_gemini = resolved_http.replace("https://", GEMINI_PREFIX, 1)
             return self.__class__(resolved_gemini)
-        except Exception as e:
+        except Exception as error:
             raise URIError(
-                f"Failed to resolve relative URI '{relative_uri}' against base '{base_str}': {e}"
-            ) from e
+                f"Failed to resolve relative URI '{relative_uri}' against base '{base_str}': {error}"
+            ) from error
 
     @cached_property
     def bytes_left(self) -> int:

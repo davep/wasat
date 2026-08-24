@@ -90,15 +90,15 @@ class MockStreamReader:
             return line
         raise asyncio.IncompleteReadError(b"", None)
 
-    async def read(self, n: int = -1) -> bytes:
+    async def read(self, size: int = -1) -> bytes:
         if self._body_offset >= len(self._body_data):
             return b""
-        if n == -1:
+        if size == -1:
             chunk = self._body_data[self._body_offset :]
             self._body_offset = len(self._body_data)
             return chunk
         else:
-            chunk = self._body_data[self._body_offset : self._body_offset + n]
+            chunk = self._body_data[self._body_offset : self._body_offset + size]
             self._body_offset += len(chunk)
             return chunk
 
@@ -107,8 +107,8 @@ class TestClient:
     """Test suite for the Gemini Client class."""
 
     @pytest.fixture(autouse=True)
-    def setup_ssl_obj(self) -> None:
-        self.ssl_obj = MockSSLObject()
+    def setup_ssl_object(self) -> None:
+        self.ssl_object = MockSSLObject()
 
     def test_successful_request(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test a simple successful request and reading the body."""
@@ -116,7 +116,7 @@ class TestClient:
         async def run() -> None:
             reader = MockStreamReader([b"20 text/gemini\r\n"])
             reader.set_body(b"Hello from Gemini!")
-            writer = MockStreamWriter(self.ssl_obj)
+            writer = MockStreamWriter(self.ssl_object)
 
             async def mock_open_connection(
                 *args: Any, **kwargs: Any
@@ -150,7 +150,7 @@ class TestClient:
                     raise ssl.SSLEOFError("EOF occurred in violation of protocol")
 
             reader = FailingReader([])
-            writer = MockStreamWriter(self.ssl_obj)
+            writer = MockStreamWriter(self.ssl_object)
 
             async def mock_open_connection(
                 *args: Any, **kwargs: Any
@@ -174,7 +174,7 @@ class TestClient:
 
         async def run() -> None:
             reader = MockStreamReader([])
-            writer = MockStreamWriter(self.ssl_obj)
+            writer = MockStreamWriter(self.ssl_object)
 
             async def failing_drain() -> None:
                 raise ssl.SSLEOFError("EOF occurred in violation of protocol")
@@ -202,11 +202,11 @@ class TestClient:
             # 1st request -> redirect to /target
             # 2nd request -> success
             reader1 = MockStreamReader([b"30 gemini://example.com/target\r\n"])
-            writer1 = MockStreamWriter(self.ssl_obj)
+            writer1 = MockStreamWriter(self.ssl_object)
 
             reader2 = MockStreamReader([b"20 text/gemini\r\n"])
             reader2.set_body(b"Target Content")
-            writer2 = MockStreamWriter(self.ssl_obj)
+            writer2 = MockStreamWriter(self.ssl_object)
 
             connections = [(reader1, writer1), (reader2, writer2)]
             call_count = 0
@@ -215,9 +215,9 @@ class TestClient:
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
@@ -243,11 +243,11 @@ class TestClient:
 
         async def run() -> None:
             reader1 = MockStreamReader([b"30 gemini://example.com/two\r\n"])
-            writer1 = MockStreamWriter(self.ssl_obj)
+            writer1 = MockStreamWriter(self.ssl_object)
 
             reader2 = MockStreamReader([b"30 gemini://example.com/one\r\n"])
             reader2.set_body(b"")
-            writer2 = MockStreamWriter(self.ssl_obj)
+            writer2 = MockStreamWriter(self.ssl_object)
 
             connections = [(reader1, writer1), (reader2, writer2), (reader1, writer1)]
             call_count = 0
@@ -256,9 +256,9 @@ class TestClient:
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
@@ -273,7 +273,7 @@ class TestClient:
 
         async def run() -> None:
             reader = MockStreamReader([b"30 gemini://example.com/next\r\n"] * 5)
-            writer = MockStreamWriter(self.ssl_obj)
+            writer = MockStreamWriter(self.ssl_object)
 
             async def mock_open_connection(
                 *args: Any, **kwargs: Any
@@ -294,17 +294,17 @@ class TestClient:
         async def run() -> None:
             # 1st request to /old -> 31 redirect to /new
             reader1 = MockStreamReader([b"31 gemini://example.com/new\r\n"])
-            writer1 = MockStreamWriter(self.ssl_obj)
+            writer1 = MockStreamWriter(self.ssl_object)
 
             # 2nd request to /new -> 20 success
             reader2 = MockStreamReader([b"20 text/gemini\r\n"])
             reader2.set_body(b"New Content")
-            writer2 = MockStreamWriter(self.ssl_obj)
+            writer2 = MockStreamWriter(self.ssl_object)
 
             # 3rd request (subsequent call to /old) -> should skip /old and connect directly to /new
             reader3 = MockStreamReader([b"20 text/gemini\r\n"])
             reader3.set_body(b"New Content")
-            writer3 = MockStreamWriter(self.ssl_obj)
+            writer3 = MockStreamWriter(self.ssl_object)
 
             connections = [
                 (reader1, writer1),
@@ -317,34 +317,34 @@ class TestClient:
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
             client = Client(verify_mode="off")
 
             # First request to /old
-            resp1 = await client.request("gemini://example.com/old")
-            assert await resp1.text() == "New Content"
+            response1 = await client.request("gemini://example.com/old")
+            assert await response1.text() == "New Content"
             assert call_count == 2
-            assert resp1.requested_uri == GeminiURI("gemini://example.com/old")
-            assert resp1.uri == GeminiURI("gemini://example.com/new")
-            assert len(resp1.history) == 1
-            assert resp1.history[0].status == StatusCode.PERMANENT_REDIRECT
-            assert resp1.history[0].uri == GeminiURI("gemini://example.com/old")
-            assert resp1.history[0].requested_uri == GeminiURI(
+            assert response1.requested_uri == GeminiURI("gemini://example.com/old")
+            assert response1.uri == GeminiURI("gemini://example.com/new")
+            assert len(response1.history) == 1
+            assert response1.history[0].status == StatusCode.PERMANENT_REDIRECT
+            assert response1.history[0].uri == GeminiURI("gemini://example.com/old")
+            assert response1.history[0].requested_uri == GeminiURI(
                 "gemini://example.com/old"
             )
 
             # Second request to /old (should go directly to /new)
-            resp2 = await client.request("gemini://example.com/old")
-            assert await resp2.text() == "New Content"
+            response2 = await client.request("gemini://example.com/old")
+            assert await response2.text() == "New Content"
             assert call_count == 3  # Only 1 additional connection
-            assert resp2.requested_uri == GeminiURI("gemini://example.com/old")
-            assert resp2.uri == GeminiURI("gemini://example.com/new")
-            assert len(resp2.history) == 0
+            assert response2.requested_uri == GeminiURI("gemini://example.com/old")
+            assert response2.uri == GeminiURI("gemini://example.com/new")
+            assert len(response2.history) == 0
 
         asyncio.run(run())
 
@@ -352,16 +352,16 @@ class TestClient:
         """Test Trust-On-First-Use (TOFU) verification flow."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                hosts_file = Path(tmpdir) / "known_hosts"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                hosts_file = Path(temporary_directory) / "known_hosts"
                 trust_store = FileTrustStore(hosts_file)
 
                 cert_der1 = b"cert_one"
-                ssl_obj1 = MockSSLObject(cert_der1)
+                ssl_object1 = MockSSLObject(cert_der1)
 
                 # 1. First request with cert 1: Trusted on First Use, saved.
                 reader1 = MockStreamReader([b"20 text/gemini\r\n"])
-                writer1 = MockStreamWriter(ssl_obj1)
+                writer1 = MockStreamWriter(ssl_object1)
 
                 connections: list[tuple[MockStreamReader, MockStreamWriter]] = [
                     (reader1, writer1)
@@ -375,11 +375,13 @@ class TestClient:
                 monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
                 client = Client(verify_mode="tofu", trust_store=trust_store)
-                resp1 = await client.request("gemini://example.com/index.gmi")
-                assert resp1.status == StatusCode.SUCCESS
-                assert resp1.verification_method == "tofu"
-                assert resp1.server_cert_der == cert_der1
-                assert resp1.server_cert_fingerprint == get_cert_fingerprint(cert_der1)
+                response1 = await client.request("gemini://example.com/index.gmi")
+                assert response1.status == StatusCode.SUCCESS
+                assert response1.verification_method == "tofu"
+                assert response1.server_cert_der == cert_der1
+                assert response1.server_cert_fingerprint == get_cert_fingerprint(
+                    cert_der1
+                )
 
                 # Verify saved fingerprint in store
                 fingerprint1 = await trust_store.get_fingerprint(
@@ -389,21 +391,21 @@ class TestClient:
 
                 # 2. Second request with same cert: should pass
                 reader2 = MockStreamReader([b"20 text/gemini\r\n"])
-                writer2 = MockStreamWriter(ssl_obj1)
+                writer2 = MockStreamWriter(ssl_object1)
                 connections[0] = (reader2, writer2)
-                resp2 = await client.request("gemini://example.com/index.gmi")
-                assert resp2.status == StatusCode.SUCCESS
+                response2 = await client.request("gemini://example.com/index.gmi")
+                assert response2.status == StatusCode.SUCCESS
 
                 # 3. Third request with different cert: should fail
                 cert_der2 = b"cert_two"
-                ssl_obj2 = MockSSLObject(cert_der2)
+                ssl_object2 = MockSSLObject(cert_der2)
                 reader3 = MockStreamReader([b"20 text/gemini\r\n"])
-                writer3 = MockStreamWriter(ssl_obj2)
+                writer3 = MockStreamWriter(ssl_object2)
                 connections[0] = (reader3, writer3)
 
-                with pytest.raises(SecurityError) as ctx:
+                with pytest.raises(SecurityError) as exception_context:
                     await client.request("gemini://example.com/index.gmi")
-                assert "fingerprint mismatch" in str(ctx.value)
+                assert "fingerprint mismatch" in str(exception_context.value)
 
         asyncio.run(run())
 
@@ -479,6 +481,85 @@ class TestClient:
             Path("/home/mockuser") / ".config" / "wasat" / "known_hosts"
         )
 
+    def test_client_cert_propagation_on_same_host_redirect(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that client certificates are reused for same-host redirects."""
+
+        async def run() -> None:
+            # First request -> 30 redirect to /protected
+            reader1 = MockStreamReader([b"30 gemini://example.com/protected\r\n"])
+            writer1 = MockStreamWriter(self.ssl_object)
+
+            # Second request -> 20 success
+            reader2 = MockStreamReader([b"20 text/gemini\r\n"])
+            reader2.set_body(b"Secret Area")
+            writer2 = MockStreamWriter(self.ssl_object)
+
+            connections = [(reader1, writer1), (reader2, writer2)]
+            call_count = 0
+
+            # Store tracks if cert was used on connect
+            ssl_contexts_used: list[Any] = []
+
+            async def mock_connect(
+                self_client: Any, uri: GeminiURI, ssl_context: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                nonlocal call_count
+                ssl_contexts_used.append(ssl_context)
+                connection = connections[call_count]
+                call_count += 1
+                return connection
+
+            monkeypatch.setattr("wasat.Client._connect", mock_connect)
+            monkeypatch.setattr(
+                "wasat.Client._create_ssl_context",
+                lambda *args, **kwargs: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
+            )
+
+            cert_path = Path("/mock/cert.crt")
+            key_path = Path("/mock/cert.key")
+
+            class MockClientCertStore:
+                async def get_credentials(
+                    self, uri: GeminiURI
+                ) -> tuple[Path, Path] | None:
+                    if uri.path == "/start":
+                        return cert_path, key_path
+                    return None
+
+                async def register_credentials(
+                    self,
+                    uri: GeminiURI,
+                    cert_path: str | Path,
+                    key_path: str | Path,
+                    *,
+                    transient: bool = False,
+                ) -> None:
+                    pass
+
+                async def close(self) -> None:
+                    pass
+
+            mock_cert_store = MockClientCertStore()
+
+            client = Client(
+                verify_mode="off",
+                client_cert_store=mock_cert_store,  # type: ignore[arg-type]
+            )
+
+            response = await client.request("gemini://example.com/start")
+
+            assert response.status == StatusCode.SUCCESS
+            assert await response.text() == "Secret Area"
+            assert call_count == 2
+            assert response.client_cert_used is True
+            assert response.client_cert_path == cert_path
+            assert response.history[0].client_cert_used is True
+            assert response.history[0].client_cert_path == cert_path
+
+        asyncio.run(run())
+
     def test_hybrid_mode_ca_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test hybrid mode when CA verification succeeds."""
 
@@ -542,14 +623,14 @@ class TestClient:
 
             client = Client(verify_mode="hybrid", trust_store=mock_store)
             async with client:
-                resp = await client.request("gemini://example.com/")
-                assert resp.status == StatusCode.SUCCESS
-                assert resp.verification_method == "ca"
-                assert resp.server_cert_der == b"mock_ca_cert_der"
-                assert resp.server_cert_fingerprint == get_cert_fingerprint(
+                response = await client.request("gemini://example.com/")
+                assert response.status == StatusCode.SUCCESS
+                assert response.verification_method == "ca"
+                assert response.server_cert_der == b"mock_ca_cert_der"
+                assert response.server_cert_fingerprint == get_cert_fingerprint(
                     b"mock_ca_cert_der"
                 )
-                await resp.close()
+                await response.close()
 
             assert len(saved_hosts) == 1
             assert saved_hosts[0][0] == "example.com"
@@ -624,14 +705,14 @@ class TestClient:
 
             client = Client(verify_mode="hybrid", trust_store=mock_store)
             async with client:
-                resp = await client.request("gemini://selfsigned.example.com/")
-                assert resp.status == StatusCode.SUCCESS
-                assert resp.verification_method == "tofu"
-                assert resp.server_cert_der == b"mock_self_signed_cert_der"
-                assert resp.server_cert_fingerprint == get_cert_fingerprint(
+                response = await client.request("gemini://selfsigned.example.com/")
+                assert response.status == StatusCode.SUCCESS
+                assert response.verification_method == "tofu"
+                assert response.server_cert_der == b"mock_self_signed_cert_der"
+                assert response.server_cert_fingerprint == get_cert_fingerprint(
                     b"mock_self_signed_cert_der"
                 )
-                await resp.close()
+                await response.close()
 
             assert tofu_verified is True
 
@@ -662,13 +743,13 @@ class TestClient:
                 self_client: Any, uri: GeminiURI, ssl_context: Any
             ) -> tuple[Any, Any]:
                 if ssl_context.verify_mode == ssl.CERT_REQUIRED:
-                    ssl_err = ssl.SSLCertVerificationError(
+                    ssl_error = ssl.SSLCertVerificationError(
                         _openssl_lib.X509_V_ERR_CERT_HAS_EXPIRED,
                         "certificate has expired",
                     )
-                    sec_err = SecurityError(f"TLS handshake failed: {ssl_err}")
-                    sec_err.__cause__ = ssl_err
-                    raise sec_err
+                    security_error = SecurityError(f"TLS handshake failed: {ssl_error}")
+                    security_error.__cause__ = ssl_error
+                    raise security_error
                 raise AssertionError(
                     "Should not attempt TOFU fallback for expired cert"
                 )
@@ -707,13 +788,13 @@ class TestClient:
                 self_client: Any, uri: GeminiURI, ssl_context: Any
             ) -> tuple[Any, Any]:
                 if ssl_context.verify_mode == ssl.CERT_REQUIRED:
-                    ssl_err = ssl.SSLCertVerificationError(
+                    ssl_error = ssl.SSLCertVerificationError(
                         _openssl_lib.X509_V_ERR_HOSTNAME_MISMATCH,
                         "hostname 'mismatch.example.com' doesn't match 'other.example.com'",
                     )
-                    sec_err = SecurityError(f"TLS handshake failed: {ssl_err}")
-                    sec_err.__cause__ = ssl_err
-                    raise sec_err
+                    security_error = SecurityError(f"TLS handshake failed: {ssl_error}")
+                    security_error.__cause__ = ssl_error
+                    raise security_error
                 raise AssertionError(
                     "Should not attempt TOFU fallback for hostname mismatch"
                 )
@@ -734,9 +815,9 @@ class TestClient:
 
         async def run() -> None:
             cert_der = b"ca_server_cert_bytes"
-            ssl_obj = MockSSLObject(cert_der)
+            ssl_object = MockSSLObject(cert_der)
             reader = MockStreamReader([b"20 text/gemini\r\n"])
-            writer = MockStreamWriter(ssl_obj)
+            writer = MockStreamWriter(ssl_object)
 
             async def mock_connect(
                 self_client: Any, uri: GeminiURI, ssl_context: Any
@@ -746,12 +827,9 @@ class TestClient:
             monkeypatch.setattr("wasat.Client._connect", mock_connect)
 
             client = Client(verify_mode="ca")
-            resp = await client.request("gemini://example.com/")
-            assert resp.verification_method == "ca"
-            assert resp.server_cert_der == cert_der
-            assert resp.server_cert_fingerprint == get_cert_fingerprint(cert_der)
+            response = await client.request("gemini://example.com/")
+            assert response.verification_method == "ca"
+            assert response.server_cert_der == cert_der
+            assert response.server_cert_fingerprint == get_cert_fingerprint(cert_der)
 
         asyncio.run(run())
-
-
-### test_client.py ends here

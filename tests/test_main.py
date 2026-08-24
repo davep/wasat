@@ -71,7 +71,12 @@ class DummyResponse:
         """
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exception_type: Any,
+        exception_value: Any,
+        exception_traceback: Any,
+    ) -> None:
         """Exit context manager."""
         pass
 
@@ -89,19 +94,19 @@ def test_cli_input_handling(
 
     # First request returns status 10 (INPUT) with prompt "Name"
     # Second request returns status 20 (SUCCESS)
-    resp1 = DummyResponse(StatusCode.INPUT, "Enter name")
-    resp2 = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Hello Dave!")
+    first_response = DummyResponse(StatusCode.INPUT, "Enter name")
+    second_response = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Hello Dave!")
 
-    requests = [resp1, resp2]
+    requests = [first_response, second_response]
     call_index = 0
     requested_uris: list[Any] = []
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
         nonlocal call_index
         requested_uris.append(uri)
-        resp = requests[call_index]
+        response = requests[call_index]
         call_index += 1
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -134,19 +139,19 @@ def test_cli_sensitive_input_handling(
     """
     monkeypatch.setattr("sys.argv", ["wasat", "gemini://example.com/secret"])
 
-    resp1 = DummyResponse(StatusCode.SENSITIVE_INPUT, "Password")
-    resp2 = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Success page")
+    first_response = DummyResponse(StatusCode.SENSITIVE_INPUT, "Password")
+    second_response = DummyResponse(StatusCode.SUCCESS, "text/gemini", "Success page")
 
-    requests = [resp1, resp2]
+    requests = [first_response, second_response]
     call_index = 0
     requested_uris: list[Any] = []
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
         nonlocal call_index
         requested_uris.append(uri)
-        resp = requests[call_index]
+        response = requests[call_index]
         call_index += 1
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -177,10 +182,10 @@ def test_cli_input_interrupted(
     """
     monkeypatch.setattr("sys.argv", ["wasat", "gemini://example.com/ask"])
 
-    resp1 = DummyResponse(StatusCode.INPUT, "Enter name")
+    first_response = DummyResponse(StatusCode.INPUT, "Enter name")
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
-        return resp1
+        return first_response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -207,7 +212,7 @@ def test_cli_verbose_output(
     monkeypatch.setattr("sys.argv", ["wasat", "-v", "gemini://example.com/index.gmi"])
 
     uri = GeminiURI("gemini://example.com/index.gmi")
-    resp = DummyResponse(
+    response = DummyResponse(
         StatusCode.SUCCESS,
         "text/gemini",
         "Hello verbose!",
@@ -217,7 +222,7 @@ def test_cli_verbose_output(
     )
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -246,23 +251,23 @@ def test_cli_verbose_output_with_redirect(
 
     requested_uri = GeminiURI("gemini://example.com/redirect")
     final_uri = GeminiURI("gemini://example.com/target")
-    hist_resp = DummyResponse(
+    history_response = DummyResponse(
         StatusCode.TEMPORARY_REDIRECT,
         "gemini://example.com/target",
         uri=requested_uri,
         requested_uri=requested_uri,
     )
-    resp = DummyResponse(
+    response = DummyResponse(
         StatusCode.SUCCESS,
         "text/gemini",
         "Hello redirect verbose!",
         uri=final_uri,
-        history=[hist_resp],
+        history=[history_response],
         requested_uri=requested_uri,
     )
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -300,7 +305,7 @@ def test_cli_verify_mode_option(
     )
 
     uri = GeminiURI("gemini://example.com/index.gmi")
-    resp = DummyResponse(
+    response = DummyResponse(
         StatusCode.SUCCESS, "text/gemini", "Hello verify mode!", uri=uri
     )
 
@@ -312,12 +317,17 @@ def test_cli_verify_mode_option(
             created_client_verify_mode = kwargs.get("verify_mode")
 
         async def request(self, uri: Any) -> DummyResponse:
-            return resp
+            return response
 
         async def __aenter__(self) -> MockClient:
             return self
 
-        async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        async def __aexit__(
+            self,
+            exception_type: Any,
+            exception_value: Any,
+            exception_traceback: Any,
+        ) -> None:
             pass
 
     monkeypatch.setattr("wasat.__main__.Client", MockClient)
@@ -355,7 +365,7 @@ def test_cli_show_cert(
     )
 
     uri = GeminiURI("gemini://cli.example.com/")
-    resp = DummyResponse(
+    response = DummyResponse(
         StatusCode.SUCCESS,
         "text/gemini",
         "Hello cert!",
@@ -364,7 +374,7 @@ def test_cli_show_cert(
     )
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 
@@ -405,7 +415,7 @@ def test_cli_show_cert_with_verbose(
     )
 
     uri = GeminiURI("gemini://verbose.example.com/")
-    resp = DummyResponse(
+    response = DummyResponse(
         StatusCode.SUCCESS,
         "text/gemini",
         "Hello verbose cert!",
@@ -416,7 +426,7 @@ def test_cli_show_cert_with_verbose(
     )
 
     async def mock_request(self: Any, uri: Any) -> DummyResponse:
-        return resp
+        return response
 
     monkeypatch.setattr("wasat.Client.request", mock_request)
 

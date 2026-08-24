@@ -64,8 +64,8 @@ async def main():
             body = await response.text()
             print(body)
 
-    except WasatError as e:
-        print(f"Request failed: {e}")
+    except WasatError as error:
+        print(f"Request failed: {error}")
 
 if __name__ == "__main__":
     asyncio.run(main())

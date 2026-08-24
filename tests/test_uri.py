@@ -88,15 +88,15 @@ class TestGeminiURI:
 
     def test_equality(self) -> None:
         """Test comparison of GeminiURI instances."""
-        uri1 = GeminiURI("gemini://example.com/path")
-        uri2 = GeminiURI("gemini://example.com/path")
-        uri3 = GeminiURI("gemini://example.com/other")
-        assert uri1 == uri2
-        assert uri1 == "gemini://example.com/path"
-        assert uri1 != uri3
-        assert uri1 != "gemini://example.com/other"
-        assert uri1 != "http://example.com/path"
-        assert uri1 != None  # noqa: E711
+        first_uri = GeminiURI("gemini://example.com/path")
+        second_uri = GeminiURI("gemini://example.com/path")
+        third_uri = GeminiURI("gemini://example.com/other")
+        assert first_uri == second_uri
+        assert first_uri == "gemini://example.com/path"
+        assert first_uri != third_uri
+        assert first_uri != "gemini://example.com/other"
+        assert first_uri != "http://example.com/path"
+        assert first_uri != None  # noqa: E711
 
     def test_clone_from_gemini_uri(self) -> None:
         """Test instantiating a GeminiURI with another GeminiURI instance (cloning)."""

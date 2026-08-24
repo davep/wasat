@@ -25,7 +25,7 @@ type VerificationMethod = Literal["ca", "tofu", "off"]
 class ReaderProtocol(Protocol):
     """Protocol for async reader streams."""
 
-    async def read(self, n: int = -1) -> bytes: ...
+    async def read(self, size: int = -1) -> bytes: ...
 
 
 ##############################################################################
@@ -189,8 +189,8 @@ class Response:
         try:
             self._body = await self._reader.read()
             return self._body
-        except Exception as e:
-            raise ConnectionError(f"Error reading response body: {e}") from e
+        except Exception as error:
+            raise ConnectionError(f"Error reading response body: {error}") from error
 
     async def text(self, encoding: str | None = None) -> str:
         """Read and return the entire response body as a decoded string.
@@ -205,13 +205,13 @@ class Response:
             ProtocolError: If the response body cannot be decoded using the specified encoding.
         """
         body_bytes = await self.read()
-        enc = encoding if encoding is not None else self.charset
+        resolved_encoding = encoding if encoding is not None else self.charset
         try:
-            return body_bytes.decode(enc)
-        except UnicodeDecodeError as e:
+            return body_bytes.decode(resolved_encoding)
+        except UnicodeDecodeError as error:
             raise ProtocolError(
-                f"Failed to decode response body with encoding '{enc}': {e}"
-            ) from e
+                f"Failed to decode response body with encoding '{resolved_encoding}': {error}"
+            ) from error
 
     async def iter_chunks(self, chunk_size: int = 4096) -> AsyncIterator[bytes]:
         """Iterate over the response body in chunks as they arrive.
@@ -226,8 +226,8 @@ class Response:
             ConnectionError: If the server connection drops during reading.
         """
         if self._body is not None:
-            for i in range(0, len(self._body), chunk_size):
-                yield self._body[i : i + chunk_size]
+            for offset in range(0, len(self._body), chunk_size):
+                yield self._body[offset : offset + chunk_size]
             return
 
         if self._reader is None:
@@ -239,8 +239,10 @@ class Response:
                 if not chunk:
                     break
                 yield chunk
-        except Exception as e:
-            raise ConnectionError(f"Error reading response body chunk: {e}") from e
+        except Exception as error:
+            raise ConnectionError(
+                f"Error reading response body chunk: {error}"
+            ) from error
 
     async def close(self) -> None:
         """Close the underlying connection if it is still open."""

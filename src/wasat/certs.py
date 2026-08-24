@@ -88,8 +88,8 @@ def _split_pem_bundle(pem_data: bytes | str) -> tuple[bytes, bytes | None]:
             cert_bytes = (
                 data_bytes if data_bytes.endswith(b"\n") else data_bytes + b"\n"
             )
-        except Exception as exc:
-            raise ValueError("No valid PEM certificate found in input") from exc
+        except Exception as error:
+            raise ValueError("No valid PEM certificate found in input") from error
     else:
         cert_bytes = b"\n".join(cert_matches) + b"\n"
 
@@ -143,13 +143,13 @@ def _write_secure_file(path: Path, data: bytes) -> None:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    fd = os.open(path, flags, 0o600)
+    file_descriptor = os.open(path, flags, 0o600)
     try:
-        with open(fd, "wb", closefd=True) as f:
-            f.write(data)
+        with open(file_descriptor, "wb", closefd=True) as file_handle:
+            file_handle.write(data)
     except BaseException:
         with suppress(Exception):
-            os.close(fd)
+            os.close(file_descriptor)
         raise
 
 
@@ -187,16 +187,16 @@ def normalize_scope(scope_or_uri: str | GeminiURI) -> str:
             path = "/" + path
         return f"{host}:{port}{path}"
 
-    s = str(scope_or_uri).strip()
-    if s.startswith("gemini://") or "://" in s:
-        uri = GeminiURI(s)
+    scope_string = str(scope_or_uri).strip()
+    if scope_string.startswith("gemini://") or "://" in scope_string:
+        uri = GeminiURI(scope_string)
         return normalize_scope(uri)
 
-    if "/" in s:
-        host_port, path = s.split("/", 1)
+    if "/" in scope_string:
+        host_port, path = scope_string.split("/", 1)
         path = "/" + path
     else:
-        host_port, path = s, "/"
+        host_port, path = scope_string, "/"
 
     if ":" in host_port:
         host, port_str = host_port.rsplit(":", 1)
@@ -230,8 +230,8 @@ def get_candidate_scopes(uri: GeminiURI) -> list[str]:
 
     parts = path.split("/")
     path_prefixes: list[str] = []
-    for i in range(len(parts), 0, -1):
-        prefix = "/".join(parts[:i])
+    for part_count in range(len(parts), 0, -1):
+        prefix = "/".join(parts[:part_count])
         if prefix == "":
             prefix = "/"
         path_prefixes.append(prefix)
@@ -240,10 +240,10 @@ def get_candidate_scopes(uri: GeminiURI) -> list[str]:
 
     seen: set[str] = set()
     unique_prefixes: list[str] = []
-    for p in path_prefixes:
-        if p not in seen:
-            seen.add(p)
-            unique_prefixes.append(p)
+    for prefix_candidate in path_prefixes:
+        if prefix_candidate not in seen:
+            seen.add(prefix_candidate)
+            unique_prefixes.append(prefix_candidate)
 
     candidates: list[str] = []
     for prefix in unique_prefixes:
@@ -426,30 +426,30 @@ class ClientCertificate:
             FileNotFoundError: If cert_path or key_path does not exist.
             ValueError: If no valid certificate block can be parsed.
         """
-        c_path = Path(cert_path)
-        if not c_path.exists():
-            raise FileNotFoundError(f"Certificate file not found: {c_path}")
+        certificate_path = Path(cert_path)
+        if not certificate_path.exists():
+            raise FileNotFoundError(f"Certificate file not found: {certificate_path}")
 
         cert_pem: bytes
         key_pem: bytes | None = None
 
-        k_path = Path(key_path) if key_path is not None else None
-        if k_path is not None:
-            if not k_path.exists():
-                raise FileNotFoundError(f"Private key file not found: {k_path}")
-            cert_pem, _ = _split_pem_bundle(c_path.read_bytes())
-            key_pem = _extract_key_bytes(k_path)
+        key_file_path = Path(key_path) if key_path is not None else None
+        if key_file_path is not None:
+            if not key_file_path.exists():
+                raise FileNotFoundError(f"Private key file not found: {key_file_path}")
+            cert_pem, _ = _split_pem_bundle(certificate_path.read_bytes())
+            key_pem = _extract_key_bytes(key_file_path)
         else:
-            cert_pem, key_pem = _split_pem_bundle(c_path.read_bytes())
+            cert_pem, key_pem = _split_pem_bundle(certificate_path.read_bytes())
             if key_pem is not None:
-                k_path = c_path
+                key_file_path = certificate_path
 
         return cls(
             cert_pem=cert_pem,
             key_pem=key_pem,
-            cert_path=c_path,
-            key_path=k_path,
-            scopes=tuple(str(s) for s in scopes),
+            cert_path=certificate_path,
+            key_path=key_file_path,
+            scopes=tuple(str(scope) for scope in scopes),
         )
 
     @classmethod
@@ -481,7 +481,7 @@ class ClientCertificate:
         return cls(
             cert_pem=parsed_cert,
             key_pem=parsed_key,
-            scopes=tuple(str(s) for s in scopes),
+            scopes=tuple(str(scope) for scope in scopes),
         )
 
     @property
@@ -688,15 +688,15 @@ class ClientCertificate:
         base_name = _safe_filename(
             self.subject_common_name or f"cert_{self.fingerprint[:8]}"
         )
-        t_path = Path(target_path)
+        target_file_path = Path(target_path)
 
         if combined:
-            if t_path.is_dir() or (
-                not t_path.exists() and str(target_path).endswith(("/", "\\"))
+            if target_file_path.is_dir() or (
+                not target_file_path.exists() and str(target_path).endswith(("/", "\\"))
             ):
-                out_file = t_path / f"{base_name}.pem"
+                out_file = target_file_path / f"{base_name}.pem"
             else:
-                out_file = t_path
+                out_file = target_file_path
 
             pem_data = self.to_combined_pem()
             if self._key_pem is not None:
@@ -707,40 +707,40 @@ class ClientCertificate:
             return out_file, None
 
         if key_path is not None:
-            c_file = t_path
-            k_file = Path(key_path)
-            c_file.parent.mkdir(parents=True, exist_ok=True)
-            c_file.write_bytes(self._cert_pem)
+            cert_file = target_file_path
+            key_file = Path(key_path)
+            cert_file.parent.mkdir(parents=True, exist_ok=True)
+            cert_file.write_bytes(self._cert_pem)
             if self._key_pem is not None:
-                _write_secure_file(k_file, self._key_pem)
-                return c_file, k_file
-            return c_file, None
+                _write_secure_file(key_file, self._key_pem)
+                return cert_file, key_file
+            return cert_file, None
 
-        if t_path.is_dir() or (
-            not t_path.exists() and str(target_path).endswith(("/", "\\"))
+        if target_file_path.is_dir() or (
+            not target_file_path.exists() and str(target_path).endswith(("/", "\\"))
         ):
-            c_file = t_path / f"{base_name}.crt"
-            c_file.parent.mkdir(parents=True, exist_ok=True)
-            c_file.write_bytes(self._cert_pem)
+            cert_file = target_file_path / f"{base_name}.crt"
+            cert_file.parent.mkdir(parents=True, exist_ok=True)
+            cert_file.write_bytes(self._cert_pem)
             if self._key_pem is not None:
-                k_file = t_path / f"{base_name}.key"
-                _write_secure_file(k_file, self._key_pem)
-                return c_file, k_file
-            return c_file, None
+                key_file = target_file_path / f"{base_name}.key"
+                _write_secure_file(key_file, self._key_pem)
+                return cert_file, key_file
+            return cert_file, None
 
-        c_file = t_path
-        c_file.parent.mkdir(parents=True, exist_ok=True)
-        c_file.write_bytes(self._cert_pem)
+        cert_file = target_file_path
+        cert_file.parent.mkdir(parents=True, exist_ok=True)
+        cert_file.write_bytes(self._cert_pem)
         if self._key_pem is not None:
-            k_file = t_path.with_suffix(".key")
-            _write_secure_file(k_file, self._key_pem)
-            return c_file, k_file
-        return c_file, None
+            key_file = target_file_path.with_suffix(".key")
+            _write_secure_file(key_file, self._key_pem)
+            return cert_file, key_file
+        return cert_file, None
 
     def __repr__(self) -> str:
         """Representation of the ClientCertificate instance."""
-        cn = self.subject_common_name or ""
-        return f"<ClientCertificate cn={cn!r} fingerprint={self.fingerprint[:8]!r} scopes={self.scopes!r}>"
+        common_name = self.subject_common_name or ""
+        return f"<ClientCertificate cn={common_name!r} fingerprint={self.fingerprint[:8]!r} scopes={self.scopes!r}>"
 
 
 ##############################################################################
@@ -1092,20 +1092,20 @@ class FileClientCertificateStore(ClientCertificateStore):
         index_path = self.store_dir / "certs.json"
         if not index_path.exists():
             return
-        with suppress(Exception), open(index_path, encoding="utf-8") as f:
-            self._index = json.load(f)
+        with suppress(Exception), open(index_path, encoding="utf-8") as index_file:
+            self._index = json.load(index_file)
 
     def _save_sync(self) -> None:
         """Save the certificate index to disk synchronously."""
         self.store_dir.mkdir(parents=True, exist_ok=True)
         index_path = self.store_dir / "certs.json"
         try:
-            with open(index_path, "w", encoding="utf-8") as f:
-                json.dump(self._index, f, indent=4)
-        except Exception as e:
+            with open(index_path, "w", encoding="utf-8") as index_file:
+                json.dump(self._index, index_file, indent=4)
+        except Exception as error:
             raise RuntimeError(
-                f"Failed to write to certificate store file {index_path}: {e}"
-            ) from e
+                f"Failed to write to certificate store file {index_path}: {error}"
+            ) from error
 
     async def _ensure_loaded(self) -> None:
         """Ensure the persistent index is loaded from disk."""
@@ -1127,22 +1127,22 @@ class FileClientCertificateStore(ClientCertificateStore):
                     cert_to_key[cert_rel] = key_rel
 
         if self.store_dir.exists():
-            for p in self.store_dir.glob("*.crt"):
-                cert_rel = p.name
+            for cert_file_path in self.store_dir.glob("*.crt"):
+                cert_rel = cert_file_path.name
                 if cert_rel not in cert_to_scopes:
                     cert_to_scopes[cert_rel] = []
                 if cert_rel not in cert_to_key:
-                    key_p = p.with_suffix(".key")
-                    if key_p.exists():
-                        cert_to_key[cert_rel] = key_p.name
-            for p in self.store_dir.glob("*.pem"):
-                cert_rel = p.name
+                    key_file_path = cert_file_path.with_suffix(".key")
+                    if key_file_path.exists():
+                        cert_to_key[cert_rel] = key_file_path.name
+            for pem_file_path in self.store_dir.glob("*.pem"):
+                cert_rel = pem_file_path.name
                 if cert_rel not in cert_to_scopes:
                     cert_to_scopes[cert_rel] = []
                 if cert_rel not in cert_to_key:
-                    key_p = p.with_suffix(".key")
-                    if key_p.exists():
-                        cert_to_key[cert_rel] = key_p.name
+                    key_file_path = pem_file_path.with_suffix(".key")
+                    if key_file_path.exists():
+                        cert_to_key[cert_rel] = key_file_path.name
                     else:
                         cert_to_key[cert_rel] = cert_rel
 
@@ -1170,35 +1170,40 @@ class FileClientCertificateStore(ClientCertificateStore):
         # Add transient certificates
         transient_to_scopes: dict[Path, list[str]] = {}
         transient_to_key: dict[Path, Path] = {}
-        for scope, (c_p, k_p) in self._transient_index.items():
-            if c_p.exists():
-                transient_to_scopes.setdefault(c_p, []).append(scope)
-                transient_to_key[c_p] = k_p
+        for scope, (
+            registered_cert_path,
+            registered_key_path,
+        ) in self._transient_index.items():
+            if registered_cert_path.exists():
+                transient_to_scopes.setdefault(registered_cert_path, []).append(scope)
+                transient_to_key[registered_cert_path] = registered_key_path
 
         if self._temp_dir is not None and self._temp_dir.exists():
-            for p in self._temp_dir.glob("*.crt"):
-                if p not in transient_to_scopes:
-                    transient_to_scopes[p] = []
-                if p not in transient_to_key:
-                    key_p = p.with_suffix(".key")
-                    if key_p.exists():
-                        transient_to_key[p] = key_p
-            for p in self._temp_dir.glob("*.pem"):
-                if p not in transient_to_scopes:
-                    transient_to_scopes[p] = []
-                if p not in transient_to_key:
-                    key_p = p.with_suffix(".key")
-                    if key_p.exists():
-                        transient_to_key[p] = key_p
+            for cert_file_path in self._temp_dir.glob("*.crt"):
+                if cert_file_path not in transient_to_scopes:
+                    transient_to_scopes[cert_file_path] = []
+                if cert_file_path not in transient_to_key:
+                    key_file_path = cert_file_path.with_suffix(".key")
+                    if key_file_path.exists():
+                        transient_to_key[cert_file_path] = key_file_path
+            for pem_file_path in self._temp_dir.glob("*.pem"):
+                if pem_file_path not in transient_to_scopes:
+                    transient_to_scopes[pem_file_path] = []
+                if pem_file_path not in transient_to_key:
+                    key_file_path = pem_file_path.with_suffix(".key")
+                    if key_file_path.exists():
+                        transient_to_key[pem_file_path] = key_file_path
                     else:
-                        transient_to_key[p] = p
+                        transient_to_key[pem_file_path] = pem_file_path
 
-        for c_p, scopes in transient_to_scopes.items():
-            transient_key_path = transient_to_key.get(c_p)
+        for transient_cert_path, scopes in transient_to_scopes.items():
+            resolved_key_path = transient_to_key.get(transient_cert_path)
             try:
                 cert = ClientCertificate.from_file(
-                    cert_path=c_p,
-                    key_path=transient_key_path if transient_key_path != c_p else None,
+                    cert_path=transient_cert_path,
+                    key_path=resolved_key_path
+                    if resolved_key_path != transient_cert_path
+                    else None,
                     scopes=tuple(sorted(scopes)),
                 )
                 results.append(cert)
@@ -1232,10 +1237,10 @@ class FileClientCertificateStore(ClientCertificateStore):
         all_certs = await self.list_certificates()
 
         if isinstance(identifier, GeminiURI):
-            creds = await self.get_credentials(identifier)
-            if creds is None:
+            credentials = await self.get_credentials(identifier)
+            if credentials is None:
                 return None
-            cert_path = creds[0]
+            cert_path = credentials[0]
             for cert in all_certs:
                 if cert.cert_path and cert.cert_path.resolve() == cert_path.resolve():
                     return cert
@@ -1252,7 +1257,7 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         # Check if ident_str is a fingerprint (64 hex characters)
         if len(ident_str) == 64 and all(
-            c in "0123456789abcdefABCDEF" for c in ident_str
+            character in "0123456789abcdefABCDEF" for character in ident_str
         ):
             for cert in all_certs:
                 if cert.fingerprint.lower() == ident_str.lower():
@@ -1282,9 +1287,9 @@ class FileClientCertificateStore(ClientCertificateStore):
                 if "://" in ident_str
                 else GeminiURI(f"gemini://{ident_str}")
             )
-            creds = await self.get_credentials(uri)
-            if creds is not None:
-                cert_path = creds[0]
+            credentials = await self.get_credentials(uri)
+            if credentials is not None:
+                cert_path = credentials[0]
                 for cert in all_certs:
                     if (
                         cert.cert_path
@@ -1343,10 +1348,10 @@ class FileClientCertificateStore(ClientCertificateStore):
                 to disk fails.
             RuntimeError: If saving the credentials or updating the store index fails.
         """
-        cn = common_name or name
+        resolved_common_name = common_name or name
         cert_pem, key_pem = await asyncio.to_thread(
             generate_self_signed_cert,
-            cn,
+            resolved_common_name,
             key_type=key_type,
             rsa_key_size=rsa_key_size,
             ecdsa_curve=ecdsa_curve,
@@ -1358,7 +1363,7 @@ class FileClientCertificateStore(ClientCertificateStore):
             country=country,
         )
 
-        normalized_scopes = [normalize_scope(s) for s in scopes]
+        normalized_scopes = [normalize_scope(scope) for scope in scopes]
         safe_base = _safe_filename(name)
 
         async with self._lock:
@@ -1475,16 +1480,16 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         parsed_x509 = x509.load_pem_x509_certificate(cert_pem)
         cn_attrs = parsed_x509.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
-        cn = str(cn_attrs[0].value) if cn_attrs else None
+        certificate_common_name = str(cn_attrs[0].value) if cn_attrs else None
 
         chosen_name = (
             name
             or default_name
-            or cn
+            or certificate_common_name
             or f"cert_{get_cert_fingerprint(parsed_x509.public_bytes(serialization.Encoding.DER))[:8]}"
         )
         safe_base = _safe_filename(chosen_name)
-        normalized_scopes = [normalize_scope(s) for s in scopes]
+        normalized_scopes = [normalize_scope(scope) for scope in scopes]
 
         async with self._lock:
             if transient:
@@ -1616,8 +1621,8 @@ class FileClientCertificateStore(ClientCertificateStore):
         async with self._lock:
             # Check if transient
             if self._temp_dir is not None and cert_path.is_relative_to(self._temp_dir):
-                k_path = key_path or cert_path.with_suffix(".key")
-                self._transient_index[target_scope] = (cert_path, k_path)
+                transient_key_path = key_path or cert_path.with_suffix(".key")
+                self._transient_index[target_scope] = (cert_path, transient_key_path)
                 return
 
             await self._ensure_loaded()
@@ -1671,16 +1676,16 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         async with self._lock:
             # Check transient index
-            for s in (target_scope, scope_no_port, str(scope_or_uri)):
-                if s in self._transient_index:
-                    del self._transient_index[s]
+            for candidate_scope in (target_scope, scope_no_port, str(scope_or_uri)):
+                if candidate_scope in self._transient_index:
+                    del self._transient_index[candidate_scope]
                     return True
 
             # Check persistent index
             await self._ensure_loaded()
-            for s in (target_scope, scope_no_port, str(scope_or_uri)):
-                if s in self._index:
-                    del self._index[s]
+            for candidate_scope in (target_scope, scope_no_port, str(scope_or_uri)):
+                if candidate_scope in self._index:
+                    del self._index[candidate_scope]
                     await asyncio.to_thread(self._save_sync)
                     return True
             return False
@@ -1720,11 +1725,13 @@ class FileClientCertificateStore(ClientCertificateStore):
                 and cert_path.is_relative_to(self._temp_dir)
             ):
                 to_delete = [
-                    s for s, (cp, _) in self._transient_index.items() if cp == cert_path
+                    scope
+                    for scope, (candidate_cert_path, _) in self._transient_index.items()
+                    if candidate_cert_path == cert_path
                 ]
                 deleted = bool(to_delete) or cert_path.exists()
-                for s in to_delete:
-                    del self._transient_index[s]
+                for scope in to_delete:
+                    del self._transient_index[scope]
                 with suppress(Exception):
                     cert_path.unlink(missing_ok=True)
                 if key_path:
@@ -1737,14 +1744,14 @@ class FileClientCertificateStore(ClientCertificateStore):
             if cert_path:
                 cert_file = cert_path.name
                 to_delete = [
-                    s
-                    for s, entry in self._index.items()
+                    scope
+                    for scope, entry in self._index.items()
                     if entry.get("cert") == cert_file
                 ]
                 deleted = bool(to_delete) or cert_path.exists()
                 if to_delete:
-                    for s in to_delete:
-                        del self._index[s]
+                    for scope in to_delete:
+                        del self._index[scope]
                     await asyncio.to_thread(self._save_sync)
 
                 with suppress(Exception):
@@ -1773,11 +1780,12 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         async with self._lock:
             # Check transient index
-            for s in (target_scope, scope_no_port, str(scope_or_uri)):
-                if s in self._transient_index:
-                    cert_path, key_path = self._transient_index.pop(s)
+            for candidate_scope in (target_scope, scope_no_port, str(scope_or_uri)):
+                if candidate_scope in self._transient_index:
+                    cert_path, key_path = self._transient_index.pop(candidate_scope)
                     other_uses = any(
-                        cp == cert_path for cp, _ in self._transient_index.values()
+                        candidate_path == cert_path
+                        for candidate_path, _ in self._transient_index.values()
                     )
                     if not other_uses:
                         with suppress(Exception):
@@ -1788,9 +1796,9 @@ class FileClientCertificateStore(ClientCertificateStore):
             # Check persistent index
             await self._ensure_loaded()
             matched_scope: str | None = None
-            for s in (target_scope, scope_no_port, str(scope_or_uri)):
-                if s in self._index:
-                    matched_scope = s
+            for candidate_scope in (target_scope, scope_no_port, str(scope_or_uri)):
+                if candidate_scope in self._index:
+                    matched_scope = candidate_scope
                     break
 
             if matched_scope is None:
@@ -1801,7 +1809,9 @@ class FileClientCertificateStore(ClientCertificateStore):
             key_rel = entry.get("key")
 
             # Check if any remaining scopes in self._index use this cert
-            other_uses = any(e.get("cert") == cert_rel for e in self._index.values())
+            other_uses = any(
+                entry.get("cert") == cert_rel for entry in self._index.values()
+            )
             if not other_uses:
                 if cert_rel:
                     with suppress(Exception):
@@ -1837,17 +1847,17 @@ class FileClientCertificateStore(ClientCertificateStore):
 
         async with self._lock:
             # Check transient index first
-            for s in (scope, scope_no_port):
-                if s in self._transient_index:
-                    cert_path, key_path = self._transient_index[s]
+            for candidate_scope in (scope, scope_no_port):
+                if candidate_scope in self._transient_index:
+                    cert_path, key_path = self._transient_index[candidate_scope]
                     if cert_path.exists() and key_path.exists():
                         return True
 
             # Check persistent index
             await self._ensure_loaded()
-            for s in (scope, scope_no_port):
-                if s in self._index:
-                    entry = self._index[s]
+            for candidate_scope in (scope, scope_no_port):
+                if candidate_scope in self._index:
+                    entry = self._index[candidate_scope]
                     cert_rel = entry.get("cert")
                     key_rel = entry.get("key")
                     if cert_rel and key_rel:
@@ -1994,19 +2004,19 @@ class FileClientCertificateStore(ClientCertificateStore):
             path = "/" + path
         scope = f"{host.lower()}:{port}{path}"
 
-        c_path = Path(cert_path)
-        k_path = Path(key_path)
+        resolved_cert_path = Path(cert_path)
+        resolved_key_path = Path(key_path)
 
         async with self._lock:
             if transient:
-                self._transient_index[scope] = (c_path, k_path)
+                self._transient_index[scope] = (resolved_cert_path, resolved_key_path)
             else:
                 await self._ensure_loaded()
                 self.store_dir.mkdir(parents=True, exist_ok=True)
 
-                if c_path.parent.resolve() == self.store_dir.resolve():
-                    dest_cert_file = c_path.name
-                    dest_key_file = k_path.name
+                if resolved_cert_path.parent.resolve() == self.store_dir.resolve():
+                    dest_cert_file = resolved_cert_path.name
+                    dest_key_file = resolved_key_path.name
                 else:
                     safe_base = _safe_filename(scope)
                     dest_cert_file = f"{safe_base}.crt"
@@ -2014,10 +2024,14 @@ class FileClientCertificateStore(ClientCertificateStore):
                     dest_cert_path = self.store_dir / dest_cert_file
                     dest_key_path = self.store_dir / dest_key_file
 
-                    if c_path.resolve() != dest_cert_path.resolve():
-                        await asyncio.to_thread(shutil.copy2, c_path, dest_cert_path)
-                    if k_path.resolve() != dest_key_path.resolve():
-                        await asyncio.to_thread(shutil.copy2, k_path, dest_key_path)
+                    if resolved_cert_path.resolve() != dest_cert_path.resolve():
+                        await asyncio.to_thread(
+                            shutil.copy2, resolved_cert_path, dest_cert_path
+                        )
+                    if resolved_key_path.resolve() != dest_key_path.resolve():
+                        await asyncio.to_thread(
+                            shutil.copy2, resolved_key_path, dest_key_path
+                        )
 
                 self._index[scope] = {
                     "cert": dest_cert_file,
@@ -2045,13 +2059,14 @@ class FileClientCertificateStore(ClientCertificateStore):
                 if candidate in self._transient_index:
                     cert_path, key_path = self._transient_index.pop(candidate)
                     other_uses = any(
-                        cp == cert_path for cp, _ in self._transient_index.values()
+                        candidate_path == cert_path
+                        for candidate_path, _ in self._transient_index.values()
                     )
                     if not other_uses:
-                        for p in (cert_path, key_path):
+                        for file_path in (cert_path, key_path):
                             with suppress(Exception):
-                                if p.exists():
-                                    p.unlink()
+                                if file_path.exists():
+                                    file_path.unlink()
                     return True
 
             # Check persistent index
@@ -2063,7 +2078,8 @@ class FileClientCertificateStore(ClientCertificateStore):
                     key_rel = entry.get("key")
 
                     other_uses = any(
-                        e.get("cert") == cert_rel for e in self._index.values()
+                        entry_item.get("cert") == cert_rel
+                        for entry_item in self._index.values()
                     )
                     if not other_uses:
                         if cert_rel:
