@@ -1152,4 +1152,57 @@ class TestClientCertificateStoreManagement:
                 assert deleted is True
                 assert not trans_cert.cert_path.exists()
 
+                # Create unscoped transient certificate
+                unscoped_trans_cert = await store.create_certificate(
+                    name="unscoped_trans_user",
+                    transient=True,
+                    common_name="Unscoped Transient User",
+                )
+                assert (
+                    unscoped_trans_cert.cert_path is not None
+                    and unscoped_trans_cert.cert_path.exists()
+                )
+
+                # Unscoped transient certificate appears in list_certificates
+                listed_unscoped = await store.list_certificates()
+                assert len(listed_unscoped) == 1
+                assert (
+                    listed_unscoped[0].subject_common_name == "Unscoped Transient User"
+                )
+                assert listed_unscoped[0].scopes == ()
+
+                # Can be retrieved via get_certificate by name, path, and fingerprint
+                assert (
+                    await store.get_certificate("unscoped_trans_user.crt") is not None
+                )
+                assert (
+                    await store.get_certificate(unscoped_trans_cert.cert_path)
+                    is not None
+                )
+                assert (
+                    await store.get_certificate(unscoped_trans_cert.fingerprint)
+                    is not None
+                )
+
+                # Associate scope by filename to previously unscoped transient certificate
+                await store.associate_scope(
+                    "unscoped_trans_user.crt", "example.com/unscoped_now_scoped"
+                )
+                updated_cert = await store.get_certificate("unscoped_trans_user.crt")
+                assert updated_cert is not None
+                assert "example.com:1965/unscoped_now_scoped" in updated_cert.scopes
+
+                # Disassociate scope - cert remains in list_certificates as unscoped
+                assert (
+                    await store.disassociate_scope("example.com/unscoped_now_scoped")
+                    is True
+                )
+                listed_after_disassoc = await store.list_certificates()
+                assert len(listed_after_disassoc) == 1
+                assert listed_after_disassoc[0].scopes == ()
+
+                # Delete unscoped transient certificate by name
+                assert await store.delete_certificate("unscoped_trans_user.crt") is True
+                assert await store.list_certificates() == []
+
         asyncio.run(run())

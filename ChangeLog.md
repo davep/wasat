@@ -1,5 +1,14 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed an issue where unscoped transient certificates were omitted from
+  `list_certificates` in `FileClientCertificateStore` and could not be
+  retrieved or managed via `get_certificate`, `associate_scope`, or
+  `delete_certificate`. ([#51](https://github.com/davep/wasat/pull/51))
+
 ## v1.4.0
 
 **Released: 2026-08-23**
