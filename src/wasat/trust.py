@@ -105,8 +105,8 @@ class FileTrustStore(TrustStore):
         if not self.filepath.exists():
             return
         try:
-            with open(self.filepath, encoding="utf-8") as f:
-                for line in f:
+            with open(self.filepath, encoding="utf-8") as trust_file:
+                for line in trust_file:
                     line = line.strip()
                     if not line or line.startswith("#"):
                         continue
@@ -134,17 +134,17 @@ class FileTrustStore(TrustStore):
         """Save the known hosts to file synchronously."""
         self.filepath.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(self.filepath, "w", encoding="utf-8") as f:
-                f.write("# Wasat Gemini Known Hosts\n")
-                f.write(f"# Generated at {datetime.now(UTC).isoformat()}\n")
+            with open(self.filepath, "w", encoding="utf-8") as trust_file:
+                trust_file.write("# Wasat Gemini Known Hosts\n")
+                trust_file.write(f"# Generated at {datetime.now(UTC).isoformat()}\n")
                 for (host, port), fingerprint in self._cache.items():
-                    f.write(
+                    trust_file.write(
                         f"{host}:{port} sha256:{fingerprint} {datetime.now(UTC).isoformat()}\n"
                     )
-        except Exception as e:
+        except Exception as error:
             raise RuntimeError(
-                f"Failed to write to trust store file {self.filepath}: {e}"
-            ) from e
+                f"Failed to write to trust store file {self.filepath}: {error}"
+            ) from error
 
     async def _ensure_loaded(self) -> None:
         """Ensure the store is loaded from disk."""

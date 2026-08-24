@@ -117,11 +117,11 @@ class WrappedStreamReader:
         self._closed = False
         """Flag indicating whether the stream connection has been closed."""
 
-    async def read(self, n: int = -1) -> bytes:
+    async def read(self, size: int = -1) -> bytes:
         """Read data from the stream, closing the connection at EOF.
 
         Args:
-            n: Number of bytes to read, or -1 to read until EOF.
+            size: Number of bytes to read, or -1 to read until EOF.
 
         Returns:
             The read bytes.
@@ -130,8 +130,8 @@ class WrappedStreamReader:
             Exception: Any exception raised by the underlying reader.
         """
         try:
-            chunk = await self._reader.read(n)
-            if not chunk or n == -1:
+            chunk = await self._reader.read(size)
+            if not chunk or size == -1:
                 await self.close()
             return chunk
         except Exception:
@@ -299,7 +299,7 @@ class Client:
             if verify_code is not None and isinstance(verify_code, int):
                 return verify_code in _UNTRUSTED_CA_VERIFY_CODES
 
-        msg = str(target).lower()
+        error_message = str(target).lower()
         invalid_keywords = (
             "expired",
             "hostname",
@@ -307,7 +307,7 @@ class Client:
             "not yet valid",
             "revoked",
         )
-        if any(kw in msg for kw in invalid_keywords):
+        if any(keyword in error_message for keyword in invalid_keywords):
             return False
 
         untrusted_keywords = (
@@ -319,7 +319,7 @@ class Client:
             "certificate untrusted",
             "untrusted",
         )
-        return any(kw in msg for kw in untrusted_keywords)
+        return any(keyword in error_message for keyword in untrusted_keywords)
 
     async def _send_request_line(
         self, uri: GeminiURI, writer: asyncio.StreamWriter
@@ -336,8 +336,8 @@ class Client:
         try:
             writer.write(f"{uri}\r\n".encode())
             await writer.drain()
-        except (OSError, ssl.SSLError) as e:
-            raise ConnectionError(f"Failed to send request line: {e}") from e
+        except (OSError, ssl.SSLError) as error:
+            raise ConnectionError(f"Failed to send request line: {error}") from error
 
     async def _read_response_line(
         self, reader: asyncio.StreamReader
@@ -357,18 +357,18 @@ class Client:
         async with asyncio.timeout(self._read_timeout):
             try:
                 response_line_bytes = await reader.readuntil(b"\r\n")
-            except asyncio.LimitOverrunError as e:
+            except asyncio.LimitOverrunError as error:
                 raise ProtocolError(
                     "Response line exceeds maximum allowed limit"
-                ) from e
+                ) from error
             except (
                 asyncio.IncompleteReadError,
                 OSError,
                 ssl.SSLError,
-            ) as e:
+            ) as error:
                 raise ConnectionError(
                     "Connection closed by server before sending response"
-                ) from e
+                ) from error
 
         response_line = response_line_bytes.decode("utf-8").rstrip("\r\n")
         if not response_line:
@@ -382,8 +382,10 @@ class Client:
         status_value = int(status_str)
         try:
             status_code = StatusCode.from_int(status_value)
-        except ValueError as e:
-            raise ProtocolError(f"Invalid status code: '{status_str}': {e}") from e
+        except ValueError as error:
+            raise ProtocolError(
+                f"Invalid status code: '{status_str}': {error}"
+            ) from error
         meta = parts[1] if len(parts) > 1 else ""
 
         return status_code, meta
@@ -412,16 +414,16 @@ class Client:
                     ssl=ssl_context,
                     server_hostname=uri.host if ssl_context.check_hostname else None,
                 )
-        except TimeoutError as e:
+        except TimeoutError as error:
             raise ConnectionError(
                 f"Connection to {uri.host}:{uri.port} timed out"
-            ) from e
-        except ssl.SSLError as e:
-            raise SecurityError(f"TLS handshake failed: {e}") from e
-        except Exception as e:
+            ) from error
+        except ssl.SSLError as error:
+            raise SecurityError(f"TLS handshake failed: {error}") from error
+        except Exception as error:
             raise ConnectionError(
-                f"Failed to connect to {uri.host}:{uri.port}: {e}"
-            ) from e
+                f"Failed to connect to {uri.host}:{uri.port}: {error}"
+            ) from error
 
     async def _verify_tofu(self, uri: GeminiURI, writer: asyncio.StreamWriter) -> None:
         """Verify the peer certificate using Trust-On-First-Use (TOFU).
@@ -518,24 +520,26 @@ class Client:
             key_path = self._client_key
 
             if not cert_path and self._client_cert_store is not None:
-                creds = await self._client_cert_store.get_credentials(uri)
-                if creds is not None:
-                    cert_path, key_path = creds
+                credentials = await self._client_cert_store.get_credentials(uri)
+                if credentials is not None:
+                    cert_path, key_path = credentials
                 elif history:
                     # Look back in the redirect history for a request on the same host and port
                     # that successfully used a client certificate.
-                    for prev_resp in reversed(history):
+                    for previous_response in reversed(history):
                         if (
-                            prev_resp.client_cert_used
-                            and prev_resp.uri is not None
-                            and prev_resp.uri.host.lower() == uri.host.lower()
-                            and prev_resp.uri.port == uri.port
+                            previous_response.client_cert_used
+                            and previous_response.uri is not None
+                            and previous_response.uri.host.lower() == uri.host.lower()
+                            and previous_response.uri.port == uri.port
                         ):
-                            prev_creds = await self._client_cert_store.get_credentials(
-                                prev_resp.uri
+                            previous_credentials = (
+                                await self._client_cert_store.get_credentials(
+                                    previous_response.uri
+                                )
                             )
-                            if prev_creds is not None:
-                                cert_path, key_path = prev_creds
+                            if previous_credentials is not None:
+                                cert_path, key_path = previous_credentials
                                 cert_inherited = True
                                 break
 
@@ -557,8 +561,8 @@ class Client:
                         cert_der = ssl_object.getpeercert(binary_form=True)
                         if cert_der:
                             await self._trust_store.save(uri.host, uri.port, cert_der)
-            except SecurityError as e:
-                if not self._is_untrusted_root_error(e):
+            except SecurityError as error:
+                if not self._is_untrusted_root_error(error):
                     raise
                 tofu_ssl_context = self._create_ssl_context(
                     client_cert=cert_path,
@@ -684,11 +688,13 @@ class Client:
             with suppress(Exception):
                 await writer.wait_closed()
             raise
-        except (OSError, ssl.SSLError) as e:
+        except (OSError, ssl.SSLError) as error:
             writer.close()
             with suppress(Exception):
                 await writer.wait_closed()
-            raise ConnectionError(f"Connection failed during request: {e}") from e
+            raise ConnectionError(
+                f"Connection failed during request: {error}"
+            ) from error
         except Exception:
             writer.close()
             with suppress(Exception):
@@ -752,11 +758,11 @@ class Client:
 
             try:
                 new_uri = current_uri.resolve(redirect_str)
-            except URIError as e:
+            except URIError as error:
                 await response.close()
                 raise RedirectError(
-                    f"Failed to resolve redirect URI '{redirect_str}': {e}"
-                ) from e
+                    f"Failed to resolve redirect URI '{redirect_str}': {error}"
+                ) from error
 
             if new_uri in visited:
                 await response.close()
@@ -794,7 +800,10 @@ class Client:
         return self
 
     async def __aexit__(
-        self, exc_type: object, exc_val: object, exc_tb: object
+        self,
+        exception_type: object,
+        exception_value: object,
+        exception_traceback: object,
     ) -> None:
         """Exit the async context manager, closing resources."""
         await self.close()

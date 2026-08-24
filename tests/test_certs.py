@@ -86,15 +86,15 @@ class MockStreamReader:
             return line
         raise asyncio.IncompleteReadError(b"", None)
 
-    async def read(self, n: int = -1) -> bytes:
+    async def read(self, size: int = -1) -> bytes:
         if self._body_offset >= len(self._body_data):
             return b""
-        if n == -1:
+        if size == -1:
             chunk = self._body_data[self._body_offset :]
             self._body_offset = len(self._body_data)
             return chunk
         else:
-            chunk = self._body_data[self._body_offset : self._body_offset + n]
+            chunk = self._body_data[self._body_offset : self._body_offset + size]
             self._body_offset += len(chunk)
             return chunk
 
@@ -182,13 +182,13 @@ def test_file_client_cert_store() -> None:
     """Test FileClientCertificateStore CRUD operations."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            store = FileClientCertificateStore(tmpdir)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            store = FileClientCertificateStore(temporary_directory)
             uri = GeminiURI("gemini://example.com/admin/")
 
             # 1. Initially empty
-            creds = await store.get_credentials(uri)
-            assert creds is None
+            credentials = await store.get_credentials(uri)
+            assert credentials is None
 
             # 2. Create persistent credentials
             cert_path, key_path = await store.create_credentials(uri, transient=False)
@@ -248,17 +248,17 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
     """Test client retries requests on status 60 with on_client_certificate_required callback."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ssl_obj = MockSSLObject()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            ssl_object = MockSSLObject()
 
             # 1st request returns 60 Client Certificate Required.
             # 2nd request returns 20 Success (since cert was generated and presented).
             reader1 = MockStreamReader([b"60 Certificate required\r\n"])
-            writer1 = MockStreamWriter(ssl_obj)
+            writer1 = MockStreamWriter(ssl_object)
 
             reader2 = MockStreamReader([b"20 text/gemini\r\n"])
             reader2.set_body(b"Protected resource content")
-            writer2 = MockStreamWriter(ssl_obj)
+            writer2 = MockStreamWriter(ssl_object)
 
             connections = [(reader1, writer1), (reader2, writer2)]
             call_count = 0
@@ -267,9 +267,9 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
@@ -281,7 +281,7 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
             # Initialise client with custom cert store and callback
             client = Client(
                 verify_mode="off",
-                client_cert_store_path=tmpdir,
+                client_cert_store_path=temporary_directory,
                 on_client_certificate_required=on_cert_required,
             )
 
@@ -307,8 +307,8 @@ def test_exact_vs_parent_scope_matching() -> None:
     """Test exact scope vs parent scope certificate matching."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            store = FileClientCertificateStore(tmpdir)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            store = FileClientCertificateStore(temporary_directory)
 
             # Register a certificate at /private (no trailing slash)
             uri_parent = GeminiURI("gemini://example.com/private")
@@ -318,9 +318,9 @@ def test_exact_vs_parent_scope_matching() -> None:
 
             # 1. Querying /private/r1/r2 should return the certificate
             uri_sub = GeminiURI("gemini://example.com/private/r1/r2")
-            creds = await store.get_credentials(uri_sub)
-            assert creds is not None
-            assert creds[0] == cert_path
+            credentials = await store.get_credentials(uri_sub)
+            assert credentials is not None
+            assert credentials[0] == cert_path
 
             # 2. Querying exact credentials for /private should return True
             assert await store.has_exact_credentials(uri_parent) is True
@@ -345,8 +345,8 @@ def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test redirection combined with client certificate requests."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ssl_obj = MockSSLObject()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            ssl_object = MockSSLObject()
 
             # Connection sequence:
             # 1. First request to /initial -> returns 60 (Certificate required)
@@ -354,17 +354,17 @@ def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
             # 3. Request to /redirected -> returns 60 (Certificate required)
             # 4. Retry to /redirected (with cert 2) -> returns 20 Success
             reader1 = MockStreamReader([b"60 Certificate required for initial\r\n"])
-            writer1 = MockStreamWriter(ssl_obj)
+            writer1 = MockStreamWriter(ssl_object)
 
             reader2 = MockStreamReader([b"30 gemini://example.com/redirected\r\n"])
-            writer2 = MockStreamWriter(ssl_obj)
+            writer2 = MockStreamWriter(ssl_object)
 
             reader3 = MockStreamReader([b"60 Certificate required for redirected\r\n"])
-            writer3 = MockStreamWriter(ssl_obj)
+            writer3 = MockStreamWriter(ssl_object)
 
             reader4 = MockStreamReader([b"20 text/gemini\r\n"])
             reader4.set_body(b"Success Content")
-            writer4 = MockStreamWriter(ssl_obj)
+            writer4 = MockStreamWriter(ssl_object)
 
             connections = [
                 (reader1, writer1),
@@ -379,11 +379,11 @@ def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
                 if "ssl" in kwargs:
                     ssl_contexts_used.append(kwargs["ssl"])
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
@@ -397,7 +397,7 @@ def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
 
             client = Client(
                 verify_mode="off",
-                client_cert_store_path=tmpdir,
+                client_cert_store_path=temporary_directory,
                 on_client_certificate_required=on_cert_required,
             )
 
@@ -421,18 +421,18 @@ def test_client_cert_parent_scope_redirect(monkeypatch: pytest.MonkeyPatch) -> N
     """Test that a certificate stored under a parent scope is used for redirects automatically."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ssl_obj = MockSSLObject()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            ssl_object = MockSSLObject()
 
             # Connection sequence:
             # 1. Request to /initial -> returns 30 /redirected (using client cert)
             # 2. Request to /redirected -> returns 20 Success (using client cert)
             reader1 = MockStreamReader([b"30 gemini://example.com/redirected\r\n"])
-            writer1 = MockStreamWriter(ssl_obj)
+            writer1 = MockStreamWriter(ssl_object)
 
             reader2 = MockStreamReader([b"20 text/gemini\r\n"])
             reader2.set_body(b"Success Content")
-            writer2 = MockStreamWriter(ssl_obj)
+            writer2 = MockStreamWriter(ssl_object)
 
             connections = [
                 (reader1, writer1),
@@ -444,15 +444,15 @@ def test_client_cert_parent_scope_redirect(monkeypatch: pytest.MonkeyPatch) -> N
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
             client = Client(
                 verify_mode="off",
-                client_cert_store_path=tmpdir,
+                client_cert_store_path=temporary_directory,
             )
 
             # Pre-populate store with a certificate for the host scope (example.com:1965/)
@@ -487,8 +487,8 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
     """
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ssl_obj = MockSSLObject()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            ssl_object = MockSSLObject()
 
             # Connection sequence:
             # 1. First request to /join -> returns 60 (Certificate required)
@@ -496,18 +496,18 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
             # 3. Request to /davep (inherited cert) -> returns 20 Success
             # 4. Direct request to /davep (should automatically reuse the re-bound cert) -> returns 20 Success
             reader1 = MockStreamReader([b"60 Certificate required for join\r\n"])
-            writer1 = MockStreamWriter(ssl_obj)
+            writer1 = MockStreamWriter(ssl_object)
 
             reader2 = MockStreamReader([b"30 gemini://example.com/davep\r\n"])
-            writer2 = MockStreamWriter(ssl_obj)
+            writer2 = MockStreamWriter(ssl_object)
 
             reader3 = MockStreamReader([b"20 text/gemini\r\n"])
             reader3.set_body(b"Dave's Page")
-            writer3 = MockStreamWriter(ssl_obj)
+            writer3 = MockStreamWriter(ssl_object)
 
             reader4 = MockStreamReader([b"20 text/gemini\r\n"])
             reader4.set_body(b"Dave's Page (Direct)")
-            writer4 = MockStreamWriter(ssl_obj)
+            writer4 = MockStreamWriter(ssl_object)
 
             connections = [
                 (reader1, writer1),
@@ -522,11 +522,11 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
                 if "ssl" in kwargs:
                     ssl_contexts_used.append(kwargs["ssl"])
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
@@ -537,7 +537,7 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
 
             client = Client(
                 verify_mode="off",
-                client_cert_store_path=tmpdir,
+                client_cert_store_path=temporary_directory,
                 on_client_certificate_required=on_cert_required,
             )
 
@@ -576,34 +576,36 @@ def test_register_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async def run() -> None:
         with (
-            tempfile.TemporaryDirectory() as tmpdir1,
-            tempfile.TemporaryDirectory() as tmpdir2,
+            tempfile.TemporaryDirectory() as temporary_directory1,
+            tempfile.TemporaryDirectory() as temporary_directory2,
         ):
-            # Generate a cert in tmpdir1
-            store1 = FileClientCertificateStore(tmpdir1)
+            # Generate a cert in temporary_directory1
+            store1 = FileClientCertificateStore(temporary_directory1)
             uri = GeminiURI("gemini://example.com/join")
             cert_path, key_path = await store1.create_credentials(uri)
 
-            # Register it in store2 (which uses tmpdir2)
-            store2 = FileClientCertificateStore(tmpdir2)
-            uri2 = GeminiURI("gemini://example.com/davep")
+            # Register it in store2 (which uses temporary_directory2)
+            store2 = FileClientCertificateStore(temporary_directory2)
+            secondary_uri = GeminiURI("gemini://example.com/davep")
             await store2.register_credentials(
-                uri2, cert_path, key_path, transient=False
+                secondary_uri, cert_path, key_path, transient=False
             )
 
             # Check that the credentials were copied to store2's directory
-            retrieved = await store2.get_credentials(uri2)
+            retrieved = await store2.get_credentials(secondary_uri)
             assert retrieved is not None
-            c_path, k_path = retrieved
-            assert c_path.parent == Path(tmpdir2)
-            assert k_path.parent == Path(tmpdir2)
-            assert c_path.exists()
-            assert k_path.exists()
+            retrieved_cert_path, retrieved_key_path = retrieved
+            assert retrieved_cert_path.parent == Path(temporary_directory2)
+            assert retrieved_key_path.parent == Path(temporary_directory2)
+            assert retrieved_cert_path.exists()
+            assert retrieved_key_path.exists()
 
             # Test transient registration
-            uri3 = GeminiURI("gemini://example.com/transient")
-            await store2.register_credentials(uri3, cert_path, key_path, transient=True)
-            retrieved_transient = await store2.get_credentials(uri3)
+            transient_uri = GeminiURI("gemini://example.com/transient")
+            await store2.register_credentials(
+                transient_uri, cert_path, key_path, transient=True
+            )
+            retrieved_transient = await store2.get_credentials(transient_uri)
             assert retrieved_transient is not None
             assert retrieved_transient[0] == cert_path
             assert retrieved_transient[1] == key_path
@@ -620,18 +622,18 @@ def test_client_cert_manual_registration_in_callback(
     """Test that manual registration in the callback correctly retries with the registered cert."""
 
     async def run() -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ssl_obj = MockSSLObject()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            ssl_object = MockSSLObject()
 
             # Connection sequence:
             # 1. Request to /davep -> returns 60 (Certificate required)
             # 2. Retry to /davep (with the registered /join certificate) -> returns 20 Success
             reader1 = MockStreamReader([b"60 Certificate required\r\n"])
-            writer1 = MockStreamWriter(ssl_obj)
+            writer1 = MockStreamWriter(ssl_object)
 
             reader2 = MockStreamReader([b"20 text/gemini\r\n"])
             reader2.set_body(b"Dave's Content")
-            writer2 = MockStreamWriter(ssl_obj)
+            writer2 = MockStreamWriter(ssl_object)
 
             connections = [
                 (reader1, writer1),
@@ -643,15 +645,15 @@ def test_client_cert_manual_registration_in_callback(
                 *args: Any, **kwargs: Any
             ) -> tuple[MockStreamReader, MockStreamWriter]:
                 nonlocal call_count
-                conn = connections[call_count]
+                connection = connections[call_count]
                 call_count += 1
-                return conn
+                return connection
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
             client = Client(
                 verify_mode="off",
-                client_cert_store_path=tmpdir,
+                client_cert_store_path=temporary_directory,
             )
 
             # Pre-populate /join
@@ -664,11 +666,11 @@ def test_client_cert_manual_registration_in_callback(
                 uri: GeminiURI, store: Any
             ) -> Literal["persistent"]:
                 # Retrieve the /join credentials and register them for /davep
-                creds = await store.get_credentials(
+                credentials = await store.get_credentials(
                     GeminiURI("gemini://example.com/join")
                 )
-                assert creds is not None
-                await store.register_credentials(uri, creds[0], creds[1])
+                assert credentials is not None
+                await store.register_credentials(uri, credentials[0], credentials[1])
                 return "persistent"
 
             client._on_client_certificate_required = on_cert_required
@@ -817,16 +819,18 @@ class TestClientCertificate:
 
     def test_client_certificate_from_file(self) -> None:
         """Test constructing ClientCertificate from file paths."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory() as temporary_directory:
             cert_pem, key_pem = generate_self_signed_cert("file_user")
-            c_path = Path(tmpdir) / "test.crt"
-            k_path = Path(tmpdir) / "test.key"
-            c_path.write_bytes(cert_pem)
-            k_path.write_bytes(key_pem)
+            cert_path = Path(temporary_directory) / "test.crt"
+            key_path = Path(temporary_directory) / "test.key"
+            cert_path.write_bytes(cert_pem)
+            key_path.write_bytes(key_pem)
 
-            cert = ClientCertificate.from_file(c_path, k_path, scopes=["example.com/"])
-            assert cert.cert_path == c_path
-            assert cert.key_path == k_path
+            cert = ClientCertificate.from_file(
+                cert_path, key_path, scopes=["example.com/"]
+            )
+            assert cert.cert_path == cert_path
+            assert cert.key_path == key_path
             assert cert.cert_pem == cert_pem
             assert cert.key_pem == key_pem
             assert cert.scopes == ("example.com/",)
@@ -834,9 +838,9 @@ class TestClientCertificate:
 
     def test_client_certificate_from_file_combined(self) -> None:
         """Test constructing ClientCertificate from a single combined PEM file."""
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory() as temporary_directory:
             cert_pem, key_pem = generate_self_signed_cert("bundle_user")
-            bundle_path = Path(tmpdir) / "bundle.pem"
+            bundle_path = Path(temporary_directory) / "bundle.pem"
             bundle_path.write_bytes(cert_pem + b"\n" + key_pem)
 
             cert = ClientCertificate.from_file(
@@ -851,19 +855,19 @@ class TestClientCertificate:
 
     def test_client_certificate_from_file_errors(self) -> None:
         """Test error conditions for ClientCertificate.from_file."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            c_path = Path(tmpdir) / "exists.crt"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            cert_path = Path(temporary_directory) / "exists.crt"
             cert_pem, _ = generate_self_signed_cert("err_user")
-            c_path.write_bytes(cert_pem)
+            cert_path.write_bytes(cert_pem)
 
-            non_existent_cert = Path(tmpdir) / "does_not_exist.crt"
-            non_existent_key = Path(tmpdir) / "does_not_exist.key"
+            non_existent_cert = Path(temporary_directory) / "does_not_exist.crt"
+            non_existent_key = Path(temporary_directory) / "does_not_exist.key"
 
             with pytest.raises(FileNotFoundError):
                 ClientCertificate.from_file(non_existent_cert)
 
             with pytest.raises(FileNotFoundError):
-                ClientCertificate.from_file(c_path, non_existent_key)
+                ClientCertificate.from_file(cert_path, non_existent_key)
 
     def test_client_certificate_from_pem_combined_and_separate(self) -> None:
         """Test constructing ClientCertificate from in-memory PEM bytes."""
@@ -919,32 +923,32 @@ class TestClientCertificate:
 
     def test_client_certificate_export(self) -> None:
         """Test exporting ClientCertificate to files and directories."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp = Path(tmpdir)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temp_path = Path(temporary_directory)
             cert_pem, key_pem = generate_self_signed_cert("export_user")
             cert = ClientCertificate(cert_pem, key_pem=key_pem)
 
             # 1. Combined export to a file path
-            comb_file = tmp / "out_bundle.pem"
-            c_ret, k_ret = cert.export(comb_file, combined=True)
-            assert c_ret == comb_file
-            assert k_ret == comb_file
-            assert comb_file.exists()
-            assert (comb_file.stat().st_mode & 0o777) == 0o600
-            assert cert_pem.rstrip() in comb_file.read_bytes()
-            assert key_pem.rstrip() in comb_file.read_bytes()
+            combined_file = temp_path / "out_bundle.pem"
+            c_ret, k_ret = cert.export(combined_file, combined=True)
+            assert c_ret == combined_file
+            assert k_ret == combined_file
+            assert combined_file.exists()
+            assert (combined_file.stat().st_mode & 0o777) == 0o600
+            assert cert_pem.rstrip() in combined_file.read_bytes()
+            assert key_pem.rstrip() in combined_file.read_bytes()
 
             # 2. Combined export to a directory
-            comb_dir = tmp / "combined_dir"
-            comb_dir.mkdir()
-            c_ret2, k_ret2 = cert.export(comb_dir, combined=True)
-            assert c_ret2 == comb_dir / "export_user.pem"
-            assert k_ret2 == comb_dir / "export_user.pem"
+            combined_dir = temp_path / "combined_dir"
+            combined_dir.mkdir()
+            c_ret2, k_ret2 = cert.export(combined_dir, combined=True)
+            assert c_ret2 == combined_dir / "export_user.pem"
+            assert k_ret2 == combined_dir / "export_user.pem"
             assert (c_ret2.stat().st_mode & 0o777) == 0o600
 
             # 3. Separate export with explicit key_path
-            sep_cert_file = tmp / "custom.crt"
-            sep_key_file = tmp / "custom.key"
+            sep_cert_file = temp_path / "custom.crt"
+            sep_key_file = temp_path / "custom.key"
             c_ret3, k_ret3 = cert.export(sep_cert_file, key_path=sep_key_file)
             assert c_ret3 == sep_cert_file
             assert k_ret3 == sep_key_file
@@ -953,18 +957,18 @@ class TestClientCertificate:
             assert (sep_key_file.stat().st_mode & 0o777) == 0o600
 
             # 4. Separate export to directory
-            sep_dir = tmp / "sep_dir"
-            sep_dir.mkdir()
-            c_ret4, k_ret4 = cert.export(sep_dir, combined=False)
-            assert c_ret4 == sep_dir / "export_user.crt"
-            assert k_ret4 == sep_dir / "export_user.key"
+            separate_dir = temp_path / "sep_dir"
+            separate_dir.mkdir()
+            c_ret4, k_ret4 = cert.export(separate_dir, combined=False)
+            assert c_ret4 == separate_dir / "export_user.crt"
+            assert k_ret4 == separate_dir / "export_user.key"
             assert c_ret4.read_bytes() == cert_pem
             assert k_ret4.read_bytes() == key_pem
             assert (k_ret4.stat().st_mode & 0o777) == 0o600
 
             # 5. Combined=True with key_path raises ValueError
             with pytest.raises(ValueError):
-                cert.export(comb_file, key_path=sep_key_file, combined=True)
+                cert.export(combined_file, key_path=sep_key_file, combined=True)
 
 
 ##############################################################################
@@ -977,8 +981,8 @@ class TestClientCertificateStoreManagement:
         """Test creating standalone and multi-scope certificates and listing them."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 # Initially empty
                 assert await store.list_certificates() == []
@@ -1017,7 +1021,7 @@ class TestClientCertificateStoreManagement:
                 all_certs = await store.list_certificates()
                 assert len(all_certs) == 2
 
-                cert_names = {c.subject_common_name for c in all_certs}
+                cert_names = {cert.subject_common_name for cert in all_certs}
                 assert cert_names == {"Dave's Persona", "Shared Identity"}
 
                 # Verify that credentials can be retrieved for all scopes of multi
@@ -1044,8 +1048,8 @@ class TestClientCertificateStoreManagement:
         """Test get_certificate with URI, scope string, fingerprint, and file path."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
                 created = await store.create_certificate(
                     name="ident1",
                     scopes=["example.com/forum"],
@@ -1069,9 +1073,9 @@ class TestClientCertificateStoreManagement:
                 assert by_scope_no_port.subject_common_name == "Forum User"
 
                 # 3. By SHA-256 fingerprint
-                by_fp = await store.get_certificate(created.fingerprint)
-                assert by_fp is not None
-                assert by_fp.subject_common_name == "Forum User"
+                by_fingerprint = await store.get_certificate(created.fingerprint)
+                assert by_fingerprint is not None
+                assert by_fingerprint.subject_common_name == "Forum User"
 
                 # 4. By Path and filename
                 assert created.cert_path is not None
@@ -1093,8 +1097,8 @@ class TestClientCertificateStoreManagement:
         """Test associating new scopes to an existing certificate and disassociating them."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 # Create certificate for scope 1
                 cert = await store.create_certificate(
@@ -1112,17 +1116,33 @@ class TestClientCertificateStoreManagement:
                 )
 
                 # Verify all scopes resolve to the same certificate files
-                c1 = await store.get_credentials(
+                credentials1 = await store.get_credentials(
                     GeminiURI("gemini://example.com/page1")
                 )
-                c2 = await store.get_credentials(
+                credentials2 = await store.get_credentials(
                     GeminiURI("gemini://example.com/page2")
                 )
-                c3 = await store.get_credentials(GeminiURI("gemini://other.org/app"))
+                credentials3 = await store.get_credentials(
+                    GeminiURI("gemini://other.org/app")
+                )
 
-                assert c1 is not None and c2 is not None and c3 is not None
-                assert c1[0] == c2[0] == c3[0] == cert.cert_path
-                assert c1[1] == c2[1] == c3[1] == cert.key_path
+                assert (
+                    credentials1 is not None
+                    and credentials2 is not None
+                    and credentials3 is not None
+                )
+                assert (
+                    credentials1[0]
+                    == credentials2[0]
+                    == credentials3[0]
+                    == cert.cert_path
+                )
+                assert (
+                    credentials1[1]
+                    == credentials2[1]
+                    == credentials3[1]
+                    == cert.key_path
+                )
 
                 # Disassociate scope 2
                 removed = await store.disassociate_scope("example.com/page2")
@@ -1154,8 +1174,8 @@ class TestClientCertificateStoreManagement:
         """Test delete_certificate removes files and all associated scopes."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 cert = await store.create_certificate(
                     name="to_delete",
@@ -1195,8 +1215,8 @@ class TestClientCertificateStoreManagement:
         """Test delete_exact_scope removes the scope and only removes files when last scope is removed."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 cert = await store.create_certificate(
                     name="shared",
@@ -1244,8 +1264,8 @@ class TestClientCertificateStoreManagement:
         """Test transient certificate lifecycle and management."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 # Create transient certificate with multiple scopes
                 trans_cert = await store.create_certificate(
@@ -1350,8 +1370,8 @@ class TestClientCertificateImportExport:
         """Test importing a ClientCertificate instance into persistent and transient stores."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
                 cert_pem, key_pem = generate_self_signed_cert("instance_user")
                 orig_cert = ClientCertificate(cert_pem, key_pem=key_pem)
 
@@ -1389,22 +1409,22 @@ class TestClientCertificateImportExport:
         """Test importing from separate certificate and private key files on disk."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmp = Path(tmpdir)
-                store_dir = tmp / "store"
-                external_dir = tmp / "external"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temp_path = Path(temporary_directory)
+                store_dir = temp_path / "store"
+                external_dir = temp_path / "external"
                 external_dir.mkdir()
 
                 cert_pem, key_pem = generate_self_signed_cert("file_import_user")
-                c_src = external_dir / "user.crt"
-                k_src = external_dir / "user.key"
-                c_src.write_bytes(cert_pem)
-                k_src.write_bytes(key_pem)
+                cert_source = external_dir / "user.crt"
+                key_source = external_dir / "user.key"
+                cert_source.write_bytes(cert_pem)
+                key_source.write_bytes(key_pem)
 
                 store = FileClientCertificateStore(store_dir)
                 imported = await store.import_certificate(
-                    source=c_src,
-                    key_source=k_src,
+                    source=cert_source,
+                    key_source=key_source,
                     name="my_imported_user",
                     scopes=["gemini://example.com/files"],
                 )
@@ -1416,12 +1436,12 @@ class TestClientCertificateImportExport:
                 assert (imported.key_path.stat().st_mode & 0o777) == 0o600
 
                 # Verify lookup by scope
-                creds = await store.get_credentials(
+                credentials = await store.get_credentials(
                     GeminiURI("gemini://example.com/files")
                 )
-                assert creds is not None
-                assert creds[0] == store_dir / "my_imported_user.crt"
-                assert creds[1] == store_dir / "my_imported_user.key"
+                assert credentials is not None
+                assert credentials[0] == store_dir / "my_imported_user.crt"
+                assert credentials[1] == store_dir / "my_imported_user.key"
 
         asyncio.run(run())
 
@@ -1429,10 +1449,10 @@ class TestClientCertificateImportExport:
         """Test importing from a single combined PEM file containing cert and key."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmp = Path(tmpdir)
-                store_dir = tmp / "store"
-                bundle_file = tmp / "identity.pem"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temp_path = Path(temporary_directory)
+                store_dir = temp_path / "store"
+                bundle_file = temp_path / "identity.pem"
 
                 cert_pem, key_pem = generate_self_signed_cert("bundle_import_user")
                 bundle_file.write_bytes(cert_pem + b"\n" + key_pem)
@@ -1455,8 +1475,8 @@ class TestClientCertificateImportExport:
         """Test importing from in-memory PEM bytes and text."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
                 cert_pem, key_pem = generate_self_signed_cert("mem_import_user")
 
                 # 1. Combined bytes import without scopes (standalone)
@@ -1472,13 +1492,13 @@ class TestClientCertificateImportExport:
                 assert all_certs[0].fingerprint == standalone.fingerprint
 
                 # Retrieve by common name and fingerprint
-                by_cn = await store.get_certificate("mem_import_user")
-                assert by_cn is not None
-                assert by_cn.fingerprint == standalone.fingerprint
+                by_common_name = await store.get_certificate("mem_import_user")
+                assert by_common_name is not None
+                assert by_common_name.fingerprint == standalone.fingerprint
 
-                by_fp = await store.get_certificate(standalone.fingerprint)
-                assert by_fp is not None
-                assert by_fp.fingerprint == standalone.fingerprint
+                by_fingerprint = await store.get_certificate(standalone.fingerprint)
+                assert by_fingerprint is not None
+                assert by_fingerprint.fingerprint == standalone.fingerprint
 
                 # Associate a scope to the standalone certificate
                 await store.associate_scope(
@@ -1497,8 +1517,14 @@ class TestClientCertificateImportExport:
                     name="str_persona",
                     scopes=["gemini://example.com/str_scope"],
                 )
-                assert imported_str.cert_path == Path(tmpdir) / "str_persona.crt"
-                assert imported_str.key_path == Path(tmpdir) / "str_persona.key"
+                assert (
+                    imported_str.cert_path
+                    == Path(temporary_directory) / "str_persona.crt"
+                )
+                assert (
+                    imported_str.key_path
+                    == Path(temporary_directory) / "str_persona.key"
+                )
 
         asyncio.run(run())
 
@@ -1506,8 +1532,8 @@ class TestClientCertificateImportExport:
         """Test error conditions when importing certificates into store."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                store = FileClientCertificateStore(tmpdir)
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                store = FileClientCertificateStore(temporary_directory)
 
                 # Invalid source type
                 with pytest.raises(ValueError):
@@ -1518,7 +1544,7 @@ class TestClientCertificateImportExport:
                     await store.import_certificate(source=b"not a valid certificate")
 
                 # Non-existent file
-                non_existent = Path(tmpdir) / "not_there.crt"
+                non_existent = Path(temporary_directory) / "not_there.crt"
                 with pytest.raises(ValueError):
                     # treated as invalid PEM text
                     await store.import_certificate(source=str(non_existent))
@@ -1529,10 +1555,10 @@ class TestClientCertificateImportExport:
         """Test exporting stored certificates using store.export_certificate."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmp = Path(tmpdir)
-                store_dir = tmp / "store"
-                export_dir = tmp / "exports"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temp_path = Path(temporary_directory)
+                store_dir = temp_path / "store"
+                export_dir = temp_path / "exports"
                 export_dir.mkdir()
 
                 store = FileClientCertificateStore(store_dir)
@@ -1544,22 +1570,22 @@ class TestClientCertificateImportExport:
 
                 # 1. Export by fingerprint (combined=True)
                 comb_dst = export_dir / "exported_bundle.pem"
-                c_out, k_out = await store.export_certificate(
+                cert_output, key_output = await store.export_certificate(
                     cert.fingerprint, comb_dst, combined=True
                 )
-                assert c_out == comb_dst
-                assert k_out == comb_dst
+                assert cert_output == comb_dst
+                assert key_output == comb_dst
                 assert comb_dst.exists()
                 assert (comb_dst.stat().st_mode & 0o777) == 0o600
 
                 # 2. Export by common name (combined=False to directory)
-                sep_dir = export_dir / "sep"
-                sep_dir.mkdir()
+                separate_directory = export_dir / "sep"
+                separate_directory.mkdir()
                 c_out2, k_out2 = await store.export_certificate(
-                    "Export Test User", sep_dir, combined=False
+                    "Export Test User", separate_directory, combined=False
                 )
-                assert c_out2 == sep_dir / "Export_Test_User.crt"
-                assert k_out2 == sep_dir / "Export_Test_User.key"
+                assert c_out2 == separate_directory / "Export_Test_User.crt"
+                assert k_out2 == separate_directory / "Export_Test_User.key"
                 assert c_out2.exists()
                 assert k_out2.exists()
                 assert (k_out2.stat().st_mode & 0o777) == 0o600
@@ -1587,11 +1613,11 @@ class TestClientCertificateImportExport:
         """Test round-trip export from one store and import into another."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmp = Path(tmpdir)
-                store1_dir = tmp / "store1"
-                store2_dir = tmp / "store2"
-                backup_bundle = tmp / "identity_backup.pem"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temp_path = Path(temporary_directory)
+                store1_dir = temp_path / "store1"
+                store2_dir = temp_path / "store2"
+                backup_bundle = temp_path / "identity_backup.pem"
 
                 store1 = FileClientCertificateStore(store1_dir)
                 store2 = FileClientCertificateStore(store2_dir)
@@ -1621,11 +1647,11 @@ class TestClientCertificateImportExport:
                 assert "capsule.org:1965/account" in cert2.scopes
 
                 # 4. Verify credentials look up identically in store 2
-                creds2 = await store2.get_credentials(
+                credentials2 = await store2.get_credentials(
                     GeminiURI("gemini://capsule.org/account/settings")
                 )
-                assert creds2 is not None
-                assert creds2[0] == store2_dir / "restored_identity.crt"
-                assert creds2[1] == store2_dir / "restored_identity.key"
+                assert credentials2 is not None
+                assert credentials2[0] == store2_dir / "restored_identity.crt"
+                assert credentials2[1] == store2_dir / "restored_identity.key"
 
         asyncio.run(run())

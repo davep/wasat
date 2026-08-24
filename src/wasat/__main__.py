@@ -106,8 +106,8 @@ async def run_cli() -> None:
 
     try:
         current_uri = GeminiURI(args.url)
-    except WasatError as e:
-        print(f"Error: {e}", file=stderr)
+    except WasatError as error:
+        print(f"Error: {error}", file=stderr)
         exit(1)
 
     try:
@@ -123,10 +123,10 @@ async def run_cli() -> None:
                             print(f"Requested URI: {response.requested_uri}")
                         if response.history:
                             print("Redirections:")
-                            for redirect_resp in response.history:
+                            for redirect_response in response.history:
                                 print(
-                                    f"  {redirect_resp.uri} -> "
-                                    f"{redirect_resp.meta.strip()}"
+                                    f"  {redirect_response.uri} -> "
+                                    f"{redirect_response.meta.strip()}"
                                 )
                         print(f"URI: {response.uri}")
                         if response.verification_method is not None:
@@ -192,8 +192,8 @@ async def run_cli() -> None:
                         break
                     else:
                         exit(1)
-    except WasatError as e:
-        print(f"Error: {e}", file=stderr)
+    except WasatError as error:
+        print(f"Error: {error}", file=stderr)
         exit(1)
 
 

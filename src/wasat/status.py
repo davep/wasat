@@ -134,8 +134,8 @@ class StatusCode(IntEnum):
             primary_value = (value // 10) * 10
             try:
                 return cls(primary_value)
-            except ValueError as e:
-                raise ValueError(f"Invalid status code: {value}") from e
+            except ValueError as error:
+                raise ValueError(f"Invalid status code: {value}") from error
 
 
 ### status.py ends here

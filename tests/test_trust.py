@@ -18,8 +18,8 @@ class TestFileTrustStore:
         """Test that an empty trust store returns no hosts or fingerprints."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                hosts_file = Path(tmpdir) / "known_hosts"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                hosts_file = Path(temporary_directory) / "known_hosts"
                 trust_store = FileTrustStore(hosts_file)
 
                 hosts = await trust_store.get_hosts()
@@ -34,8 +34,8 @@ class TestFileTrustStore:
         """Test saving certificate fingerprints and retrieving hosts."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                hosts_file = Path(tmpdir) / "known_hosts"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                hosts_file = Path(temporary_directory) / "known_hosts"
                 trust_store = FileTrustStore(hosts_file)
 
                 cert_der1 = b"cert_one"
@@ -62,8 +62,8 @@ class TestFileTrustStore:
         """Test verifying certificates against stored fingerprints."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                hosts_file = Path(tmpdir) / "known_hosts"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                hosts_file = Path(temporary_directory) / "known_hosts"
                 trust_store = FileTrustStore(hosts_file)
 
                 cert_der = b"my_certificate"
@@ -89,8 +89,8 @@ class TestFileTrustStore:
         """Test that the trust_store property is correctly exposed on the Client."""
 
         async def run() -> None:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                hosts_file = Path(tmpdir) / "known_hosts"
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                hosts_file = Path(temporary_directory) / "known_hosts"
                 trust_store = FileTrustStore(hosts_file)
 
                 # Client with TOFU mode and custom trust store

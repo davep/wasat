@@ -16,15 +16,15 @@ class MockStreamReader:
         self.offset = 0
         self.closed = False
 
-    async def read(self, n: int = -1) -> bytes:
+    async def read(self, size: int = -1) -> bytes:
         if self.offset >= len(self.data):
             return b""
-        if n == -1:
+        if size == -1:
             chunk = self.data[self.offset :]
             self.offset = len(self.data)
             return chunk
         else:
-            chunk = self.data[self.offset : self.offset + n]
+            chunk = self.data[self.offset : self.offset + size]
             self.offset += len(chunk)
             return chunk
 
@@ -38,33 +38,37 @@ class TestResponse:
     def test_mime_parsing(self) -> None:
         """Test MIME type, content type, and charset parsing."""
         # Success with empty meta defaults to text/gemini
-        r1 = Response(StatusCode.SUCCESS, "")
-        assert r1.mime_type == "text/gemini; charset=utf-8"
-        assert r1.content_type == "text/gemini"
-        assert r1.charset == "utf-8"
+        response_default = Response(StatusCode.SUCCESS, "")
+        assert response_default.mime_type == "text/gemini; charset=utf-8"
+        assert response_default.content_type == "text/gemini"
+        assert response_default.charset == "utf-8"
 
     def test_uri_property(self) -> None:
         """Test that the uri property is correctly exposed and returned."""
         uri = GeminiURI("gemini://example.com/foo")
-        r = Response(StatusCode.SUCCESS, "", uri=uri)
-        assert r.uri == uri
-        assert r.uri.host == "example.com"
-        assert r.uri.path == "/foo"
+        response = Response(StatusCode.SUCCESS, "", uri=uri)
+        assert response.uri == uri
+        assert response.uri.host == "example.com"
+        assert response.uri.path == "/foo"
 
         # Defaults to None
-        r_none = Response(StatusCode.SUCCESS, "")
-        assert r_none.uri is None
+        response_without_uri = Response(StatusCode.SUCCESS, "")
+        assert response_without_uri.uri is None
 
         # Success with custom MIME type and charset
-        r2 = Response(StatusCode.SUCCESS, "text/plain; charset=iso-8859-1; foo=bar")
-        assert r2.mime_type == "text/plain; charset=iso-8859-1; foo=bar"
-        assert r2.content_type == "text/plain"
-        assert r2.charset == "iso-8859-1"
+        response_custom_mime = Response(
+            StatusCode.SUCCESS, "text/plain; charset=iso-8859-1; foo=bar"
+        )
+        assert (
+            response_custom_mime.mime_type == "text/plain; charset=iso-8859-1; foo=bar"
+        )
+        assert response_custom_mime.content_type == "text/plain"
+        assert response_custom_mime.charset == "iso-8859-1"
 
         # Non-success code has no MIME type
-        r3 = Response(StatusCode.NOT_FOUND, "Resource not found")
-        assert r3.mime_type == ""
-        assert r3.content_type == ""
+        response_not_found = Response(StatusCode.NOT_FOUND, "Resource not found")
+        assert response_not_found.mime_type == ""
+        assert response_not_found.content_type == ""
 
     def test_read_body_all(self) -> None:
         """Test reading the entire response body."""
@@ -89,19 +93,21 @@ class TestResponse:
         async def run() -> None:
             # Test default UTF-8
             reader1 = MockStreamReader("αβγ".encode())
-            r1 = Response(StatusCode.SUCCESS, "", reader1)
-            assert await r1.text() == "αβγ"
+            response_utf8 = Response(StatusCode.SUCCESS, "", reader1)
+            assert await response_utf8.text() == "αβγ"
 
             # Test custom charset (e.g. latin-1)
             reader2 = MockStreamReader("hello".encode("latin-1"))
-            r2 = Response(StatusCode.SUCCESS, "text/plain; charset=latin-1", reader2)
-            assert await r2.text() == "hello"
+            response_latin1 = Response(
+                StatusCode.SUCCESS, "text/plain; charset=latin-1", reader2
+            )
+            assert await response_latin1.text() == "hello"
 
             # Test decode failure
             reader3 = MockStreamReader(b"\xff\xff")
-            r3 = Response(StatusCode.SUCCESS, "", reader3)
+            response_invalid = Response(StatusCode.SUCCESS, "", reader3)
             with pytest.raises(ProtocolError):
-                await r3.text()
+                await response_invalid.text()
 
         asyncio.run(run())
 
@@ -126,8 +132,8 @@ class TestResponse:
 
         async def run() -> None:
             reader = MockStreamReader(b"data")
-            async with Response(StatusCode.SUCCESS, "", reader) as r:
-                assert await r.read() == b"data"
+            async with Response(StatusCode.SUCCESS, "", reader) as response:
+                assert await response.read() == b"data"
                 assert not reader.closed
 
             assert reader.closed
@@ -140,55 +146,57 @@ class TestResponse:
         requested_uri = GeminiURI("gemini://example.com/original")
 
         # Test default values.
-        r_default = Response(StatusCode.SUCCESS, "")
-        assert r_default.history == []
-        assert r_default.requested_uri is None
+        default_response = Response(StatusCode.SUCCESS, "")
+        assert default_response.history == []
+        assert default_response.requested_uri is None
 
         # Test customised values.
-        hist_resp = Response(StatusCode.TEMPORARY_REDIRECT, "gemini://example.com/foo")
-        r = Response(
+        history_response = Response(
+            StatusCode.TEMPORARY_REDIRECT, "gemini://example.com/foo"
+        )
+        response = Response(
             StatusCode.SUCCESS,
             "",
             uri=uri,
-            history=[hist_resp],
+            history=[history_response],
             requested_uri=requested_uri,
         )
-        assert r.history == [hist_resp]
-        assert r.requested_uri == requested_uri
+        assert response.history == [history_response]
+        assert response.requested_uri == requested_uri
 
     def test_client_cert_path(self) -> None:
         """Test that client_cert_path and client_cert_used properties are correctly exposed."""
         # Test default value.
-        r_default = Response(StatusCode.SUCCESS, "")
-        assert r_default.client_cert_path is None
-        assert not r_default.client_cert_used
+        default_response = Response(StatusCode.SUCCESS, "")
+        assert default_response.client_cert_path is None
+        assert not default_response.client_cert_used
 
         # Test customised value.
         cert_path = Path("/path/to/client.crt")
-        r = Response(StatusCode.SUCCESS, "", client_cert_path=cert_path)
-        assert r.client_cert_path == cert_path
-        assert r.client_cert_used
+        response = Response(StatusCode.SUCCESS, "", client_cert_path=cert_path)
+        assert response.client_cert_path == cert_path
+        assert response.client_cert_used
 
     def test_server_cert_properties(self) -> None:
         """Test server_cert_der, server_cert_fingerprint, and verification_method properties."""
         # Test default values.
-        r_default = Response(StatusCode.SUCCESS, "")
-        assert r_default.server_cert_der is None
-        assert r_default.server_cert_fingerprint is None
-        assert r_default.verification_method is None
+        default_response = Response(StatusCode.SUCCESS, "")
+        assert default_response.server_cert_der is None
+        assert default_response.server_cert_fingerprint is None
+        assert default_response.verification_method is None
 
         # Test populated values.
         cert_der = b"mock_server_cert_der_bytes"
-        r = Response(
+        response = Response(
             StatusCode.SUCCESS,
             "",
             server_cert_der=cert_der,
             verification_method="ca",
         )
-        assert r.server_cert_der == cert_der
-        assert r.verification_method == "ca"
-        assert r.server_cert_fingerprint is not None
-        assert len(r.server_cert_fingerprint) == 64
+        assert response.server_cert_der == cert_der
+        assert response.verification_method == "ca"
+        assert response.server_cert_fingerprint is not None
+        assert len(response.server_cert_fingerprint) == 64
 
     def test_server_cert_lazy_property(self) -> None:
         """Test that server_cert lazily loads and caches the ServerCertificate instance."""
@@ -197,20 +205,20 @@ class TestResponse:
 
         from wasat import ServerCertificate, generate_self_signed_cert
 
-        r_default = Response(StatusCode.SUCCESS, "")
-        assert r_default.server_cert is None
+        default_response = Response(StatusCode.SUCCESS, "")
+        assert default_response.server_cert is None
 
         cert_pem, _ = generate_self_signed_cert(common_name="lazy.example.com")
         cert_x509 = x509.load_pem_x509_certificate(cert_pem)
         der_bytes = cert_x509.public_bytes(serialization.Encoding.DER)
 
-        r = Response(StatusCode.SUCCESS, "", server_cert_der=der_bytes)
-        assert r._server_cert is None
+        response = Response(StatusCode.SUCCESS, "", server_cert_der=der_bytes)
+        assert response._server_cert is None
 
-        cert_obj = r.server_cert
-        assert isinstance(cert_obj, ServerCertificate)
-        assert cert_obj.subject_common_name == "lazy.example.com"
-        assert r.server_cert is cert_obj
+        server_certificate = response.server_cert
+        assert isinstance(server_certificate, ServerCertificate)
+        assert server_certificate.subject_common_name == "lazy.example.com"
+        assert response.server_cert is server_certificate
 
 
 ### test_response.py ends here
