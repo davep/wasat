@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.5.0
 
-**Released: WiP**
+**Released: 2026-08-24**
 
 - Added `ClientCertificate.from_pem` constructor to instantiate client
   certificates from in-memory PEM text or bytes, supporting combined
