@@ -566,6 +566,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#importing-and-exporting-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Importing and Exporting Certificates
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1050,6 +1061,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#importing-and-exporting-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Importing and Exporting Certificates
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1123,8 +1145,8 @@
             <span class="n">body</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
 
-    <span class="k">except</span> <span class="n">WasatError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Request failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">WasatError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Request failed: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
@@ -1275,6 +1297,38 @@
 <span class="c1"># 6. Delete a certificate and all associated scope mappings</span>
 <span class="k">if</span> <span class="n">cert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">delete_certificate</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="importing-and-exporting-certificates">Importing and Exporting Certificates</h3>
+<p>You can import external certificates (such as identity backups from other Gemini clients, OpenSSL keypairs, or pasted PEM text) and export identities for backup:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClientCertificate</span><span class="p">,</span> <span class="n">FileClientCertificateStore</span>
+
+<span class="n">store</span> <span class="o">=</span> <span class="n">FileClientCertificateStore</span><span class="p">(</span><span class="s2">"~/.config/my_app/certs"</span><span class="p">)</span>
+
+<span class="c1"># 1. In-memory or file import (supports combined or separate cert + key)</span>
+<span class="n">cert_bundle</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"identity.pem"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+<span class="n">imported_cert</span> <span class="o">=</span> <span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">import_certificate</span><span class="p">(</span>
+    <span class="n">source</span><span class="o">=</span><span class="n">cert_bundle</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"imported_identity"</span><span class="p">,</span>
+    <span class="n">scopes</span><span class="o">=</span><span class="p">[</span><span class="s2">"gemini://example.com/blog"</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># 2. Construct an in-memory ClientCertificate instance directly from PEM</span>
+<span class="n">cert</span> <span class="o">=</span> <span class="n">ClientCertificate</span><span class="o">.</span><span class="n">from_pem</span><span class="p">(</span><span class="n">cert_bundle</span><span class="p">)</span>
+
+<span class="c1"># 3. Export as a combined .pem backup bundle with strict permissions (0600)</span>
+<span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">export_certificate</span><span class="p">(</span>
+    <span class="n">identifier</span><span class="o">=</span><span class="n">imported_cert</span><span class="p">,</span>
+    <span class="n">target_path</span><span class="o">=</span><span class="s2">"~/backups/identity_backup.pem"</span><span class="p">,</span>
+    <span class="n">combined</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 4. Export as separate .crt and .key files into a directory</span>
+<span class="k">await</span> <span class="n">store</span><span class="o">.</span><span class="n">export_certificate</span><span class="p">(</span>
+    <span class="n">identifier</span><span class="o">=</span><span class="s2">"imported_identity"</span><span class="p">,</span>
+    <span class="n">target_path</span><span class="o">=</span><span class="s2">"~/backups/keys/"</span><span class="p">,</span>
+    <span class="n">combined</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="exception-hierarchy">Exception Hierarchy</h2>

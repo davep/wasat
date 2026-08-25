@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v150" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.5.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v140" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1022,6 +1033,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v150" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.5.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v140" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1251,6 +1273,39 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v150">v1.5.0</h2>
+<p><strong>Released: 2026-08-24</strong></p>
+<ul>
+<li>Added <code>ClientCertificate.from_pem</code> constructor to instantiate client
+  certificates from in-memory PEM text or bytes, supporting combined
+  bundles, separate certificate and private key inputs, or certificate-only
+  data. (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Updated <code>ClientCertificate.from_file</code> to automatically detect and extract
+  private keys from single combined <code>.pem</code> files when <code>key_path</code> is omitted.
+  (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Added <code>ClientCertificate.to_combined_pem</code> method to serialise certificate
+  and private key pairs into a single PEM byte sequence.
+  (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Added <code>ClientCertificate.export</code> method to export certificates and private
+  keys to disk with restricted permissions (<code>0600</code>) on private keys.
+  (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Added <code>import_certificate</code> method to <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation to import certificates from
+  file paths, raw PEM bytes or strings, or <code>ClientCertificate</code> instances,
+  with optional scope associations and safe file permissions.
+  (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Added <code>export_certificate</code> method to <code>ClientCertificateStore</code> protocol and
+  <code>FileClientCertificateStore</code> implementation to look up certificates by
+  fingerprint, common name, file stem, or scope and export them as combined
+  bundles or separate files. (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Enhanced <code>FileClientCertificateStore.get_certificate</code> to support lookup by
+  certificate subject Common Name and file stem.
+  (<a href="https://github.com/davep/wasat/pull/52">#52</a>)</li>
+<li>Fixed an issue where unscoped transient certificates were omitted from
+  <code>list_certificates</code> in <code>FileClientCertificateStore</code> and could not be
+  retrieved or managed via <code>get_certificate</code>, <code>associate_scope</code>, or
+  <code>delete_certificate</code>. (<a href="https://github.com/davep/wasat/pull/51">#51</a>)</li>
+</ul>
 <h2 id="v140">v1.4.0</h2>
 <p><strong>Released: 2026-08-23</strong></p>
 <ul>
