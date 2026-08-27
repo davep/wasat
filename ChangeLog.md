@@ -1,5 +1,15 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+- Added `client_cert` and `client_key_path` properties to `Response` to
+  allow inspecting the client TLS certificate and key used for the request.
+  `client_cert` lazily loads and caches the `ClientCertificate` instance.
+  ([#55](https://github.com/davep/wasat/pull/55))
+- Updated the CLI (`wasat`) `--show-cert` option to display client
+  certificate details alongside server certificate information when a client
+  certificate was used. ([#55](https://github.com/davep/wasat/pull/55))
+
 ## v1.5.0
 
 **Released: 2026-08-24**

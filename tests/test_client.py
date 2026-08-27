@@ -482,9 +482,10 @@ class TestClient:
         )
 
     def test_client_cert_propagation_on_same_host_redirect(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """Test that client certificates are reused for same-host redirects."""
+        from wasat import generate_self_signed_cert
 
         async def run() -> None:
             # First request -> 30 redirect to /protected
@@ -517,8 +518,11 @@ class TestClient:
                 lambda *args, **kwargs: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
             )
 
-            cert_path = Path("/mock/cert.crt")
-            key_path = Path("/mock/cert.key")
+            cert_pem, key_pem = generate_self_signed_cert(common_name="mock.client.com")
+            cert_path = tmp_path / "cert.crt"
+            key_path = tmp_path / "cert.key"
+            cert_path.write_bytes(cert_pem)
+            key_path.write_bytes(key_pem)
 
             class MockClientCertStore:
                 async def get_credentials(
@@ -555,8 +559,12 @@ class TestClient:
             assert call_count == 2
             assert response.client_cert_used is True
             assert response.client_cert_path == cert_path
+            assert response.client_key_path == key_path
+            assert response.client_cert is not None
+            assert response.client_cert.cert_path == cert_path
             assert response.history[0].client_cert_used is True
             assert response.history[0].client_cert_path == cert_path
+            assert response.history[0].client_key_path == key_path
 
         asyncio.run(run())
 
