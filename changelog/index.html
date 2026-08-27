@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v160" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.6.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v150" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1033,6 +1044,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v160" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.6.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v150" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1273,6 +1295,17 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v160">v1.6.0</h2>
+<p><strong>Released: 2026-08-27</strong></p>
+<ul>
+<li>Added <code>client_cert</code> and <code>client_key_path</code> properties to <code>Response</code> to
+  allow inspecting the client TLS certificate and key used for the request.
+  <code>client_cert</code> lazily loads and caches the <code>ClientCertificate</code> instance.
+  (<a href="https://github.com/davep/wasat/pull/55">#55</a>)</li>
+<li>Updated the CLI (<code>wasat</code>) <code>--show-cert</code> option to display client
+  certificate details alongside server certificate information when a client
+  certificate was used. (<a href="https://github.com/davep/wasat/pull/55">#55</a>)</li>
+</ul>
 <h2 id="v150">v1.5.0</h2>
 <p><strong>Released: 2026-08-24</strong></p>
 <ul>
