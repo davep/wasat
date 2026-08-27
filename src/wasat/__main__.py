@@ -55,7 +55,7 @@ def get_args() -> Namespace:
     parser.add_argument(
         "--show-cert",
         action="store_true",
-        help="Display server TLS certificate information.",
+        help="Display server and client TLS certificate information.",
     )
 
     return parser.parse_args()
@@ -164,6 +164,28 @@ async def run_cli() -> None:
                         print(f"Fingerprint: sha256:{cert.fingerprint}")
                         print(f"Self-Signed: {cert.is_self_signed}")
                         print(f"Expired: {cert.is_expired}")
+                        print("--------------------------")
+
+                    if args.show_cert and response.client_cert is not None:
+                        client_cert = response.client_cert
+                        print("--- Client Certificate ---")
+                        print(f"Subject: {client_cert.subject}")
+                        print(f"Issuer: {client_cert.issuer}")
+                        if client_cert.subject_common_name:
+                            print(f"Subject CN: {client_cert.subject_common_name}")
+                        if client_cert.issuer_common_name:
+                            print(f"Issuer CN: {client_cert.issuer_common_name}")
+                        if client_cert.email:
+                            print(f"Email: {client_cert.email}")
+                        if client_cert.user_id:
+                            print(f"User ID: {client_cert.user_id}")
+                        print(f"Valid From: {client_cert.not_before}")
+                        print(f"Valid Until: {client_cert.not_after}")
+                        print(f"Fingerprint: sha256:{client_cert.fingerprint}")
+                        print(f"Self-Signed: {client_cert.is_self_signed}")
+                        print(f"Expired: {client_cert.is_expired}")
+                        if client_cert.scopes:
+                            print(f"Scopes: {', '.join(client_cert.scopes)}")
                         print("--------------------------")
 
                     if response.status.is_input:

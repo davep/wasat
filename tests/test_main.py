@@ -27,6 +27,7 @@ class DummyResponse:
         verification_method: str | None = None,
         server_cert_fingerprint: str | None = None,
         server_cert: Any | None = None,
+        client_cert: Any | None = None,
     ) -> None:
         """Initialise dummy response.
 
@@ -40,6 +41,7 @@ class DummyResponse:
             verification_method: Optional certificate verification method.
             server_cert_fingerprint: Optional server certificate fingerprint.
             server_cert: Optional server certificate object.
+            client_cert: Optional client certificate object.
         """
         self.status = status
         self.meta = meta
@@ -50,6 +52,7 @@ class DummyResponse:
         self.verification_method = verification_method
         self.server_cert_fingerprint = server_cert_fingerprint
         self.server_cert = server_cert
+        self.client_cert = client_cert
 
     async def text(self) -> str:
         """Get the text body.
@@ -439,3 +442,54 @@ def test_cli_show_cert_with_verbose(
     assert "--- Server Certificate ---" in captured.out
     assert "Subject CN: verbose.example.com" in captured.out
     assert "Hello verbose cert!" in captured.out
+
+
+def test_cli_show_cert_with_client_cert(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI with --show-cert prints client certificate details if present.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture stdout/stderr fixture.
+    """
+    from wasat import ClientCertificate, generate_self_signed_cert
+
+    cert_pem, key_pem = generate_self_signed_cert(
+        common_name="client.example.com",
+        email="test@example.com",
+    )
+    client_cert = ClientCertificate.from_pem(
+        cert_pem,
+        key_pem=key_pem,
+        scopes=["gemini://client.example.com/"],
+    )
+
+    monkeypatch.setattr(
+        "sys.argv", ["wasat", "--show-cert", "gemini://client.example.com/"]
+    )
+
+    uri = GeminiURI("gemini://client.example.com/")
+    response = DummyResponse(
+        StatusCode.SUCCESS,
+        "text/gemini",
+        "Hello client cert!",
+        uri=uri,
+        client_cert=client_cert,
+    )
+
+    async def mock_request(self: Any, uri: Any) -> DummyResponse:
+        return response
+
+    monkeypatch.setattr("wasat.Client.request", mock_request)
+
+    asyncio.run(run_cli())
+
+    captured = capsys.readouterr()
+    assert "--- Client Certificate ---" in captured.out
+    assert "Subject CN: client.example.com" in captured.out
+    assert "Issuer CN: client.example.com" in captured.out
+    assert "Email: test@example.com" in captured.out
+    assert "Fingerprint: sha256:" in captured.out
+    assert "Scopes: gemini://client.example.com/" in captured.out
+    assert "Hello client cert!" in captured.out

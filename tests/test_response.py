@@ -164,18 +164,56 @@ class TestResponse:
         assert response.history == [history_response]
         assert response.requested_uri == requested_uri
 
-    def test_client_cert_path(self) -> None:
-        """Test that client_cert_path and client_cert_used properties are correctly exposed."""
-        # Test default value.
+    def test_client_cert_properties(self, tmp_path: Path) -> None:
+        """Test client_cert_path, client_key_path, client_cert_used, and direct client_cert."""
+        from wasat import ClientCertificate, generate_self_signed_cert
+
+        # Test default values.
         default_response = Response(StatusCode.SUCCESS, "")
         assert default_response.client_cert_path is None
+        assert default_response.client_key_path is None
+        assert default_response.client_cert is None
         assert not default_response.client_cert_used
 
-        # Test customised value.
-        cert_path = Path("/path/to/client.crt")
-        response = Response(StatusCode.SUCCESS, "", client_cert_path=cert_path)
+        # Test customised path values.
+        cert_path = tmp_path / "client.crt"
+        key_path = tmp_path / "client.key"
+        response = Response(
+            StatusCode.SUCCESS,
+            "",
+            client_cert_path=cert_path,
+            client_key_path=key_path,
+        )
         assert response.client_cert_path == cert_path
+        assert response.client_key_path == key_path
         assert response.client_cert_used
+
+        # Non-existent file returns None gracefully for client_cert
+        assert response.client_cert is None
+
+        # Test passing ClientCertificate instance directly
+        cert_pem, key_pem = generate_self_signed_cert(common_name="direct.example.com")
+        cert = ClientCertificate.from_pem(cert_pem, key_pem=key_pem)
+        direct_response = Response(StatusCode.SUCCESS, "", client_cert=cert)
+        assert direct_response.client_cert is cert
+        assert direct_response.client_cert_used
+        assert direct_response.client_cert.subject_common_name == "direct.example.com"
+
+    def test_client_cert_lazy_property(self, tmp_path: Path) -> None:
+        """Test that client_cert lazily loads and caches the ClientCertificate instance."""
+        from wasat import ClientCertificate, generate_self_signed_cert
+
+        cert_pem, key_pem = generate_self_signed_cert(common_name="lazy.client.com")
+        cert_path = tmp_path / "client.pem"
+        cert_path.write_bytes(cert_pem + b"\n" + key_pem)
+
+        response = Response(StatusCode.SUCCESS, "", client_cert_path=cert_path)
+        assert response._client_cert is None
+
+        client_certificate = response.client_cert
+        assert isinstance(client_certificate, ClientCertificate)
+        assert client_certificate.subject_common_name == "lazy.client.com"
+        assert response.client_cert is client_certificate
 
     def test_server_cert_properties(self) -> None:
         """Test server_cert_der, server_cert_fingerprint, and verification_method properties."""

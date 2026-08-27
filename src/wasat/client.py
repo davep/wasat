@@ -634,6 +634,7 @@ class Client:
                     history=history,
                     requested_uri=requested_uri,
                     client_cert_path=cert_path,
+                    client_key_path=key_path,
                     server_cert_der=server_cert_der,
                     verification_method=verification_method,
                 )
@@ -650,6 +651,7 @@ class Client:
                     history=history,
                     requested_uri=requested_uri,
                     client_cert_path=cert_path,
+                    client_key_path=key_path,
                     server_cert_der=server_cert_der,
                     verification_method=verification_method,
                 )

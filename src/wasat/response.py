@@ -10,7 +10,7 @@ from typing import Literal, Protocol, Self
 
 ##############################################################################
 # Local imports.
-from .certs import ServerCertificate
+from .certs import ClientCertificate, ServerCertificate
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
 from .trust import get_cert_fingerprint
@@ -43,6 +43,8 @@ class Response:
         client_cert_path: Path | None = None,
         server_cert_der: bytes | None = None,
         verification_method: VerificationMethod | None = None,
+        client_key_path: Path | None = None,
+        client_cert: ClientCertificate | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -56,6 +58,8 @@ class Response:
             client_cert_path: The path to the client certificate used for the connection.
             server_cert_der: The raw DER-encoded server TLS certificate, or None.
             verification_method: The method used to verify the server TLS certificate, or None.
+            client_key_path: The path to the client private key used for the connection, or None.
+            client_cert: The parsed client TLS certificate, or None.
         """
         self._status = status
         """The Gemini status code of the response."""
@@ -69,12 +73,24 @@ class Response:
         """The history of response objects from any redirections."""
         self._requested_uri = requested_uri
         """The originally requested Gemini URI, or None if not set."""
-        self._client_cert_path = client_cert_path
+        self._client_cert_path = (
+            client_cert_path
+            if client_cert_path is not None
+            else (client_cert.cert_path if client_cert is not None else None)
+        )
         """The path to the client certificate used for the connection, or None."""
+        self._client_key_path = (
+            client_key_path
+            if client_key_path is not None
+            else (client_cert.key_path if client_cert is not None else None)
+        )
+        """The path to the client private key used for the connection, or None."""
         self._server_cert_der = server_cert_der
         """The raw DER-encoded server TLS certificate, or None if unavailable."""
         self._server_cert: ServerCertificate | None = None
         """The parsed server TLS certificate information, or None if unavailable."""
+        self._client_cert: ClientCertificate | None = client_cert
+        """The parsed client TLS certificate information, or None if unavailable."""
         self._verification_method = verification_method
         """The method used to verify the server TLS certificate, or None."""
         self._body: bytes | None = None
@@ -106,9 +122,27 @@ class Response:
         return self._client_cert_path
 
     @property
+    def client_key_path(self) -> Path | None:
+        """The path to the client private key used for the connection, or None."""
+        return self._client_key_path
+
+    @property
+    def client_cert(self) -> ClientCertificate | None:
+        """The parsed client TLS certificate information, or None if unavailable."""
+        if self._client_cert is None and self._client_cert_path is not None:
+            try:
+                self._client_cert = ClientCertificate.from_file(
+                    self._client_cert_path,
+                    key_path=self._client_key_path,
+                )
+            except (FileNotFoundError, ValueError):
+                return None
+        return self._client_cert
+
+    @property
     def client_cert_used(self) -> bool:
         """Whether a client certificate was used for the connection."""
-        return self._client_cert_path is not None
+        return self._client_cert_path is not None or self._client_cert is not None
 
     @property
     def server_cert_der(self) -> bytes | None:
