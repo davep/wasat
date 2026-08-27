@@ -1,6 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.6.0
+
+**Released: 2026-08-27**
 
 - Added `client_cert` and `client_key_path` properties to `Response` to
   allow inspecting the client TLS certificate and key used for the request.
