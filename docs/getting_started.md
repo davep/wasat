@@ -94,6 +94,22 @@ client = Client(
 )
 ```
 
+### Managing Trusted Server Fingerprints
+
+When running in `"tofu"` or `"hybrid"` mode, you can inspect or forget trusted hosts via the client's [trust_store][wasat.client.Client.trust_store]:
+
+```python
+if client.trust_store is not None:
+    # List all trusted (host, port) pairs
+    hosts = await client.trust_store.get_hosts()
+    print(f"Known hosts: {hosts}")
+
+    # Remove a stored fingerprint (e.g. after a server certificate renewal)
+    removed = await client.trust_store.forget("example.com", 1965)
+    if removed:
+        print("Removed fingerprint; next connection will prompt for trust again.")
+```
+
 ---
 
 ## Client Certificate Authentication
