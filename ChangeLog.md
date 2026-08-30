@@ -1,5 +1,15 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+- Added Titan protocol support (`titan://`), including `TitanURI`
+  representation, URI conversions (`to_titan`, `to_gemini`), and parameter
+  parsing (`size`, `mime`, `token`).
+- Added Titan upload (`Client.upload`) and deletion (`Client.delete`) methods to
+  `Client`.
+- Updated the CLI with `--upload`, `--data`, `--delete`, `--mime`, and `--token`
+  options.
+
 ## v1.7.0
 
 **Released: 2026-08-30**

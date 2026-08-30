@@ -27,18 +27,18 @@ from cryptography.x509.oid import NameOID
 ##############################################################################
 # Local imports.
 from .trust import get_cert_fingerprint
-from .uri import GEMINI_DEFAULT_PORT, GeminiURI
+from .uri import GEMINI_DEFAULT_PORT, AnyURI, GeminiURI, TitanURI
 
 ##############################################################################
 type ClientCertCallback = Callable[
-    [GeminiURI, ClientCertificateStore],
+    [AnyURI, ClientCertificateStore],
     Coroutine[None, None, Literal["transient", "persistent", "ignore"]],
 ]
 """Async callback function signature for resolving a client certificate requirement.
 
 This callback is invoked when a client certificate is required. It receives the
-requested [GeminiURI][wasat.uri.GeminiURI] and the [ClientCertificateStore][wasat.certs.ClientCertificateStore]
-instance to query or update.
+requested URI ([GeminiURI][wasat.uri.GeminiURI] or [TitanURI][wasat.uri.TitanURI])
+and the [ClientCertificateStore][wasat.certs.ClientCertificateStore] instance to query or update.
 """
 
 _transient_dirs: list[Path] = []
@@ -169,17 +169,17 @@ def _safe_filename(scope: str) -> str:
 
 
 ##############################################################################
-def normalize_scope(scope_or_uri: str | GeminiURI) -> str:
-    """Normalise a GeminiURI or scope string into a canonical scope string.
+def normalize_scope(scope_or_uri: str | AnyURI) -> str:
+    """Normalise a GeminiURI, TitanURI, or scope string into a canonical scope string.
 
     Args:
-        scope_or_uri: A GeminiURI instance or a scope string (e.g. 'example.com/path'
-            or 'gemini://example.com:1965/path').
+        scope_or_uri: A GeminiURI or TitanURI instance, or a scope string (e.g. 'example.com/path'
+            or 'gemini://example.com:1965/path' or 'titan://example.com/path;size=10').
 
     Returns:
         The canonical scope string in 'host:port/path' format.
     """
-    if isinstance(scope_or_uri, GeminiURI):
+    if isinstance(scope_or_uri, (GeminiURI, TitanURI)):
         host = scope_or_uri.host.lower()
         port = scope_or_uri.port
         path = scope_or_uri.path or "/"
@@ -188,15 +188,19 @@ def normalize_scope(scope_or_uri: str | GeminiURI) -> str:
         return f"{host}:{port}{path}"
 
     scope_string = str(scope_or_uri).strip()
+    if scope_string.startswith("titan://"):
+        return normalize_scope(TitanURI(scope_string))
     if scope_string.startswith("gemini://") or "://" in scope_string:
-        uri = GeminiURI(scope_string)
-        return normalize_scope(uri)
+        return normalize_scope(GeminiURI(scope_string))
 
     if "/" in scope_string:
         host_port, path = scope_string.split("/", 1)
         path = "/" + path
     else:
         host_port, path = scope_string, "/"
+
+    if ";" in path:
+        path = path.partition(";")[0]
 
     if ":" in host_port:
         host, port_str = host_port.rsplit(":", 1)
@@ -213,11 +217,11 @@ def normalize_scope(scope_or_uri: str | GeminiURI) -> str:
 
 
 ##############################################################################
-def get_candidate_scopes(uri: GeminiURI) -> list[str]:
+def get_candidate_scopes(uri: AnyURI) -> list[str]:
     """Get candidate certificate scopes for a URI, sorted by specificity.
 
     Args:
-        uri: The GeminiURI to generate scopes for.
+        uri: The URI (GeminiURI or TitanURI) to generate scopes for.
 
     Returns:
         A list of scope strings in descending order of specificity.
@@ -407,7 +411,7 @@ class ClientCertificate:
         cls,
         cert_path: str | Path,
         key_path: str | Path | None = None,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
     ) -> ClientCertificate:
         """Construct a ClientCertificate instance from PEM files on disk.
 
@@ -417,7 +421,7 @@ class ClientCertificate:
         Args:
             cert_path: Path to the certificate PEM file (or combined bundle).
             key_path: Optional path to the private key PEM file.
-            scopes: Sequence of Gemini scopes or URIs associated with this certificate.
+            scopes: Sequence of Gemini/Titan scopes or URIs associated with this certificate.
 
         Returns:
             A new ClientCertificate instance.
@@ -458,7 +462,7 @@ class ClientCertificate:
         cert_pem: bytes | str,
         *,
         key_pem: bytes | str | None = None,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
     ) -> ClientCertificate:
         """Construct a ClientCertificate instance from PEM bytes or text.
 
@@ -466,7 +470,7 @@ class ClientCertificate:
             cert_pem: PEM-encoded certificate bytes or string (can be a combined
                 certificate and private key bundle).
             key_pem: Optional separate PEM-encoded private key bytes or string.
-            scopes: Sequence of Gemini scopes or URIs associated with this certificate.
+            scopes: Sequence of Gemini/Titan scopes or URIs associated with this certificate.
 
         Returns:
             A new ClientCertificate instance.
@@ -757,12 +761,12 @@ class ClientCertificateStore(Protocol):
         ...
 
     async def get_certificate(
-        self, identifier: str | Path | GeminiURI
+        self, identifier: str | Path | AnyURI
     ) -> ClientCertificate | None:
         """Retrieve a client certificate by scope, URI, fingerprint, or filename.
 
         Args:
-            identifier: A GeminiURI, scope string, SHA-256 fingerprint, or
+            identifier: A URI (GeminiURI or TitanURI), scope string, SHA-256 fingerprint, or
                 certificate file path/name.
 
         Returns:
@@ -774,7 +778,7 @@ class ClientCertificateStore(Protocol):
         self,
         name: str,
         *,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
         transient: bool = False,
         common_name: str | None = None,
         valid_days: int | None = 365,
@@ -791,7 +795,7 @@ class ClientCertificateStore(Protocol):
 
         Args:
             name: Base name for the certificate file.
-            scopes: Sequence of Gemini scopes or URIs to associate with the certificate.
+            scopes: Sequence of Gemini/Titan scopes or URIs to associate with the certificate.
             transient: If True, the certificate is generated in a temporary
                 directory and not registered in the persistent store.
             common_name: The Common Name (CN) for the certificate. Defaults to `name`.
@@ -825,7 +829,7 @@ class ClientCertificateStore(Protocol):
         *,
         key_source: str | Path | bytes | None = None,
         name: str | None = None,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
         transient: bool = False,
     ) -> ClientCertificate:
         """Import an existing client certificate and key into the store.
@@ -835,7 +839,7 @@ class ClientCertificateStore(Protocol):
             key_source: Optional separate file path or PEM string/bytes for the private key.
             name: Optional base name for the imported certificate files in the store.
                 If omitted, derived from the certificate common name, fingerprint, or source filename.
-            scopes: Optional sequence of Gemini scopes or URIs to associate with the imported certificate.
+            scopes: Optional sequence of Gemini/Titan scopes or URIs to associate with the imported certificate.
             transient: If True, imports the certificate into transient storage.
 
         Returns:
@@ -851,7 +855,7 @@ class ClientCertificateStore(Protocol):
 
     async def export_certificate(
         self,
-        identifier: str | Path | GeminiURI | ClientCertificate,
+        identifier: str | Path | AnyURI | ClientCertificate,
         target_path: str | Path,
         *,
         key_path: str | Path | None = None,
@@ -860,7 +864,7 @@ class ClientCertificateStore(Protocol):
         """Export a stored client certificate and its private key to disk.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
             target_path: File or directory destination for the exported certificate.
             key_path: Optional specific file destination for the private key.
@@ -878,15 +882,15 @@ class ClientCertificateStore(Protocol):
 
     async def associate_scope(
         self,
-        identifier: str | Path | GeminiURI | ClientCertificate,
-        scope_or_uri: str | GeminiURI,
+        identifier: str | Path | AnyURI | ClientCertificate,
+        scope_or_uri: str | AnyURI,
     ) -> None:
         """Associate an existing certificate in the store with an additional scope or URI.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
-            scope_or_uri: The scope string or GeminiURI to associate.
+            scope_or_uri: The scope string or URI to associate.
 
         Raises:
             ValueError: If the certificate cannot be identified in the store.
@@ -894,11 +898,11 @@ class ClientCertificateStore(Protocol):
         """
         ...
 
-    async def disassociate_scope(self, scope_or_uri: str | GeminiURI) -> bool:
+    async def disassociate_scope(self, scope_or_uri: str | AnyURI) -> bool:
         """Disassociate a scope or URI without deleting the certificate files.
 
         Args:
-            scope_or_uri: The scope string or GeminiURI to disassociate.
+            scope_or_uri: The scope string or URI to disassociate.
 
         Returns:
             True if an association was removed, False if no matching scope was registered.
@@ -909,12 +913,12 @@ class ClientCertificateStore(Protocol):
         ...
 
     async def delete_certificate(
-        self, identifier: str | Path | GeminiURI | ClientCertificate
+        self, identifier: str | Path | AnyURI | ClientCertificate
     ) -> bool:
         """Delete a client certificate and its private key, removing all associated scopes.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
 
         Returns:
@@ -925,11 +929,11 @@ class ClientCertificateStore(Protocol):
         """
         ...
 
-    async def delete_exact_scope(self, scope_or_uri: str | GeminiURI) -> bool:
+    async def delete_exact_scope(self, scope_or_uri: str | AnyURI) -> bool:
         """Delete the exact scope association, removing the certificate files if unused.
 
         Args:
-            scope_or_uri: The scope string or GeminiURI to delete.
+            scope_or_uri: The scope string or URI to delete.
 
         Returns:
             True if the scope was found and deleted, False otherwise.
@@ -939,7 +943,7 @@ class ClientCertificateStore(Protocol):
         """
         ...
 
-    async def has_exact_credentials(self, uri: GeminiURI) -> bool:
+    async def has_exact_credentials(self, uri: AnyURI) -> bool:
         """Check if a certificate exists for the exact scope of the URI.
 
         This checks if a certificate has been registered specifically for the
@@ -947,21 +951,21 @@ class ClientCertificateStore(Protocol):
         scopes).
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             True if a certificate is registered for this exact scope, False otherwise.
         """
         ...
 
-    async def get_credentials(self, uri: GeminiURI) -> tuple[Path, Path] | None:
+    async def get_credentials(self, uri: AnyURI) -> tuple[Path, Path] | None:
         """Retrieve the certificate and private key paths matching the given URI.
 
         This should perform path prefix matching to find the most specific
         matching certificate for the requested host, port, and path.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             A tuple of (cert_path, key_path) or None if no certificate is stored
@@ -971,7 +975,7 @@ class ClientCertificateStore(Protocol):
 
     async def create_credentials(
         self,
-        uri: GeminiURI,
+        uri: AnyURI,
         *,
         transient: bool = False,
         common_name: str | None = None,
@@ -988,7 +992,7 @@ class ClientCertificateStore(Protocol):
         """Generate and save a new self-signed client certificate and private key.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             transient: If True, the certificate is generated in a temporary
                 directory and not registered in the persistent store.
             common_name: The Common Name (CN) for the certificate. Defaults to the host.
@@ -1018,7 +1022,7 @@ class ClientCertificateStore(Protocol):
 
     async def register_credentials(
         self,
-        uri: GeminiURI,
+        uri: AnyURI,
         cert_path: str | Path,
         key_path: str | Path,
         *,
@@ -1027,7 +1031,7 @@ class ClientCertificateStore(Protocol):
         """Register existing certificate and private key paths for the URI's scope.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             cert_path: Path to the existing client certificate.
             key_path: Path to the existing private key.
             transient: If True, registers as transient.
@@ -1041,11 +1045,11 @@ class ClientCertificateStore(Protocol):
         """
         ...
 
-    async def delete_credentials(self, uri: GeminiURI) -> bool:
+    async def delete_credentials(self, uri: AnyURI) -> bool:
         """Delete the certificate and key associated with the matching scope.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             True if deleted, False if no matching scope was found.
@@ -1223,12 +1227,12 @@ class FileClientCertificateStore(ClientCertificateStore):
             return await asyncio.to_thread(self._list_certificates_sync)
 
     async def get_certificate(
-        self, identifier: str | Path | GeminiURI
+        self, identifier: str | Path | AnyURI
     ) -> ClientCertificate | None:
         """Retrieve a client certificate by scope, URI, fingerprint, or filename.
 
         Args:
-            identifier: A GeminiURI, scope string, SHA-256 fingerprint, or
+            identifier: A URI (GeminiURI or TitanURI), scope string, SHA-256 fingerprint, or
                 certificate file path/name.
 
         Returns:
@@ -1236,7 +1240,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         """
         all_certs = await self.list_certificates()
 
-        if isinstance(identifier, GeminiURI):
+        if isinstance(identifier, (GeminiURI, TitanURI)):
             credentials = await self.get_credentials(identifier)
             if credentials is None:
                 return None
@@ -1280,13 +1284,14 @@ class FileClientCertificateStore(ClientCertificateStore):
             if norm_scope in cert.scopes or ident_str in cert.scopes:
                 return cert
 
-        # Fallback to candidate scope lookup using GeminiURI
+        # Fallback to candidate scope lookup using URI
         try:
-            uri = (
-                GeminiURI(ident_str)
-                if "://" in ident_str
-                else GeminiURI(f"gemini://{ident_str}")
-            )
+            if ident_str.startswith("titan://"):
+                uri: AnyURI = TitanURI(ident_str)
+            elif ident_str.startswith("gemini://") or "://" in ident_str:
+                uri = GeminiURI(ident_str)
+            else:
+                uri = GeminiURI(f"gemini://{ident_str}")
             credentials = await self.get_credentials(uri)
             if credentials is not None:
                 cert_path = credentials[0]
@@ -1305,7 +1310,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         self,
         name: str,
         *,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
         transient: bool = False,
         common_name: str | None = None,
         valid_days: int | None = 365,
@@ -1424,7 +1429,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         *,
         key_source: str | Path | bytes | None = None,
         name: str | None = None,
-        scopes: Sequence[str | GeminiURI] = (),
+        scopes: Sequence[str | AnyURI] = (),
         transient: bool = False,
     ) -> ClientCertificate:
         """Import an existing client certificate and key into the store.
@@ -1434,7 +1439,7 @@ class FileClientCertificateStore(ClientCertificateStore):
             key_source: Optional separate file path or PEM string/bytes for the private key.
             name: Optional base name for the imported certificate files in the store.
                 If omitted, derived from the certificate common name, fingerprint, or source filename.
-            scopes: Optional sequence of Gemini scopes or URIs to associate with the imported certificate.
+            scopes: Optional sequence of Gemini/Titan scopes or URIs to associate with the imported certificate.
             transient: If True, imports the certificate into transient storage.
 
         Returns:
@@ -1550,7 +1555,7 @@ class FileClientCertificateStore(ClientCertificateStore):
 
     async def export_certificate(
         self,
-        identifier: str | Path | GeminiURI | ClientCertificate,
+        identifier: str | Path | AnyURI | ClientCertificate,
         target_path: str | Path,
         *,
         key_path: str | Path | None = None,
@@ -1559,7 +1564,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         """Export a stored client certificate and its private key to disk.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
             target_path: File or directory destination for the exported certificate.
             key_path: Optional specific file destination for the private key.
@@ -1591,15 +1596,15 @@ class FileClientCertificateStore(ClientCertificateStore):
 
     async def associate_scope(
         self,
-        identifier: str | Path | GeminiURI | ClientCertificate,
-        scope_or_uri: str | GeminiURI,
+        identifier: str | Path | AnyURI | ClientCertificate,
+        scope_or_uri: str | AnyURI,
     ) -> None:
         """Associate an existing certificate in the store with an additional scope or URI.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
-            scope_or_uri: The scope string or GeminiURI to associate.
+            scope_or_uri: The scope string or URI to associate.
 
         Raises:
             ValueError: If the certificate cannot be identified in the store.
@@ -1659,11 +1664,11 @@ class FileClientCertificateStore(ClientCertificateStore):
             }
             await asyncio.to_thread(self._save_sync)
 
-    async def disassociate_scope(self, scope_or_uri: str | GeminiURI) -> bool:
+    async def disassociate_scope(self, scope_or_uri: str | AnyURI) -> bool:
         """Disassociate a scope or URI without deleting the certificate files.
 
         Args:
-            scope_or_uri: The scope string or GeminiURI to disassociate.
+            scope_or_uri: The scope string or URI to disassociate.
 
         Returns:
             True if an association was removed, False if no matching scope was registered.
@@ -1691,12 +1696,12 @@ class FileClientCertificateStore(ClientCertificateStore):
             return False
 
     async def delete_certificate(
-        self, identifier: str | Path | GeminiURI | ClientCertificate
+        self, identifier: str | Path | AnyURI | ClientCertificate
     ) -> bool:
         """Delete a client certificate and its private key, removing all associated scopes.
 
         Args:
-            identifier: Target certificate reference (ClientCertificate, GeminiURI,
+            identifier: Target certificate reference (ClientCertificate, URI,
                 fingerprint, or file path/name).
 
         Returns:
@@ -1763,11 +1768,11 @@ class FileClientCertificateStore(ClientCertificateStore):
 
             return False
 
-    async def delete_exact_scope(self, scope_or_uri: str | GeminiURI) -> bool:
+    async def delete_exact_scope(self, scope_or_uri: str | AnyURI) -> bool:
         """Delete the exact scope association, removing the certificate files if unused.
 
         Args:
-            scope_or_uri: The scope string or GeminiURI to delete.
+            scope_or_uri: The scope string or URI to delete.
 
         Returns:
             True if the scope was found and deleted, False otherwise.
@@ -1823,7 +1828,7 @@ class FileClientCertificateStore(ClientCertificateStore):
             await asyncio.to_thread(self._save_sync)
             return True
 
-    async def has_exact_credentials(self, uri: GeminiURI) -> bool:
+    async def has_exact_credentials(self, uri: AnyURI) -> bool:
         """Check if a certificate exists for the exact scope of the URI.
 
         This checks if a certificate has been registered specifically for the
@@ -1831,7 +1836,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         scopes).
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             True if a certificate is registered for this exact scope, False otherwise.
@@ -1867,11 +1872,11 @@ class FileClientCertificateStore(ClientCertificateStore):
                             return True
             return False
 
-    async def get_credentials(self, uri: GeminiURI) -> tuple[Path, Path] | None:
+    async def get_credentials(self, uri: AnyURI) -> tuple[Path, Path] | None:
         """Retrieve the certificate and private key paths matching the given URI.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             A tuple of (cert_path, key_path) or None if no certificate is stored
@@ -1903,7 +1908,7 @@ class FileClientCertificateStore(ClientCertificateStore):
 
     async def create_credentials(
         self,
-        uri: GeminiURI,
+        uri: AnyURI,
         *,
         transient: bool = False,
         common_name: str | None = None,
@@ -1920,7 +1925,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         """Generate and save a new self-signed client certificate and private key.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             transient: If True, the certificate is generated in a temporary
                 directory and not registered in the persistent store.
             common_name: The Common Name (CN) for the certificate. Defaults to the host.
@@ -1975,7 +1980,7 @@ class FileClientCertificateStore(ClientCertificateStore):
 
     async def register_credentials(
         self,
-        uri: GeminiURI,
+        uri: AnyURI,
         cert_path: str | Path,
         key_path: str | Path,
         *,
@@ -1984,7 +1989,7 @@ class FileClientCertificateStore(ClientCertificateStore):
         """Register existing certificate and private key paths for the URI's scope.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             cert_path: Path to the existing client certificate.
             key_path: Path to the existing private key.
             transient: If True, registers as transient.
@@ -2039,11 +2044,11 @@ class FileClientCertificateStore(ClientCertificateStore):
                 }
                 await asyncio.to_thread(self._save_sync)
 
-    async def delete_credentials(self, uri: GeminiURI) -> bool:
+    async def delete_credentials(self, uri: AnyURI) -> bool:
         """Delete the certificate and key associated with the matching scope.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
 
         Returns:
             True if deleted, False if no matching scope was found.

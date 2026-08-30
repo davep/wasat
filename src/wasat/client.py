@@ -1,4 +1,4 @@
-"""Gemini Protocol async client implementation."""
+"""Gemini and Titan Protocol async client implementation."""
 
 ##############################################################################
 # Python imports.
@@ -6,10 +6,10 @@ import asyncio
 import os
 import ssl
 import sys
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import suppress
 from pathlib import Path
-from typing import Final, Literal, Self
+from typing import BinaryIO, Final, Literal, Self
 
 from cryptography.hazmat.bindings.openssl.binding import Binding
 
@@ -31,7 +31,12 @@ from .exceptions import (
 from .response import Response, VerificationMethod
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
-from .uri import GeminiURI
+from .uri import (
+    AnyURI,
+    GeminiURI,
+    TitanURI,
+    guess_mime_type,
+)
 
 ##############################################################################
 type NewCertCallback = Callable[[str, int, str], Coroutine[None, None, bool]]
@@ -233,7 +238,7 @@ class Client:
             )
 
         # Cache for permanent redirects (status 31)
-        self._permanent_redirects: dict[GeminiURI, GeminiURI] = {}
+        self._permanent_redirects: dict[AnyURI, AnyURI] = {}
         """Cache mapping requested URIs to their permanent redirect targets."""
 
     def _create_ssl_context(
@@ -322,12 +327,12 @@ class Client:
         return any(keyword in error_message for keyword in untrusted_keywords)
 
     async def _send_request_line(
-        self, uri: GeminiURI, writer: asyncio.StreamWriter
+        self, uri: AnyURI, writer: asyncio.StreamWriter
     ) -> None:
-        """Send the Gemini request line to the server.
+        """Send the request line to the server.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             writer: The StreamWriter representing the established connection.
 
         Raises:
@@ -338,6 +343,24 @@ class Client:
             await writer.drain()
         except (OSError, ssl.SSLError) as error:
             raise ConnectionError(f"Failed to send request line: {error}") from error
+
+    async def _send_payload(self, payload: bytes, writer: asyncio.StreamWriter) -> None:
+        """Send the payload bytes to the server.
+
+        Args:
+            payload: The raw bytes payload to send.
+            writer: The StreamWriter representing the established connection.
+        """
+        if not payload:
+            return
+        try:
+            writer.write(payload)
+            await writer.drain()
+        except (BrokenPipeError, ConnectionResetError, ssl.SSLEOFError, OSError):
+            # The server may have rejected early (e.g. sent 5x or 60 status) and closed
+            # the connection. We ignore socket write failures here so that the response
+            # line can be read and handled gracefully.
+            pass
 
     async def _read_response_line(
         self, reader: asyncio.StreamReader
@@ -391,12 +414,12 @@ class Client:
         return status_code, meta
 
     async def _connect(
-        self, uri: GeminiURI, ssl_context: ssl.SSLContext
+        self, uri: AnyURI, ssl_context: ssl.SSLContext
     ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-        """Establish connection to the Gemini server.
+        """Establish connection to the server.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             ssl_context: The SSLContext to use for the TLS handshake.
 
         Returns:
@@ -425,11 +448,11 @@ class Client:
                 f"Failed to connect to {uri.host}:{uri.port}: {error}"
             ) from error
 
-    async def _verify_tofu(self, uri: GeminiURI, writer: asyncio.StreamWriter) -> None:
+    async def _verify_tofu(self, uri: AnyURI, writer: asyncio.StreamWriter) -> None:
         """Verify the peer certificate using Trust-On-First-Use (TOFU).
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             writer: The StreamWriter representing the established connection.
 
         Raises:
@@ -489,19 +512,21 @@ class Client:
 
     async def _do_request(
         self,
-        uri: GeminiURI,
+        uri: AnyURI,
         history: list[Response] | None = None,
-        requested_uri: GeminiURI | None = None,
+        requested_uri: AnyURI | None = None,
+        payload: bytes | None = None,
     ) -> Response:
-        """Execute a single Gemini request.
+        """Execute a single Gemini or Titan request.
 
         Args:
-            uri: The target GeminiURI.
+            uri: The target URI (GeminiURI or TitanURI).
             history: Optional redirection history list.
             requested_uri: Optional originally requested URI.
+            payload: Optional payload bytes to send for Titan upload requests.
 
         Returns:
-            The Gemini Response object.
+            The Response object.
 
         Raises:
             ConnectionError: On connection/network failure.
@@ -604,6 +629,8 @@ class Client:
                         server_cert_der = cert_bytes
 
             await self._send_request_line(uri, writer)
+            if payload is not None and len(payload) > 0:
+                await self._send_payload(payload, writer)
             status_code, meta = await self._read_response_line(reader)
 
             # If the certificate was inherited from a redirect, and the request succeeded
@@ -677,10 +704,14 @@ class Client:
                                 await self._client_cert_store.create_credentials(
                                     uri,
                                     transient=(action == "transient"),
+                                    common_name=uri.host,
                                 )
                             # Retry the request
                             return await self._do_request(
-                                uri, history=history, requested_uri=requested_uri
+                                uri,
+                                history=history,
+                                requested_uri=requested_uri,
+                                payload=payload,
                             )
 
                 return response
@@ -703,29 +734,47 @@ class Client:
                 await writer.wait_closed()
             raise
 
-    async def request(self, uri: str | GeminiURI) -> Response:
-        """Perform a Gemini request and return the response.
+    async def request(self, uri: str | AnyURI) -> Response:
+        """Perform a Gemini or Titan request and return the response.
 
         Automatically handles redirection if configured.
 
         Args:
-            uri: The target URI as a string or GeminiURI object.
+            uri: The target URI as a string, GeminiURI, or TitanURI object.
 
         Returns:
-            The final Gemini Response object.
+            The final Response object.
 
         Raises:
             URIError: If the URI is invalid.
             ConnectionError: If network connection fails or times out.
             SecurityError: If TLS/certificate check fails.
-            ProtocolError: If the server response violates the Gemini protocol.
+            ProtocolError: If the server response violates the protocol.
             RedirectError: If redirect limits are exceeded or loops are detected.
             ValueError: If client certificate generation parameters are invalid.
             OSError: If creating directories or writing client certificate files fails.
             RuntimeError: If saving the updated client certificate store index fails.
         """
-        requested_uri = GeminiURI(uri)
-        current_uri = requested_uri
+        requested_uri: AnyURI
+        if isinstance(uri, str):
+            requested_uri = (
+                TitanURI(uri) if uri.startswith("titan://") else GeminiURI(uri)
+            )
+        elif isinstance(uri, (GeminiURI, TitanURI)):
+            requested_uri = uri
+        else:
+            raise URIError(f"Invalid URI type: {type(uri)}")
+
+        if (
+            isinstance(requested_uri, TitanURI)
+            and requested_uri.size is not None
+            and requested_uri.size > 0
+        ):
+            raise URIError(
+                "Titan URI specifies size > 0 but no payload was provided. Use client.upload() instead."
+            )
+
+        current_uri: AnyURI = requested_uri
 
         # Resolve permanent redirects cache first
         seen_redirects = {current_uri}
@@ -787,6 +836,169 @@ class Client:
             )
 
         return response
+
+    async def upload(
+        self,
+        uri: str | GeminiURI | TitanURI,
+        data: bytes | str | Path | AsyncIterator[bytes] | BinaryIO,
+        *,
+        mime: str | None = None,
+        token: str | None = None,
+    ) -> Response:
+        """Upload data to a Titan endpoint.
+
+        Args:
+            uri: The target URI as a string, GeminiURI, or TitanURI.
+            data: The content to upload. Can be raw bytes, a UTF-8 string, a Path,
+                an async byte iterator, or a file-like stream.
+            mime: The MIME type of the payload. If None, it is automatically inferred.
+            token: Optional authorization token for the Titan transaction.
+
+        Returns:
+            A Response instance representing the server's response.
+
+        Raises:
+            URIError: If the URI is invalid or cannot be converted to a Titan URI.
+            ConnectionError: If connection establishment fails.
+            SecurityError: If TLS or certificate validation fails.
+            ProtocolError: If the server response violates the protocol.
+            RedirectError: If redirect limits are exceeded or loops are detected.
+            TypeError: If the provided data type is unsupported.
+        """
+        target_uri: TitanURI
+        if isinstance(uri, str):
+            target_uri = (
+                GeminiURI(uri).to_titan()
+                if uri.startswith("gemini://")
+                else TitanURI.with_default_scheme(uri)
+            )
+        elif isinstance(uri, GeminiURI):
+            target_uri = uri.to_titan()
+        elif isinstance(uri, TitanURI):
+            target_uri = uri
+        else:
+            raise URIError(f"Invalid URI type: {type(uri)}")
+
+        payload_bytes: bytes
+        detected_mime: str | None = mime
+
+        if isinstance(data, str):
+            payload_bytes = data.encode("utf-8")
+            if detected_mime is None:
+                detected_mime = target_uri.mime or "text/gemini"
+        elif isinstance(data, (bytes, bytearray, memoryview)):
+            payload_bytes = bytes(data)
+            if detected_mime is None:
+                detected_mime = target_uri.mime or "application/octet-stream"
+        elif isinstance(data, Path):
+            payload_bytes = data.read_bytes()
+            if detected_mime is None:
+                detected_mime = target_uri.mime or guess_mime_type(data)
+        elif hasattr(data, "__aiter__"):
+            chunks: list[bytes] = []
+            async for chunk in data:
+                chunks.append(chunk)
+            payload_bytes = b"".join(chunks)
+            if detected_mime is None:
+                detected_mime = target_uri.mime or "application/octet-stream"
+        elif hasattr(data, "read"):
+            read_result = data.read()
+            if isinstance(read_result, str):
+                payload_bytes = read_result.encode("utf-8")
+                if detected_mime is None:
+                    detected_mime = target_uri.mime or "text/gemini"
+            else:
+                payload_bytes = bytes(read_result)
+                if detected_mime is None:
+                    detected_mime = target_uri.mime or "application/octet-stream"
+        else:
+            raise TypeError(f"Unsupported payload data type: {type(data)}")
+
+        size = len(payload_bytes)
+        target_token = token if token is not None else target_uri.token
+        final_uri = target_uri.replace(
+            size=size, mime=detected_mime, token=target_token
+        )
+
+        current_uri: AnyURI = final_uri
+        visited = {current_uri}
+        history: list[Response] = []
+
+        response = await self._do_request(
+            current_uri,
+            history=history,
+            requested_uri=final_uri,
+            payload=payload_bytes,
+        )
+
+        while response.status.is_redirect and self._follow_redirects:
+            if len(visited) > self._max_redirects:
+                await response.close()
+                raise RedirectError(
+                    f"Maximum redirect limit of {self._max_redirects} exceeded"
+                )
+
+            redirect_str = response.meta.strip()
+            if not redirect_str:
+                await response.close()
+                raise ProtocolError(
+                    "Redirect status received, but redirect URI is empty"
+                )
+
+            try:
+                new_uri = current_uri.resolve(redirect_str)
+            except URIError as error:
+                await response.close()
+                raise RedirectError(
+                    f"Failed to resolve redirect URI '{redirect_str}': {error}"
+                ) from error
+
+            if new_uri in visited:
+                await response.close()
+                raise RedirectError(f"Circular redirect detected: {new_uri}")
+
+            visited.add(new_uri)
+            current_uri = new_uri
+            history.append(response)
+            await response.close()
+
+            if isinstance(new_uri, TitanURI):
+                redirect_titan = new_uri.replace(
+                    size=size,
+                    mime=detected_mime,
+                    token=token if token is not None else new_uri.token,
+                )
+                response = await self._do_request(
+                    redirect_titan,
+                    history=history,
+                    requested_uri=final_uri,
+                    payload=payload_bytes,
+                )
+            else:
+                response = await self._do_request(
+                    new_uri,
+                    history=history,
+                    requested_uri=final_uri,
+                )
+
+        return response
+
+    async def delete(
+        self,
+        uri: str | AnyURI,
+        *,
+        token: str | None = None,
+    ) -> Response:
+        """Delete a resource via the Titan protocol by uploading zero bytes (size=0).
+
+        Args:
+            uri: The target URI as a string, GeminiURI, or TitanURI.
+            token: Optional authorisation token.
+
+        Returns:
+            The final Response object.
+        """
+        return await self.upload(uri, b"", token=token)
 
     async def close(self) -> None:
         """Close the client and clean up resources, including the client certificate store."""

@@ -6,14 +6,14 @@ All source code lives in [src/wasat/](src/wasat/). Key modules and their respons
 
 | Module | Responsibility |
 |---|---|
-| [`__init__.py`](src/wasat/__init__.py) | Library entry point. Exposes public classes (`Client`, `Response`, `StatusCode`, `GeminiURI`, `TrustStore`, `FileTrustStore`, `ClientCertificateStore`, `FileClientCertificateStore`), types/callbacks (`ClientCertCallback`), helper functions (`generate_self_signed_cert`), constants (`GEMINI_DEFAULT_PORT`), and exceptions, while keeping internal details hidden. |
+| [`__init__.py`](src/wasat/__init__.py) | Library entry point. Exposes public classes (`Client`, `Response`, `StatusCode`, `GeminiURI`, `TitanURI`, `TrustStore`, `FileTrustStore`, `ClientCertificateStore`, `FileClientCertificateStore`), types/callbacks (`ClientCertCallback`), helper functions (`generate_self_signed_cert`, `guess_mime_type`), constants (`GEMINI_DEFAULT_PORT`, `TITAN_DEFAULT_PORT`), and exceptions, while keeping internal details hidden. |
 | [`__main__.py`](src/wasat/__main__.py) | Self-contained package execution entry point and CLI runner. Not part of the public library interface. |
-| [`certs.py`](src/wasat/certs.py) | Client certificate generation and storage management (`ClientCertificateStore`, `FileClientCertificateStore`) for Gemini connections. |
-| [`client.py`](src/wasat/client.py) | Async client implementation (`Client`), including TLS connection establishment, request dispatch, redirect handling, timeout enforcement, and stream wrapping via `WrappedStreamReader`. |
-| [`response.py`](src/wasat/response.py) | Represents Gemini server response (`Response`), handling response body caching, text decoding with charsets, chunked streaming (`iter_chunks`), and async context management. |
+| [`certs.py`](src/wasat/certs.py) | Client certificate generation and storage management (`ClientCertificateStore`, `FileClientCertificateStore`) for Gemini and Titan connections. |
+| [`client.py`](src/wasat/client.py) | Async client implementation (`Client`), including TLS connection establishment, request dispatch, Titan uploads and deletions, redirect handling, timeout enforcement, and stream wrapping via `WrappedStreamReader`. |
+| [`response.py`](src/wasat/response.py) | Represents Gemini and Titan server response (`Response`), handling response body caching, text decoding with charsets, chunked streaming (`iter_chunks`), and async context management. |
 | [`status.py`](src/wasat/status.py) | Gemini protocol status code parsing and category logic (`StatusCode`). |
 | [`trust.py`](src/wasat/trust.py) | Trust-On-First-Use (TOFU) validation logic and default file-based storage backend (`FileTrustStore`). |
-| [`uri.py`](src/wasat/uri.py) | Gemini URI representation, parsing, and relative path resolution (`GeminiURI`). Uses a safe, undocumented-internal-free scheme-swapping method with `urllib.parse`. |
+| [`uri.py`](src/wasat/uri.py) | Gemini and Titan URI representation, parsing, parameter manipulation, and relative path resolution (`GeminiURI`, `TitanURI`, `_BaseURI`). Uses a safe, undocumented-internal-free scheme-swapping method with `urllib.parse`. |
 | [`exceptions.py`](src/wasat/exceptions.py) | Custom exceptions for the library (`WasatError`, `URIError`, `ProtocolError`, `ConnectionError`, `SecurityError`, `RedirectError`). |
 
 ---
@@ -77,6 +77,9 @@ All tests live in the [tests/](tests/) directory:
 - [tests/test_main.py](tests/test_main.py)
 - [tests/test_response.py](tests/test_response.py)
 - [tests/test_status.py](tests/test_status.py)
+- [tests/test_titan_cli.py](tests/test_titan_cli.py)
+- [tests/test_titan_client.py](tests/test_titan_client.py)
+- [tests/test_titan_uri.py](tests/test_titan_uri.py)
 - [tests/test_trust.py](tests/test_trust.py)
 - [tests/test_uri.py](tests/test_uri.py)
 

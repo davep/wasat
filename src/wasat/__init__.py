@@ -37,7 +37,18 @@ from .exceptions import (
 from .response import Response, VerificationMethod
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore
-from .uri import GEMINI_DEFAULT_PORT, GeminiURI
+from .uri import (
+    GEMINI_DEFAULT_PORT,
+    GEMINI_PREFIX,
+    GEMINI_SCHEME,
+    TITAN_DEFAULT_PORT,
+    TITAN_PREFIX,
+    TITAN_SCHEME,
+    AnyURI,
+    GeminiURI,
+    TitanURI,
+    guess_mime_type,
+)
 
 ##############################################################################
 # Exports.
@@ -49,6 +60,14 @@ __all__ = [
     "StatusCode",
     "GeminiURI",
     "GEMINI_DEFAULT_PORT",
+    "GEMINI_PREFIX",
+    "GEMINI_SCHEME",
+    "TitanURI",
+    "TITAN_DEFAULT_PORT",
+    "TITAN_PREFIX",
+    "TITAN_SCHEME",
+    "AnyURI",
+    "guess_mime_type",
     "TrustStore",
     "FileTrustStore",
     "ClientCertificateStore",
