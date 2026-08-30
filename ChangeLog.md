@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.7.0
 
-**Released: WiP**
+**Released: 2026-08-30**
 
 - Added `forget` asynchronous method to the `TrustStore` protocol and
   `FileTrustStore` implementation to remove stored certificate fingerprints
