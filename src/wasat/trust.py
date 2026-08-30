@@ -77,6 +77,18 @@ class TrustStore(Protocol):
         """
         ...
 
+    async def forget(self, host: str, port: int = GEMINI_DEFAULT_PORT) -> bool:
+        """Remove a stored certificate fingerprint for a host and port.
+
+        Args:
+            host: The remote hostname.
+            port: The remote port.
+
+        Returns:
+            True if the fingerprint was removed, False if it was not present.
+        """
+        ...
+
 
 ##############################################################################
 class FileTrustStore(TrustStore):
@@ -209,6 +221,28 @@ class FileTrustStore(TrustStore):
         async with self._lock:
             await self._ensure_loaded()
             return list(self._cache.keys())
+
+    async def forget(self, host: str, port: int = GEMINI_DEFAULT_PORT) -> bool:
+        """Remove a stored certificate fingerprint for a host and port.
+
+        Args:
+            host: The remote hostname.
+            port: The remote port.
+
+        Returns:
+            True if the fingerprint was removed, False if it was not present.
+
+        Raises:
+            RuntimeError: If saving the updated known hosts file to disk fails.
+        """
+        async with self._lock:
+            await self._ensure_loaded()
+            key = (host.lower(), port)
+            if key in self._cache:
+                del self._cache[key]
+                await asyncio.to_thread(self._save_sync)
+                return True
+            return False
 
 
 ### trust.py ends here

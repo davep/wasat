@@ -587,6 +587,9 @@ class TestClient:
                 async def get_hosts(self) -> list[tuple[str, int]]:
                     return []
 
+                async def forget(self, host: str, port: int = 1965) -> bool:
+                    return False
+
             mock_store = MockTrustStore()
 
             class MockSSLObject:
@@ -667,6 +670,9 @@ class TestClient:
                 async def get_hosts(self) -> list[tuple[str, int]]:
                     return []
 
+                async def forget(self, host: str, port: int = 1965) -> bool:
+                    return False
+
             mock_store = MockTrustStore()
 
             class MockSSLObject:
@@ -745,6 +751,9 @@ class TestClient:
                 async def get_hosts(self) -> list[tuple[str, int]]:
                     return []
 
+                async def forget(self, host: str, port: int = 1965) -> bool:
+                    return False
+
             mock_store = MockTrustStore()
 
             async def mock_connect(
@@ -789,6 +798,9 @@ class TestClient:
 
                 async def get_hosts(self) -> list[tuple[str, int]]:
                     return []
+
+                async def forget(self, host: str, port: int = 1965) -> bool:
+                    return False
 
             mock_store = MockTrustStore()
 
