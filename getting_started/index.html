@@ -497,6 +497,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Custom Trust Verification, TOFU, and Hybrid Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#managing-trusted-server-fingerprints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing Trusted Server Fingerprints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -992,6 +1009,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Custom Trust Verification, TOFU, and Hybrid Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#managing-trusted-server-fingerprints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing Trusted Server Fingerprints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1189,6 +1223,23 @@
     <span class="n">verify_mode</span><span class="o">=</span><span class="s2">"hybrid"</span><span class="p">,</span>
     <span class="n">on_new_certificate</span><span class="o">=</span><span class="n">confirm_cert</span>
 <span class="p">)</span>
+</code></pre></div>
+<h3 id="managing-trusted-server-fingerprints">Managing Trusted Server Fingerprints</h3>
+<p>When running in <code>"tofu"</code> or <code>"hybrid"</code> mode, you can inspect or forget trusted hosts via the client's <a class="autorefs autorefs-internal" title="            trust_store
+
+
+  
+      property
+  " href="../library/client/#wasat.client.Client.trust_store">trust_store</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">client</span><span class="o">.</span><span class="n">trust_store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># List all trusted (host, port) pairs</span>
+    <span class="n">hosts</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">trust_store</span><span class="o">.</span><span class="n">get_hosts</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Known hosts: </span><span class="si">{</span><span class="n">hosts</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="c1"># Remove a stored fingerprint (e.g. after a server certificate renewal)</span>
+    <span class="n">removed</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">trust_store</span><span class="o">.</span><span class="n">forget</span><span class="p">(</span><span class="s2">"example.com"</span><span class="p">,</span> <span class="mi">1965</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">removed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Removed fingerprint; next connection will prompt for trust again."</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="client-certificate-authentication">Client Certificate Authentication</h2>
