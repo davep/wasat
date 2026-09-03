@@ -10,6 +10,7 @@ import pytest
 from cryptography import x509
 
 from wasat import (
+    AnyURI,
     Client,
     ClientCertificate,
     FileClientCertificateStore,
@@ -273,9 +274,7 @@ def test_client_dynamic_cert_load_and_callback(monkeypatch: pytest.MonkeyPatch) 
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
-            async def on_cert_required(
-                uri: GeminiURI, store: Any
-            ) -> Literal["transient"]:
+            async def on_cert_required(uri: AnyURI, store: Any) -> Literal["transient"]:
                 return "transient"
 
             # Initialise client with custom cert store and callback
@@ -389,9 +388,7 @@ def test_client_cert_with_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
 
             callback_uris = []
 
-            async def on_cert_required(
-                uri: GeminiURI, store: Any
-            ) -> Literal["transient"]:
+            async def on_cert_required(uri: AnyURI, store: Any) -> Literal["transient"]:
                 callback_uris.append(uri)
                 return "transient"
 
@@ -530,9 +527,7 @@ def test_client_cert_redirect_sibling_path(monkeypatch: pytest.MonkeyPatch) -> N
 
             monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
 
-            async def on_cert_required(
-                uri: GeminiURI, store: Any
-            ) -> Literal["transient"]:
+            async def on_cert_required(uri: AnyURI, store: Any) -> Literal["transient"]:
                 return "transient"
 
             client = Client(
@@ -663,7 +658,7 @@ def test_client_cert_manual_registration_in_callback(
             )
 
             async def on_cert_required(
-                uri: GeminiURI, store: Any
+                uri: AnyURI, store: Any
             ) -> Literal["persistent"]:
                 # Retrieve the /join credentials and register them for /davep
                 credentials = await store.get_credentials(

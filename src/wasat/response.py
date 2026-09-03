@@ -14,7 +14,7 @@ from .certs import ClientCertificate, ServerCertificate
 from .exceptions import ConnectionError, ProtocolError
 from .status import StatusCode
 from .trust import get_cert_fingerprint
-from .uri import GeminiURI
+from .uri import AnyURI
 
 ##############################################################################
 type VerificationMethod = Literal["ca", "tofu", "off"]
@@ -30,16 +30,16 @@ class ReaderProtocol(Protocol):
 
 ##############################################################################
 class Response:
-    """Represents a response from a Gemini server."""
+    """Represents a response from a Gemini or Titan server."""
 
     def __init__(
         self,
         status: StatusCode,
         meta: str,
         reader: ReaderProtocol | None = None,
-        uri: GeminiURI | None = None,
+        uri: AnyURI | None = None,
         history: list[Response] | None = None,
-        requested_uri: GeminiURI | None = None,
+        requested_uri: AnyURI | None = None,
         client_cert_path: Path | None = None,
         server_cert_der: bytes | None = None,
         verification_method: VerificationMethod | None = None,
@@ -49,12 +49,12 @@ class Response:
         """Initialise the Response object.
 
         Args:
-            status: The Gemini status code.
+            status: The Gemini/Titan status code.
             meta: The extra metadata line.
             reader: The stream reader for reading the response body.
-            uri: The Gemini URI of the response.
+            uri: The URI of the response.
             history: A history of response objects from any redirections.
-            requested_uri: The originally requested Gemini URI.
+            requested_uri: The originally requested URI.
             client_cert_path: The path to the client certificate used for the connection.
             server_cert_der: The raw DER-encoded server TLS certificate, or None.
             verification_method: The method used to verify the server TLS certificate, or None.
@@ -62,17 +62,17 @@ class Response:
             client_cert: The parsed client TLS certificate, or None.
         """
         self._status = status
-        """The Gemini status code of the response."""
+        """The status code of the response."""
         self._meta = meta
         """The meta/header line of the response."""
         self._reader = reader
         """The stream reader for the response body."""
         self._uri = uri
-        """The Gemini URI of the response, or None if not set."""
+        """The URI of the response, or None if not set."""
         self._history = list(history) if history is not None else []
         """The history of response objects from any redirections."""
         self._requested_uri = requested_uri
-        """The originally requested Gemini URI, or None if not set."""
+        """The originally requested URI, or None if not set."""
         self._client_cert_path = (
             client_cert_path
             if client_cert_path is not None
@@ -102,8 +102,8 @@ class Response:
         return self._status
 
     @property
-    def uri(self) -> GeminiURI | None:
-        """The Gemini URI associated with the response, or None if not set."""
+    def uri(self) -> AnyURI | None:
+        """The URI associated with the response, or None if not set."""
         return self._uri
 
     @property
@@ -112,8 +112,8 @@ class Response:
         return self._history
 
     @property
-    def requested_uri(self) -> GeminiURI | None:
-        """The originally requested Gemini URI, or None if not set."""
+    def requested_uri(self) -> AnyURI | None:
+        """The originally requested URI, or None if not set."""
         return self._requested_uri
 
     @property

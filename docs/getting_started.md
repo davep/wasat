@@ -13,6 +13,7 @@ The following classes and protocols form the core interface of the library:
 - **[ServerCertificate][wasat.certs.ServerCertificate]**: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via `response.server_cert`.
 - **[ClientCertificate][wasat.certs.ClientCertificate]**: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes. Access it lazily via `response.client_cert`.
 - **[GeminiURI][wasat.uri.GeminiURI]**: A utility class to parse, validate, and resolve Gemini URIs safely.
+- **[TitanURI][wasat.uri.TitanURI]**: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (`size`, `mime`, `token`).
 - **[StatusCode][wasat.status.StatusCode]**: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.
 - **[TrustStore][wasat.trust.TrustStore]**: A protocol defining the trust verification interface.
 - **[FileTrustStore][wasat.trust.FileTrustStore]**: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.
@@ -66,6 +67,53 @@ async def download_file():
         if response.status.is_success:
             async for chunk in response.iter_chunks(chunk_size=1024):
                 sys.stdout.buffer.write(chunk)
+```
+
+---
+
+## Titan Protocol Support (Uploads and Deletions)
+
+Wasat natively supports the **Titan protocol** (`titan://`), the companion upload and data exchange protocol for Gemini.
+
+### Uploading Content
+
+Use [upload][wasat.client.Client.upload] to send data to a Titan endpoint. Payload data can be raw `bytes`, UTF-8 `str`, a `Path`, an async byte iterator, or a file-like stream:
+
+```python
+from pathlib import Path
+from wasat import Client
+
+async def upload_content():
+    async with Client(verify_mode="tofu") as client:
+        # Upload string content
+        response = await client.upload(
+            "titan://example.com/new-post.gmi",
+            "# My New Post\nContent goes here...",
+            token="secret_auth_token",
+        )
+        print(f"Upload status: {response.status.name}")
+
+        # Upload a binary file (MIME type is guessed automatically from file extension)
+        image_path = Path("avatar.png")
+        response = await client.upload(
+            "titan://example.com/upload/avatar.png",
+            image_path,
+        )
+```
+
+### Deleting Resources
+
+In the Titan protocol, a request with `size=0` requests deletion of a resource. Use [delete][wasat.client.Client.delete]:
+
+```python
+async def delete_item():
+    async with Client(verify_mode="tofu") as client:
+        response = await client.delete(
+            "titan://example.com/posts/old-post.gmi",
+            token="secret_auth_token",
+        )
+        if response.status.is_success:
+            print("Resource deleted successfully.")
 ```
 
 ---
