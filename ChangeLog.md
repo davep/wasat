@@ -1,6 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.8.0
+
+**Released: 2026-09-03**
 
 - Added Titan protocol support (`titan://`), including `TitanURI`
   representation, URI conversions (`to_titan`, `to_gemini`), and parameter
