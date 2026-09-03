@@ -1835,9 +1835,9 @@
     <span class="n"><a class="autorefs autorefs-internal" title="status (wasat.response.Response(status))" href="#wasat.response.Response(status)">status</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            StatusCode (wasat.status.StatusCode)" href="../status/#wasat.status.StatusCode">StatusCode</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="meta (wasat.response.Response(meta))" href="#wasat.response.Response(meta)">meta</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="reader (wasat.response.Response(reader))" href="#wasat.response.Response(reader)">reader</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ReaderProtocol (wasat.response.ReaderProtocol)" href="#wasat.response.ReaderProtocol">ReaderProtocol</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.response.Response(uri))" href="#wasat.response.Response(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.response.Response(uri))" href="#wasat.response.Response(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="history (wasat.response.Response(history))" href="#wasat.response.Response(history)">history</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Response (wasat.response.Response)" href="#wasat.response.Response">Response</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="requested_uri (wasat.response.Response(requested_uri))" href="#wasat.response.Response(requested_uri)">requested_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="requested_uri (wasat.response.Response(requested_uri))" href="#wasat.response.Response(requested_uri)">requested_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="client_cert_path (wasat.response.Response(client_cert_path))" href="#wasat.response.Response(client_cert_path)">client_cert_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="server_cert_der (wasat.response.Response(server_cert_der))" href="#wasat.response.Response(server_cert_der)">server_cert_der</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="verification_method (wasat.response.Response(verification_method))" href="#wasat.response.Response(verification_method)">verification_method</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            VerificationMethod (wasat.response.VerificationMethod)" href="#wasat.response.VerificationMethod">VerificationMethod</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1850,7 +1850,7 @@
 
 
 
-        <p>Represents a response from a Gemini server.</p>
+        <p>Represents a response from a Gemini or Titan server.</p>
 
 
 
@@ -1874,7 +1874,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The Gemini status code.</p>
+                <p>The Gemini/Titan status code.</p>
               </div>
             </td>
             <td>
@@ -1918,11 +1918,11 @@
 <h3 id="wasat.response.Response(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | None</code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The Gemini URI of the response.</p>
+                <p>The URI of the response.</p>
               </div>
             </td>
             <td>
@@ -1950,11 +1950,11 @@
 <h3 id="wasat.response.Response(requested_uri)" class="doc doc-heading doc-heading-parameter">                  <code>requested_uri</code>
 </h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | None</code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The originally requested Gemini URI.</p>
+                <p>The originally requested URI.</p>
               </div>
             </td>
             <td>
@@ -2294,12 +2294,12 @@ For other status codes, it contains error messages, instructions, or redirect UR
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">requested_uri</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">requested_uri</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>The originally requested Gemini URI, or None if not set.</p>
+        <p>The originally requested URI, or None if not set.</p>
 
     </div>
 
@@ -2414,12 +2414,12 @@ For other status codes, it contains error messages, instructions, or redirect UR
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">uri</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">uri</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>The Gemini URI associated with the response, or None if not set.</p>
+        <p>The URI associated with the response, or None if not set.</p>
 
     </div>
 

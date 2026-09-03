@@ -5846,7 +5846,7 @@
 
 </h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nc">ClientCertCallback</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
-    <span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificateStore (wasat.certs.ClientCertificateStore)" href="#wasat.certs.ClientCertificateStore">ClientCertificateStore</a></span><span class="p">],</span>
+    <span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificateStore (wasat.certs.ClientCertificateStore)" href="#wasat.certs.ClientCertificateStore">ClientCertificateStore</a></span><span class="p">],</span>
     <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Coroutine" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Coroutine">Coroutine</a></span><span class="p">[</span>
         <span class="kc">None</span><span class="p">,</span>
         <span class="kc">None</span><span class="p">,</span>
@@ -5859,8 +5859,8 @@
 
         <p>Async callback function signature for resolving a client certificate requirement.</p>
 <p>This callback is invoked when a client certificate is required. It receives the
-requested <a class="autorefs autorefs-internal" title="            GeminiURI" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> and the <a class="autorefs autorefs-internal" title="            ClientCertificateStore" href="#wasat.certs.ClientCertificateStore">ClientCertificateStore</a>
-instance to query or update.</p>
+requested URI (<a class="autorefs autorefs-internal" title="            GeminiURI" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> or <a class="autorefs autorefs-internal" title="            TitanURI" href="../uri/#wasat.uri.TitanURI">TitanURI</a>)
+and the <a class="autorefs autorefs-internal" title="            ClientCertificateStore" href="#wasat.certs.ClientCertificateStore">ClientCertificateStore</a> instance to query or update.</p>
     </div>
 
 </div>
@@ -6764,7 +6764,7 @@ instance to query or update.</p>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_file</span><span class="p">(</span>
     <span class="n"><a class="autorefs autorefs-internal" title="cert_path (wasat.certs.ClientCertificate.from_file(cert_path))" href="#wasat.certs.ClientCertificate.from_file(cert_path)">cert_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_path (wasat.certs.ClientCertificate.from_file(key_path))" href="#wasat.certs.ClientCertificate.from_file(key_path)">key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificate.from_file(scopes))" href="#wasat.certs.ClientCertificate.from_file(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificate.from_file(scopes))" href="#wasat.certs.ClientCertificate.from_file(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span>
 </code></pre></div>
 
@@ -6823,11 +6823,11 @@ key bundle in addition to the certificate.</p>
 <h4 id="wasat.certs.ClientCertificate.from_file(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sequence of Gemini scopes or URIs associated with this certificate.</p>
+                <p>Sequence of Gemini/Titan scopes or URIs associated with this certificate.</p>
               </div>
             </td>
             <td>
@@ -6914,7 +6914,7 @@ key bundle in addition to the certificate.</p>
     <span class="n"><a class="autorefs autorefs-internal" title="cert_pem (wasat.certs.ClientCertificate.from_pem(cert_pem))" href="#wasat.certs.ClientCertificate.from_pem(cert_pem)">cert_pem</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_pem (wasat.certs.ClientCertificate.from_pem(key_pem))" href="#wasat.certs.ClientCertificate.from_pem(key_pem)">key_pem</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificate.from_pem(scopes))" href="#wasat.certs.ClientCertificate.from_pem(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificate.from_pem(scopes))" href="#wasat.certs.ClientCertificate.from_pem(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span>
 </code></pre></div>
 
@@ -6972,11 +6972,11 @@ certificate and private key bundle).</p>
 <h4 id="wasat.certs.ClientCertificate.from_pem(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sequence of Gemini scopes or URIs associated with this certificate.</p>
+                <p>Sequence of Gemini/Titan scopes or URIs associated with this certificate.</p>
               </div>
             </td>
             <td>
@@ -7151,8 +7151,8 @@ certificate and private key bundle).</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">associate_scope</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.associate_scope(identifier))" href="#wasat.certs.ClientCertificateStore.associate_scope(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.associate_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.associate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.associate_scope(identifier))" href="#wasat.certs.ClientCertificateStore.associate_scope(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.associate_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.associate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
@@ -7177,11 +7177,11 @@ certificate and private key bundle).</p>
 <h4 id="wasat.certs.ClientCertificateStore.associate_scope(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -7194,11 +7194,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.associate_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to associate.</p>
+                <p>The scope string or URI to associate.</p>
               </div>
             </td>
             <td>
@@ -7285,7 +7285,7 @@ fingerprint, or file path/name).</p>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_certificate</span><span class="p">(</span>
     <span class="n"><a class="autorefs autorefs-internal" title="name (wasat.certs.ClientCertificateStore.create_certificate(name))" href="#wasat.certs.ClientCertificateStore.create_certificate(name)">name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificateStore.create_certificate(scopes))" href="#wasat.certs.ClientCertificateStore.create_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificateStore.create_certificate(scopes))" href="#wasat.certs.ClientCertificateStore.create_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.ClientCertificateStore.create_certificate(transient))" href="#wasat.certs.ClientCertificateStore.create_certificate(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="common_name (wasat.certs.ClientCertificateStore.create_certificate(common_name))" href="#wasat.certs.ClientCertificateStore.create_certificate(common_name)">common_name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="valid_days (wasat.certs.ClientCertificateStore.create_certificate(valid_days))" href="#wasat.certs.ClientCertificateStore.create_certificate(valid_days)">valid_days</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">365</span><span class="p">,</span>
@@ -7337,11 +7337,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.create_certificate(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sequence of Gemini scopes or URIs to associate with the certificate.</p>
+                <p>Sequence of Gemini/Titan scopes or URIs to associate with the certificate.</p>
               </div>
             </td>
             <td>
@@ -7616,7 +7616,7 @@ to disk fails.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_credentials</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.create_credentials(uri))" href="#wasat.certs.ClientCertificateStore.create_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.create_credentials(uri))" href="#wasat.certs.ClientCertificateStore.create_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.ClientCertificateStore.create_credentials(transient))" href="#wasat.certs.ClientCertificateStore.create_credentials(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="common_name (wasat.certs.ClientCertificateStore.create_credentials(common_name))" href="#wasat.certs.ClientCertificateStore.create_credentials(common_name)">common_name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7653,11 +7653,11 @@ to disk fails.</p>
 <h4 id="wasat.certs.ClientCertificateStore.create_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -7932,7 +7932,7 @@ to disk fails.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.delete_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.delete_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.delete_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.delete_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
@@ -7957,11 +7957,11 @@ to disk fails.</p>
 <h4 id="wasat.certs.ClientCertificateStore.delete_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -8035,7 +8035,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.delete_credentials(uri))" href="#wasat.certs.ClientCertificateStore.delete_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.delete_credentials(uri))" href="#wasat.certs.ClientCertificateStore.delete_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8059,11 +8059,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.delete_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -8136,7 +8136,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_exact_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.delete_exact_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.delete_exact_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_exact_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.delete_exact_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.delete_exact_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8160,11 +8160,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.delete_exact_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to delete.</p>
+                <p>The scope string or URI to delete.</p>
               </div>
             </td>
             <td>
@@ -8237,7 +8237,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">disassociate_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.disassociate_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.disassociate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">disassociate_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.ClientCertificateStore.disassociate_scope(scope_or_uri))" href="#wasat.certs.ClientCertificateStore.disassociate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8261,11 +8261,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.disassociate_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to disassociate.</p>
+                <p>The scope string or URI to disassociate.</p>
               </div>
             </td>
             <td>
@@ -8339,7 +8339,7 @@ fingerprint, or file path/name).</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">export_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.export_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.export_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.export_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.export_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="target_path (wasat.certs.ClientCertificateStore.export_certificate(target_path))" href="#wasat.certs.ClientCertificateStore.export_certificate(target_path)">target_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_path (wasat.certs.ClientCertificateStore.export_certificate(key_path))" href="#wasat.certs.ClientCertificateStore.export_certificate(key_path)">key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8368,11 +8368,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.ClientCertificateStore.export_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -8506,7 +8506,7 @@ True and key_path is specified.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.get_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.get_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.ClientCertificateStore.get_certificate(identifier))" href="#wasat.certs.ClientCertificateStore.get_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
@@ -8531,11 +8531,11 @@ True and key_path is specified.</p>
 <h4 id="wasat.certs.ClientCertificateStore.get_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A GeminiURI, scope string, SHA-256 fingerprint, or
+                <p>A URI (GeminiURI or TitanURI), scope string, SHA-256 fingerprint, or
 certificate file path/name.</p>
               </div>
             </td>
@@ -8586,7 +8586,7 @@ certificate file path/name.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.get_credentials(uri))" href="#wasat.certs.ClientCertificateStore.get_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.get_credentials(uri))" href="#wasat.certs.ClientCertificateStore.get_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8612,11 +8612,11 @@ matching certificate for the requested host, port, and path.</p>
 <h4 id="wasat.certs.ClientCertificateStore.get_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -8676,7 +8676,7 @@ matching certificate for the requested host, port, and path.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">has_exact_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.has_exact_credentials(uri))" href="#wasat.certs.ClientCertificateStore.has_exact_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">has_exact_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.has_exact_credentials(uri))" href="#wasat.certs.ClientCertificateStore.has_exact_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8703,11 +8703,11 @@ scopes).</p>
 <h4 id="wasat.certs.ClientCertificateStore.has_exact_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -8762,7 +8762,7 @@ scopes).</p>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_source (wasat.certs.ClientCertificateStore.import_certificate(key_source))" href="#wasat.certs.ClientCertificateStore.import_certificate(key_source)">key_source</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="name (wasat.certs.ClientCertificateStore.import_certificate(name))" href="#wasat.certs.ClientCertificateStore.import_certificate(name)">name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificateStore.import_certificate(scopes))" href="#wasat.certs.ClientCertificateStore.import_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.ClientCertificateStore.import_certificate(scopes))" href="#wasat.certs.ClientCertificateStore.import_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.ClientCertificateStore.import_certificate(transient))" href="#wasat.certs.ClientCertificateStore.import_certificate(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span>
 </code></pre></div>
@@ -8837,11 +8837,11 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 <h4 id="wasat.certs.ClientCertificateStore.import_certificate(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional sequence of Gemini scopes or URIs to associate with the imported certificate.</p>
+                <p>Optional sequence of Gemini/Titan scopes or URIs to associate with the imported certificate.</p>
               </div>
             </td>
             <td>
@@ -9008,7 +9008,7 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_credentials</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.register_credentials(uri))" href="#wasat.certs.ClientCertificateStore.register_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.ClientCertificateStore.register_credentials(uri))" href="#wasat.certs.ClientCertificateStore.register_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="cert_path (wasat.certs.ClientCertificateStore.register_credentials(cert_path))" href="#wasat.certs.ClientCertificateStore.register_credentials(cert_path)">cert_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_path (wasat.certs.ClientCertificateStore.register_credentials(key_path))" href="#wasat.certs.ClientCertificateStore.register_credentials(key_path)">key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -9037,11 +9037,11 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 <h4 id="wasat.certs.ClientCertificateStore.register_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -9269,8 +9269,8 @@ mapping Gemini scopes (host[:port]/path) to certificate filenames.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">associate_scope</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.associate_scope(identifier))" href="#wasat.certs.FileClientCertificateStore.associate_scope(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.associate_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.associate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.associate_scope(identifier))" href="#wasat.certs.FileClientCertificateStore.associate_scope(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.associate_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.associate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
@@ -9295,11 +9295,11 @@ mapping Gemini scopes (host[:port]/path) to certificate filenames.</p>
 <h4 id="wasat.certs.FileClientCertificateStore.associate_scope(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -9312,11 +9312,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.associate_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to associate.</p>
+                <p>The scope string or URI to associate.</p>
               </div>
             </td>
             <td>
@@ -9403,7 +9403,7 @@ fingerprint, or file path/name).</p>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_certificate</span><span class="p">(</span>
     <span class="n"><a class="autorefs autorefs-internal" title="name (wasat.certs.FileClientCertificateStore.create_certificate(name))" href="#wasat.certs.FileClientCertificateStore.create_certificate(name)">name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.FileClientCertificateStore.create_certificate(scopes))" href="#wasat.certs.FileClientCertificateStore.create_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.FileClientCertificateStore.create_certificate(scopes))" href="#wasat.certs.FileClientCertificateStore.create_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.FileClientCertificateStore.create_certificate(transient))" href="#wasat.certs.FileClientCertificateStore.create_certificate(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="common_name (wasat.certs.FileClientCertificateStore.create_certificate(common_name))" href="#wasat.certs.FileClientCertificateStore.create_certificate(common_name)">common_name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="valid_days (wasat.certs.FileClientCertificateStore.create_certificate(valid_days))" href="#wasat.certs.FileClientCertificateStore.create_certificate(valid_days)">valid_days</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">365</span><span class="p">,</span>
@@ -9455,7 +9455,7 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.create_certificate(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -9734,7 +9734,7 @@ to disk fails.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_credentials</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.create_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.create_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.create_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.create_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.FileClientCertificateStore.create_credentials(transient))" href="#wasat.certs.FileClientCertificateStore.create_credentials(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="common_name (wasat.certs.FileClientCertificateStore.create_credentials(common_name))" href="#wasat.certs.FileClientCertificateStore.create_credentials(common_name)">common_name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9771,11 +9771,11 @@ to disk fails.</p>
 <h4 id="wasat.certs.FileClientCertificateStore.create_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -10050,7 +10050,7 @@ directory fails, or if writing the certificate or key file to disk fails.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.delete_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.delete_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.delete_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.delete_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
@@ -10075,11 +10075,11 @@ directory fails, or if writing the certificate or key file to disk fails.</p>
 <h4 id="wasat.certs.FileClientCertificateStore.delete_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -10153,7 +10153,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.delete_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.delete_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.delete_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.delete_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10177,11 +10177,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.delete_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -10254,7 +10254,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_exact_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.delete_exact_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.delete_exact_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_exact_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.delete_exact_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.delete_exact_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10278,11 +10278,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.delete_exact_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to delete.</p>
+                <p>The scope string or URI to delete.</p>
               </div>
             </td>
             <td>
@@ -10355,7 +10355,7 @@ fingerprint, or file path/name).</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">disassociate_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.disassociate_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.disassociate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">disassociate_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.FileClientCertificateStore.disassociate_scope(scope_or_uri))" href="#wasat.certs.FileClientCertificateStore.disassociate_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10379,11 +10379,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.disassociate_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The scope string or GeminiURI to disassociate.</p>
+                <p>The scope string or URI to disassociate.</p>
               </div>
             </td>
             <td>
@@ -10457,7 +10457,7 @@ fingerprint, or file path/name).</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">export_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.export_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.export_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.export_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.export_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="target_path (wasat.certs.FileClientCertificateStore.export_certificate(target_path))" href="#wasat.certs.FileClientCertificateStore.export_certificate(target_path)">target_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_path (wasat.certs.FileClientCertificateStore.export_certificate(key_path))" href="#wasat.certs.FileClientCertificateStore.export_certificate(key_path)">key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10486,11 +10486,11 @@ fingerprint, or file path/name).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.export_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a> | <a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target certificate reference (ClientCertificate, GeminiURI,
+                <p>Target certificate reference (ClientCertificate, URI,
 fingerprint, or file path/name).</p>
               </div>
             </td>
@@ -10624,7 +10624,7 @@ True and key_path is specified.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_certificate</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.get_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.get_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="identifier (wasat.certs.FileClientCertificateStore.get_certificate(identifier))" href="#wasat.certs.FileClientCertificateStore.get_certificate(identifier)">identifier</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
@@ -10649,11 +10649,11 @@ True and key_path is specified.</p>
 <h4 id="wasat.certs.FileClientCertificateStore.get_certificate(identifier)" class="doc doc-heading doc-heading-parameter">                  <code>identifier</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A GeminiURI, scope string, SHA-256 fingerprint, or
+                <p>A URI (GeminiURI or TitanURI), scope string, SHA-256 fingerprint, or
 certificate file path/name.</p>
               </div>
             </td>
@@ -10704,7 +10704,7 @@ certificate file path/name.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.get_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.get_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.get_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.get_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10728,11 +10728,11 @@ certificate file path/name.</p>
 <h4 id="wasat.certs.FileClientCertificateStore.get_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -10792,7 +10792,7 @@ certificate file path/name.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">has_exact_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.has_exact_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.has_exact_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">has_exact_credentials</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.has_exact_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.has_exact_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10819,11 +10819,11 @@ scopes).</p>
 <h4 id="wasat.certs.FileClientCertificateStore.has_exact_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -10878,7 +10878,7 @@ scopes).</p>
     <span class="o">*</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_source (wasat.certs.FileClientCertificateStore.import_certificate(key_source))" href="#wasat.certs.FileClientCertificateStore.import_certificate(key_source)">key_source</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="name (wasat.certs.FileClientCertificateStore.import_certificate(name))" href="#wasat.certs.FileClientCertificateStore.import_certificate(name)">name</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.FileClientCertificateStore.import_certificate(scopes))" href="#wasat.certs.FileClientCertificateStore.import_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="scopes (wasat.certs.FileClientCertificateStore.import_certificate(scopes))" href="#wasat.certs.FileClientCertificateStore.import_certificate(scopes)">scopes</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="n"><a class="autorefs autorefs-internal" title="transient (wasat.certs.FileClientCertificateStore.import_certificate(transient))" href="#wasat.certs.FileClientCertificateStore.import_certificate(transient)">transient</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="#wasat.certs.ClientCertificate">ClientCertificate</a></span>
 </code></pre></div>
@@ -10953,11 +10953,11 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 <h4 id="wasat.certs.FileClientCertificateStore.import_certificate(scopes)" class="doc doc-heading doc-heading-parameter">                  <code>scopes</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional sequence of Gemini scopes or URIs to associate with the imported certificate.</p>
+                <p>Optional sequence of Gemini/Titan scopes or URIs to associate with the imported certificate.</p>
               </div>
             </td>
             <td>
@@ -11124,7 +11124,7 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_credentials</span><span class="p">(</span>
-    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.register_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.register_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.FileClientCertificateStore.register_credentials(uri))" href="#wasat.certs.FileClientCertificateStore.register_credentials(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="cert_path (wasat.certs.FileClientCertificateStore.register_credentials(cert_path))" href="#wasat.certs.FileClientCertificateStore.register_credentials(cert_path)">cert_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="key_path (wasat.certs.FileClientCertificateStore.register_credentials(key_path))" href="#wasat.certs.FileClientCertificateStore.register_credentials(key_path)">key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11153,11 +11153,11 @@ If omitted, derived from the certificate common name, fingerprint, or source fil
 <h4 id="wasat.certs.FileClientCertificateStore.register_credentials(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h4>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The target GeminiURI.</p>
+                <p>The target URI (GeminiURI or TitanURI).</p>
               </div>
             </td>
             <td>
@@ -12008,7 +12008,7 @@ or 'secp384r1', or the country code is not exactly two characters.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_candidate_scopes</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.get_candidate_scopes(uri))" href="#wasat.certs.get_candidate_scopes(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_candidate_scopes</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.certs.get_candidate_scopes(uri))" href="#wasat.certs.get_candidate_scopes(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -12032,11 +12032,11 @@ or 'secp384r1', or the country code is not exactly two characters.</p>
 <h3 id="wasat.certs.get_candidate_scopes(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
 </h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The GeminiURI to generate scopes for.</p>
+                <p>The URI (GeminiURI or TitanURI) to generate scopes for.</p>
               </div>
             </td>
             <td>
@@ -12082,12 +12082,12 @@ or 'secp384r1', or the country code is not exactly two characters.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">normalize_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.normalize_scope(scope_or_uri))" href="#wasat.certs.normalize_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">normalize_scope</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="scope_or_uri (wasat.certs.normalize_scope(scope_or_uri))" href="#wasat.certs.normalize_scope(scope_or_uri)">scope_or_uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Normalise a GeminiURI or scope string into a canonical scope string.</p>
+        <p>Normalise a GeminiURI, TitanURI, or scope string into a canonical scope string.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -12106,12 +12106,12 @@ or 'secp384r1', or the country code is not exactly two characters.</p>
 <h3 id="wasat.certs.normalize_scope(scope_or_uri)" class="doc doc-heading doc-heading-parameter">                  <code>scope_or_uri</code>
 </h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            GeminiURI (wasat.uri.GeminiURI)" href="../uri/#wasat.uri.GeminiURI">GeminiURI</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A GeminiURI instance or a scope string (e.g. 'example.com/path'
-or 'gemini://example.com:1965/path').</p>
+                <p>A GeminiURI or TitanURI instance, or a scope string (e.g. 'example.com/path'
+or 'gemini://example.com:1965/path' or 'titan://example.com/path;size=10').</p>
               </div>
             </td>
             <td>

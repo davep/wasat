@@ -489,6 +489,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#titan-protocol-support-uploads-and-deletions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Titan Protocol Support (Uploads and Deletions)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads and Deletions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uploading-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uploading Content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#custom-trust-verification-tofu-and-hybrid-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1001,6 +1040,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#titan-protocol-support-uploads-and-deletions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Titan Protocol Support (Uploads and Deletions)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads and Deletions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uploading-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uploading Content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleting-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#custom-trust-verification-tofu-and-hybrid-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1153,6 +1231,7 @@
 <li><strong><a class="autorefs autorefs-internal" title="            ServerCertificate" href="../library/certs/#wasat.certs.ServerCertificate">ServerCertificate</a></strong>: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via <code>response.server_cert</code>.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ClientCertificate" href="../library/certs/#wasat.certs.ClientCertificate">ClientCertificate</a></strong>: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes. Access it lazily via <code>response.client_cert</code>.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a></strong>: A utility class to parse, validate, and resolve Gemini URIs safely.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            TitanURI" href="../library/uri/#wasat.uri.TitanURI">TitanURI</a></strong>: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (<code>size</code>, <code>mime</code>, <code>token</code>).</li>
 <li><strong><a class="autorefs autorefs-internal" title="            StatusCode" href="../library/status/#wasat.status.StatusCode">StatusCode</a></strong>: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            TrustStore" href="../library/trust/#wasat.trust.TrustStore">TrustStore</a></strong>: A protocol defining the trust verification interface.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a></strong>: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.</li>
@@ -1202,6 +1281,52 @@
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">is_success</span><span class="p">:</span>
             <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_chunks</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
                 <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="titan-protocol-support-uploads-and-deletions">Titan Protocol Support (Uploads and Deletions)</h2>
+<p>Wasat natively supports the <strong>Titan protocol</strong> (<code>titan://</code>), the companion upload and data exchange protocol for Gemini.</p>
+<h3 id="uploading-content">Uploading Content</h3>
+<p>Use <a class="autorefs autorefs-internal" title="            upload
+
+
+  
+      async
+  " href="../library/client/#wasat.client.Client.upload">upload</a> to send data to a Titan endpoint. Payload data can be raw <code>bytes</code>, UTF-8 <code>str</code>, a <code>Path</code>, an async byte iterator, or a file-like stream:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upload_content</span><span class="p">():</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+        <span class="c1"># Upload string content</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span>
+            <span class="s2">"titan://example.com/new-post.gmi"</span><span class="p">,</span>
+            <span class="s2">"# My New Post</span><span class="se">\n</span><span class="s2">Content goes here..."</span><span class="p">,</span>
+            <span class="n">token</span><span class="o">=</span><span class="s2">"secret_auth_token"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Upload status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="c1"># Upload a binary file (MIME type is guessed automatically from file extension)</span>
+        <span class="n">image_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"avatar.png"</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span>
+            <span class="s2">"titan://example.com/upload/avatar.png"</span><span class="p">,</span>
+            <span class="n">image_path</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<h3 id="deleting-resources">Deleting Resources</h3>
+<p>In the Titan protocol, a request with <code>size=0</code> requests deletion of a resource. Use <a class="autorefs autorefs-internal" title="            delete
+
+
+  
+      async
+  " href="../library/client/#wasat.client.Client.delete">delete</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete_item</span><span class="p">():</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span>
+            <span class="s2">"titan://example.com/posts/old-post.gmi"</span><span class="p">,</span>
+            <span class="n">token</span><span class="o">=</span><span class="s2">"secret_auth_token"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">is_success</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Resource deleted successfully."</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="custom-trust-verification-tofu-and-hybrid-mode">Custom Trust Verification, TOFU, and Hybrid Mode</h2>
