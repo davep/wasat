@@ -13,7 +13,7 @@ The following classes and protocols form the core interface of the library:
 - **[ServerCertificate][wasat.certs.ServerCertificate]**: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via `response.server_cert`.
 - **[ClientCertificate][wasat.certs.ClientCertificate]**: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes. Access it lazily via `response.client_cert`.
 - **[GeminiURI][wasat.uri.GeminiURI]**: A utility class to parse, validate, and resolve Gemini URIs safely.
-- **[TitanURI][wasat.uri.TitanURI]**: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (`size`, `mime`, `token`).
+- **[TitanURI][wasat.uri.TitanURI]**: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (`size`, `mime`, `token`, `edit`).
 - **[StatusCode][wasat.status.StatusCode]**: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.
 - **[TrustStore][wasat.trust.TrustStore]**: A protocol defining the trust verification interface.
 - **[FileTrustStore][wasat.trust.FileTrustStore]**: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.
@@ -71,9 +71,9 @@ async def download_file():
 
 ---
 
-## Titan Protocol Support (Uploads and Deletions)
+## Titan Protocol Support (Uploads, Deletions, and Editing)
 
-Wasat natively supports the **Titan protocol** (`titan://`), the companion upload and data exchange protocol for Gemini.
+Wasat natively supports the **Titan protocol** (`titan://`), the companion upload, editing, and data exchange protocol for Gemini.
 
 ### Uploading Content
 
@@ -114,6 +114,60 @@ async def delete_item():
         )
         if response.status.is_success:
             print("Resource deleted successfully.")
+```
+
+### Editing Resources (The Edit Extension)
+
+The Titan specification includes a proposed extension for collaborative editing and raw content retrieval using the `;edit` path parameter (e.g. `titan://example.com/page;edit`). While this remains a proposed specification extension rather than part of the core RFC, it is supported by a number of Gemini and Titan servers and clients.
+
+When a client sends a request to a Titan edit URI, the server:
+1. Locks the resource for editing (subject to a server-side timeout).
+2. Returns the "raw" unrendered page content (without site-injected headers, footers, or post-processing) with a `20 SUCCESS` response.
+3. If another user already holds the edit lock, the server responds with a `40 TEMPORARY FAILURE` explaining that the resource is locked.
+
+Use the [edit][wasat.client.Client.edit] method to fetch raw content and acquire the lock:
+
+```python
+from wasat import Client, StatusCode
+
+async def edit_resource():
+    async with Client(verify_mode="tofu") as client:
+        # Request raw content for editing
+        response = await client.edit("gemini://example.com/page")
+        if response.status == StatusCode.SUCCESS:
+            raw_text = await response.text()
+            mime_type = response.meta  # e.g. text/gemini
+
+            # ... edit content in your editor ...
+            modified_text = raw_text + "\nUpdated content!"
+
+            # Upload the modified text back to the server.
+            # Client.upload() automatically removes ';edit' to target the base resource.
+            save_response = await client.upload(
+                response.uri,
+                modified_text,
+                mime=mime_type,
+            )
+            print(f"Save status: {save_response.status.name}")
+        elif response.status == StatusCode.TEMPORARY_FAILURE:
+            print(f"Resource is locked by another user: {response.meta}")
+```
+
+#### Working with Edit URIs
+
+You can inspect and create edit URIs directly using [TitanURI][wasat.uri.TitanURI] and [GeminiURI][wasat.uri.GeminiURI]:
+
+```python
+from wasat import GeminiURI, TitanURI
+
+# Convert a Gemini URI into a Titan edit URI
+gemini = GeminiURI("gemini://example.com/posts/article")
+titan_edit = gemini.to_titan(edit=True)
+print(titan_edit)  # titan://example.com/posts/article;edit
+print(titan_edit.is_edit)  # True
+
+# Convert back to the canonical Gemini viewing URI
+print(titan_edit.to_gemini())  # gemini://example.com/posts/article
 ```
 
 ---

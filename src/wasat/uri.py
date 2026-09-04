@@ -430,6 +430,7 @@ class GeminiURI(_BaseURI):
     def to_titan(
         self,
         *,
+        edit: bool = False,
         size: int | None = None,
         mime: str | None = None,
         token: str | None = None,
@@ -437,17 +438,31 @@ class GeminiURI(_BaseURI):
         """Convert this GeminiURI into a TitanURI with optional parameters.
 
         Args:
+            edit: Whether to generate an edit Titan URI (with ';edit' parameter).
             size: Optional upload payload size in bytes.
             mime: Optional MIME type of the payload.
-            token: Optional authorization token.
+            token: Optional authorisation token.
 
         Returns:
             A new TitanURI instance.
+
+        Raises:
+            URIError: If edit is True and size is specified.
         """
+        if edit and size is not None:
+            raise URIError(
+                "Titan URI with 'edit' parameter cannot have a 'size' parameter."
+            )
         port_str = f":{self._port}" if self._port != TITAN_DEFAULT_PORT else ""
         query_str = f"?{self._query}" if self._query else ""
         uri_str = f"{TITAN_PREFIX}{self._host}{port_str}{self._path}{query_str}"
         titan_uri = TitanURI(uri_str)
+        if edit:
+            return titan_uri.replace(
+                edit=True,
+                mime=mime if mime is not None else _UNSET,
+                token=token if token is not None else _UNSET,
+            )
         return titan_uri.replace(
             size=size if size is not None else _UNSET,
             mime=mime if mime is not None else _UNSET,
@@ -634,6 +649,11 @@ class TitanURI(_BaseURI):
             else:
                 parameters[param.lower()] = None
 
+        if "edit" in parameters and "size" in parameters:
+            raise URIError(
+                "Titan URI with 'edit' parameter cannot have a 'size' parameter."
+            )
+
         return clean_path, parameters
 
     @classmethod
@@ -676,8 +696,13 @@ class TitanURI(_BaseURI):
 
     @property
     def token(self) -> str | None:
-        """The authorization token parameter, or None if omitted."""
+        """The authorisation token parameter, or None if omitted."""
         return self._parameters.get("token")
+
+    @property
+    def is_edit(self) -> bool:
+        """Whether this Titan URI represents an edit request (has ';edit' parameter)."""
+        return "edit" in self._parameters
 
     def replace(
         self,
@@ -689,6 +714,7 @@ class TitanURI(_BaseURI):
         size: int | None | _UnsetType = _UNSET,
         mime: str | None | _UnsetType = _UNSET,
         token: str | None | _UnsetType = _UNSET,
+        edit: bool | _UnsetType = _UNSET,
         parameters: dict[str, str | None] | _UnsetType = _UNSET,
     ) -> Self:
         """Create a new TitanURI by replacing specific parts of this URI.
@@ -701,6 +727,7 @@ class TitanURI(_BaseURI):
             size: The new size parameter, None to remove, or _UNSET to keep current.
             mime: The new mime parameter, None to remove, or _UNSET to keep current.
             token: The new token parameter, None to remove, or _UNSET to keep current.
+            edit: True to set the edit parameter, False to remove, or _UNSET to keep current.
             parameters: Complete dictionary replacement of parameters, or _UNSET.
 
         Returns:
@@ -733,6 +760,25 @@ class TitanURI(_BaseURI):
             else dict(parameters)
         )
 
+        if (
+            not isinstance(edit, _UnsetType)
+            and edit
+            and not isinstance(size, _UnsetType)
+            and size is not None
+        ):
+            raise URIError(
+                "Titan URI with 'edit' parameter cannot have a 'size' parameter."
+            )
+
+        if not isinstance(edit, _UnsetType):
+            if edit:
+                new_params["edit"] = None
+                new_params.pop("size", None)
+            else:
+                new_params.pop("edit", None)
+        elif not isinstance(size, _UnsetType) and size is not None:
+            new_params.pop("edit", None)
+
         if not isinstance(size, _UnsetType):
             if size is None:
                 new_params.pop("size", None)
@@ -754,6 +800,11 @@ class TitanURI(_BaseURI):
                 new_params.pop("token", None)
             else:
                 new_params["token"] = token
+
+        if "edit" in new_params and "size" in new_params:
+            raise URIError(
+                "Titan URI with 'edit' parameter cannot have a 'size' parameter."
+            )
 
         param_parts: list[str] = []
         for k, v in new_params.items():
@@ -852,15 +903,28 @@ class TitanURI(_BaseURI):
         return self.replace(mime=mime)
 
     def with_token(self, token: str | None) -> Self:
-        """Return a new TitanURI with the authorization token parameter set or removed.
+        """Return a new TitanURI with the authorisation token parameter set or removed.
 
         Args:
-            token: The authorization token string, or None to remove.
+            token: The authorisation token string, or None to remove.
 
         Returns:
             A new TitanURI instance.
         """
         return self.replace(token=token)
+
+    def with_edit(self, edit: bool = True) -> Self:
+        """Return a new TitanURI with the edit parameter set or removed.
+
+        Args:
+            edit: True to set the edit parameter, False to remove it.
+
+        Returns:
+            A new TitanURI instance.
+        """
+        if edit:
+            return self.replace(edit=True, size=None)
+        return self.replace(edit=False)
 
     def with_parameters(self, parameters: dict[str, str | None]) -> Self:
         """Return a new TitanURI with the parameters dictionary replaced.

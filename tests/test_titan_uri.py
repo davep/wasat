@@ -589,6 +589,84 @@ class TestTitanURI:
         assert uri2.size == 20
         assert uri2.token == "abc"
 
+    def test_edit_parameter_parsing(self) -> None:
+        """Test parsing Titan URI with edit parameter."""
+        uri = TitanURI("titan://example.com/test/testing;edit")
+        assert uri.is_edit is True
+        assert uri.size is None
+        assert uri.parameters == {"edit": None}
+        assert str(uri) == "titan://example.com/test/testing;edit"
+
+    def test_edit_parameter_helpers(self) -> None:
+        """Test is_edit property and with_edit method."""
+        uri = TitanURI("titan://example.com/resource")
+        assert uri.is_edit is False
+
+        edit_uri = uri.with_edit(True)
+        assert edit_uri.is_edit is True
+        assert str(edit_uri) == "titan://example.com/resource;edit"
+
+        reverted_uri = edit_uri.with_edit(False)
+        assert reverted_uri.is_edit is False
+        assert str(reverted_uri) == "titan://example.com/resource"
+
+    def test_edit_and_size_mutual_exclusivity(self) -> None:
+        """Test that edit and size parameters cannot be combined."""
+        with pytest.raises(
+            URIError,
+            match="Titan URI with 'edit' parameter cannot have a 'size' parameter",
+        ):
+            TitanURI("titan://example.com/resource;edit;size=10")
+
+        with pytest.raises(
+            URIError,
+            match="Titan URI with 'edit' parameter cannot have a 'size' parameter",
+        ):
+            TitanURI("titan://example.com/resource;size=10;edit")
+
+        uri = TitanURI("titan://example.com/resource")
+        with pytest.raises(
+            URIError,
+            match="Titan URI with 'edit' parameter cannot have a 'size' parameter",
+        ):
+            uri.replace(edit=True, size=10)
+
+        with pytest.raises(
+            URIError,
+            match="Titan URI with 'edit' parameter cannot have a 'size' parameter",
+        ):
+            uri.replace(parameters={"edit": None, "size": "10"})
+
+        # with_edit(True) on a URI with size clears size
+        uri_with_size = TitanURI("titan://example.com/resource;size=10")
+        edit_uri = uri_with_size.with_edit(True)
+        assert edit_uri.is_edit is True
+        assert edit_uri.size is None
+        assert str(edit_uri) == "titan://example.com/resource;edit"
+
+        # replace(size=20) on an edit URI clears edit
+        upload_uri = edit_uri.replace(size=20)
+        assert upload_uri.is_edit is False
+        assert upload_uri.size == 20
+        assert str(upload_uri) == "titan://example.com/resource;size=20"
+
+    def test_gemini_to_titan_edit(self) -> None:
+        """Test converting GeminiURI to TitanURI with edit=True."""
+        gemini = GeminiURI("gemini://example.com/test/page")
+        titan = gemini.to_titan(edit=True)
+        assert titan.is_edit is True
+        assert titan.size is None
+        assert str(titan) == "titan://example.com/test/page;edit"
+
+        # Converting back to Gemini strips edit parameter
+        assert titan.to_gemini() == gemini
+
+        with pytest.raises(
+            URIError,
+            match="Titan URI with 'edit' parameter cannot have a 'size' parameter",
+        ):
+            gemini.to_titan(edit=True, size=10)
+
 
 ##############################################################################
 class TestGuessMimeType:

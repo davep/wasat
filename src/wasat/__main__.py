@@ -80,6 +80,12 @@ def get_args() -> Namespace:
         help="Delete a resource using the Titan protocol (size=0).",
     )
     parser.add_argument(
+        "-e",
+        "--edit",
+        action="store_true",
+        help="Request raw content for editing using the proposed Titan edit extension (;edit).",
+    )
+    parser.add_argument(
         "-m",
         "--mime",
         type=str,
@@ -146,10 +152,16 @@ async def run_cli() -> None:
         elif args.url.startswith("gemini://"):
             current_uri = GeminiURI(args.url)
         else:
-            if args.upload or args.data or args.delete:
+            if args.upload or args.data or args.delete or args.edit:
                 current_uri = TitanURI(f"titan://{args.url}")
             else:
                 current_uri = GeminiURI(f"gemini://{args.url}")
+
+        if args.edit:
+            if isinstance(current_uri, GeminiURI):
+                current_uri = current_uri.to_titan(edit=True)
+            elif isinstance(current_uri, TitanURI):
+                current_uri = current_uri.with_edit(True)
     except WasatError as error:
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
@@ -181,6 +193,8 @@ async def run_cli() -> None:
                     current_uri,
                     token=args.token,
                 )
+            elif isinstance(current_uri, TitanURI) and current_uri.is_edit:
+                response = await client.edit(current_uri)
             elif isinstance(current_uri, TitanURI):
                 upload_payload: str | bytes | Path
                 if not sys.stdin.isatty():
