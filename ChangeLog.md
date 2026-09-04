@@ -1,5 +1,26 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+- Fixed `TitanURI` path parameter parsing to strictly apply parameters to
+  the terminal path segment, preventing truncation of directory paths that
+  contain semicolons. ([#61](https://github.com/davep/wasat/pull/61))
+- Fixed `TitanURI` parsing to support semicolon parameters immediately
+  following the authority without an explicit path slash.
+  ([#61](https://github.com/davep/wasat/pull/61))
+- Updated `Client.upload` and Titan redirect handling to ignore existing
+  parameters on target and redirect URIs in compliance with the Titan
+  specification. ([#61](https://github.com/davep/wasat/pull/61))
+- Fixed `Client.delete` to avoid appending a default MIME type parameter on
+  zero-byte payload requests.
+  ([#61](https://github.com/davep/wasat/pull/61))
+- Updated `Client.request` to raise `RedirectError` when following a
+  redirect from a Gemini request to a Titan upload URI with size > 0.
+  ([#61](https://github.com/davep/wasat/pull/61))
+- Updated the CLI to prompt for interactive input or read from standard
+  input when a Titan URI is requested without `--upload`, `--data`, or
+  `--delete`. ([#61](https://github.com/davep/wasat/pull/61))
+
 ## v1.8.0
 
 **Released: 2026-09-03**

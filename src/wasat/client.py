@@ -815,6 +815,17 @@ class Client:
                     f"Failed to resolve redirect URI '{redirect_str}': {error}"
                 ) from error
 
+            if (
+                isinstance(new_uri, TitanURI)
+                and new_uri.size is not None
+                and new_uri.size > 0
+            ):
+                await response.close()
+                raise RedirectError(
+                    f"Redirected from Gemini to Titan URI '{new_uri}' with size > 0, "
+                    "but no payload is available. Use client.upload() for Titan uploads."
+                )
+
             if new_uri in visited:
                 await response.close()
                 raise RedirectError(f"Circular redirect detected: {new_uri}")
@@ -885,40 +896,38 @@ class Client:
         if isinstance(data, str):
             payload_bytes = data.encode("utf-8")
             if detected_mime is None:
-                detected_mime = target_uri.mime or "text/gemini"
+                detected_mime = "text/gemini"
         elif isinstance(data, (bytes, bytearray, memoryview)):
             payload_bytes = bytes(data)
-            if detected_mime is None:
-                detected_mime = target_uri.mime or "application/octet-stream"
+            if detected_mime is None and len(payload_bytes) > 0:
+                detected_mime = "application/octet-stream"
         elif isinstance(data, Path):
             payload_bytes = data.read_bytes()
             if detected_mime is None:
-                detected_mime = target_uri.mime or guess_mime_type(data)
+                detected_mime = guess_mime_type(data)
         elif hasattr(data, "__aiter__"):
             chunks: list[bytes] = []
             async for chunk in data:
                 chunks.append(chunk)
             payload_bytes = b"".join(chunks)
-            if detected_mime is None:
-                detected_mime = target_uri.mime or "application/octet-stream"
+            if detected_mime is None and len(payload_bytes) > 0:
+                detected_mime = "application/octet-stream"
         elif hasattr(data, "read"):
             read_result = data.read()
             if isinstance(read_result, str):
                 payload_bytes = read_result.encode("utf-8")
                 if detected_mime is None:
-                    detected_mime = target_uri.mime or "text/gemini"
+                    detected_mime = "text/gemini"
             else:
                 payload_bytes = bytes(read_result)
-                if detected_mime is None:
-                    detected_mime = target_uri.mime or "application/octet-stream"
+                if detected_mime is None and len(payload_bytes) > 0:
+                    detected_mime = "application/octet-stream"
         else:
             raise TypeError(f"Unsupported payload data type: {type(data)}")
 
         size = len(payload_bytes)
-        target_token = token if token is not None else target_uri.token
-        final_uri = target_uri.replace(
-            size=size, mime=detected_mime, token=target_token
-        )
+        base_target_uri = target_uri.without_parameters
+        final_uri = base_target_uri.replace(size=size, mime=detected_mime, token=token)
 
         current_uri: AnyURI = final_uri
         visited = {current_uri}
@@ -963,10 +972,10 @@ class Client:
             await response.close()
 
             if isinstance(new_uri, TitanURI):
-                redirect_titan = new_uri.replace(
+                redirect_titan = new_uri.without_parameters.replace(
                     size=size,
                     mime=detected_mime,
-                    token=token if token is not None else new_uri.token,
+                    token=token,
                 )
                 response = await self._do_request(
                     redirect_titan,

@@ -13,6 +13,7 @@ import pytest
 # Local imports.
 from wasat import (
     Client,
+    RedirectError,
     StatusCode,
     TitanURI,
     URIError,
@@ -62,9 +63,11 @@ def mock_server(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
             self.reader = reader
             self.transport = MockTransport()
             self.closed = False
+            self._request_line_sent = False
 
         def write(self, data: bytes) -> None:
-            if b"\r\n" in data and not state["sent_request_lines"]:
+            if b"\r\n" in data and not self._request_line_sent:
+                self._request_line_sent = True
                 state["sent_request_lines"].append(
                     data.decode("utf-8", errors="replace")
                 )
@@ -335,5 +338,103 @@ class TestTitanClient:
                 uri = TitanURI("titan://example.com/page;size=50")
                 with pytest.raises(URIError, match="Titan URI specifies size > 0"):
                     await client.request(uri)
+
+        asyncio.run(run())
+
+    def test_upload_ignores_existing_target_parameters(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that upload ignores existing parameters on the target URI."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(b"20 text/gemini\r\nOK\r\n")
+
+            async with Client(verify_mode="off") as client:
+                # Link contains existing parameters that should be ignored
+                response = await client.upload(
+                    "titan://example.com/upload;size=999;mime=old/mime;token=old_tok;extra=param",
+                    b"Hello World",
+                    token="my_token",
+                )
+                assert response.status == StatusCode.SUCCESS
+
+            req_line = mock_server["sent_request_lines"][0]
+            assert "size=11" in req_line
+            assert "token=my_token" in req_line
+            assert "size=999" not in req_line
+            assert "old_tok" not in req_line
+            assert "old/mime" not in req_line
+            assert "extra=param" not in req_line
+
+        asyncio.run(run())
+
+    def test_upload_redirect_ignores_existing_parameters(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that following a redirect to a Titan URI ignores all parameters in the redirect URI."""
+
+        async def run() -> None:
+            # Server redirects to a Titan URI containing dummy parameters
+            mock_server["responses_to_send"].append(
+                b"30 titan://example.com/dest;size=999;token=dummy_tok;foo=bar\r\n"
+            )
+            mock_server["responses_to_send"].append(b"20 text/gemini\r\nUploaded\r\n")
+
+            async with Client(verify_mode="off", follow_redirects=True) as client:
+                response = await client.upload(
+                    "titan://example.com/initial",
+                    b"Payload data",
+                    token="valid_token",
+                )
+                assert response.status == StatusCode.SUCCESS
+
+            # Check the second request line (re-upload to /dest)
+            re_upload_req = mock_server["sent_request_lines"][1]
+            assert "titan://example.com/dest" in re_upload_req
+            assert "size=12" in re_upload_req
+            assert "token=valid_token" in re_upload_req
+            assert "size=999" not in re_upload_req
+            assert "dummy_tok" not in re_upload_req
+            assert "foo=bar" not in re_upload_req
+
+        asyncio.run(run())
+
+    def test_delete_does_not_include_dummy_mime(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that delete (size=0) does not include a dummy application/octet-stream MIME type."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(b"20 text/gemini\r\nDeleted\r\n")
+
+            async with Client(verify_mode="off") as client:
+                response = await client.delete(
+                    "titan://example.com/item",
+                    token="del_token",
+                )
+                assert response.status == StatusCode.SUCCESS
+
+            req_line = mock_server["sent_request_lines"][0]
+            assert "size=0" in req_line
+            assert "token=del_token" in req_line
+            assert "mime=" not in req_line
+
+        asyncio.run(run())
+
+    def test_request_redirect_to_titan_with_size_raises_redirect_error(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that redirect from Gemini to Titan URI with size > 0 in client.request() raises RedirectError."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(
+                b"30 titan://example.com/upload;size=100\r\n"
+            )
+
+            async with Client(verify_mode="off", follow_redirects=True) as client:
+                with pytest.raises(
+                    RedirectError, match="Redirected from Gemini to Titan URI"
+                ):
+                    await client.request("gemini://example.com/edit")
 
         asyncio.run(run())
