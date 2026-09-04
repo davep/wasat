@@ -1,6 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.8.1
+
+**Released: 2026-09-04**
 
 - Fixed `TitanURI` path parameter parsing to strictly apply parameters to
   the terminal path segment, preventing truncation of directory paths that
