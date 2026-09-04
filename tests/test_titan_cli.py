@@ -3,6 +3,7 @@
 ##############################################################################
 # Python imports.
 import asyncio
+import io
 from pathlib import Path
 from typing import Any
 
@@ -180,3 +181,106 @@ def test_cli_delete(
 
     captured = capsys.readouterr()
     assert "Deleted successfully" in captured.out
+
+
+def test_cli_interactive_prompt_upload(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test CLI interactive query when accessing a Titan URL without flags."""
+    recorded_calls: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "wasat",
+            "titan://example.com/edit_me",
+        ],
+    )
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "User entered content")
+
+    async def mock_upload(
+        self: Any, uri: Any, data: Any, *, mime: Any = None, token: Any = None
+    ) -> DummyResponse:
+        recorded_calls.append({"uri": uri, "data": data, "mime": mime, "token": token})
+        return DummyResponse(
+            StatusCode.SUCCESS,
+            "text/gemini",
+            "Content saved!",
+            uri=TitanURI("titan://example.com/edit_me"),
+        )
+
+    monkeypatch.setattr("wasat.Client.upload", mock_upload)
+
+    asyncio.run(run_cli())
+
+    assert len(recorded_calls) == 1
+    assert recorded_calls[0]["data"] == "User entered content"
+    captured = capsys.readouterr()
+    assert "Content saved!" in captured.out
+
+
+def test_cli_piped_stdin_upload(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test CLI uploading from piped stdin when accessing a Titan URL."""
+    recorded_calls: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "wasat",
+            "titan://example.com/pipe_target",
+        ],
+    )
+
+    class MockStdin:
+        buffer = io.BytesIO(b"Piped binary data")
+
+        @staticmethod
+        def isatty() -> bool:
+            return False
+
+    monkeypatch.setattr("sys.stdin", MockStdin())
+
+    async def mock_upload(
+        self: Any, uri: Any, data: Any, *, mime: Any = None, token: Any = None
+    ) -> DummyResponse:
+        recorded_calls.append({"uri": uri, "data": data, "mime": mime, "token": token})
+        return DummyResponse(
+            StatusCode.SUCCESS,
+            "text/gemini",
+            "Piped data uploaded!",
+            uri=TitanURI("titan://example.com/pipe_target"),
+        )
+
+    monkeypatch.setattr("wasat.Client.upload", mock_upload)
+
+    asyncio.run(run_cli())
+
+    assert len(recorded_calls) == 1
+    assert recorded_calls[0]["data"] == b"Piped binary data"
+    captured = capsys.readouterr()
+    assert "Piped data uploaded!" in captured.out
+
+
+def test_cli_interactive_prompt_cancelled(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test CLI interactive query cancellation when user submits empty input."""
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "wasat",
+            "titan://example.com/cancel_target",
+        ],
+    )
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "")
+
+    with pytest.raises(SystemExit) as exit_info:
+        asyncio.run(run_cli())
+
+    assert exit_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "Upload cancelled." in captured.err

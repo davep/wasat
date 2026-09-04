@@ -181,6 +181,33 @@ async def run_cli() -> None:
                     current_uri,
                     token=args.token,
                 )
+            elif isinstance(current_uri, TitanURI):
+                upload_payload: str | bytes | Path
+                if not sys.stdin.isatty():
+                    upload_payload = await to_thread(sys.stdin.buffer.read)
+                else:
+                    try:
+                        prompt_input = await to_thread(
+                            input,
+                            "Content or file path to upload (leave empty to cancel): ",
+                        )
+                    except (EOFError, KeyboardInterrupt):
+                        print()
+                        sys.exit(1)
+                    if not prompt_input:
+                        print("Upload cancelled.", file=sys.stderr)
+                        sys.exit(0)
+                    candidate_path = Path(prompt_input)
+                    upload_payload = (
+                        candidate_path if candidate_path.is_file() else prompt_input
+                    )
+
+                response = await client.upload(
+                    current_uri,
+                    upload_payload,
+                    mime=args.mime,
+                    token=args.token,
+                )
             else:
                 response = None
 

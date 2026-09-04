@@ -566,6 +566,29 @@ class TestTitanURI:
         assert u1 is not None
         assert u1 != "http://example.com/foo"
 
+    def test_semicolon_in_earlier_path_segment(self) -> None:
+        """Test that semicolons in non-terminal path segments do not truncate the path."""
+        uri = TitanURI(
+            "titan://example.com/dir;part1/resource;size=10;mime=text/gemini"
+        )
+        assert uri.path == "/dir;part1/resource"
+        assert uri.size == 10
+        assert uri.mime == "text/gemini"
+
+    def test_semicolon_without_slash_authority(self) -> None:
+        """Test parsing Titan URI where semicolon parameters immediately follow authority without slash."""
+        uri1 = TitanURI("titan://example.com;size=10")
+        assert uri1.host == "example.com"
+        assert uri1.path == "/"
+        assert uri1.size == 10
+
+        uri2 = TitanURI("titan://example.com:1967;size=20;token=abc")
+        assert uri2.host == "example.com"
+        assert uri2.port == 1967
+        assert uri2.path == "/"
+        assert uri2.size == 20
+        assert uri2.token == "abc"
+
 
 ##############################################################################
 class TestGuessMimeType:

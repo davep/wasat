@@ -516,7 +516,17 @@ class TitanURI(_BaseURI):
 
         to_parse = cleaned
         if cleaned.startswith(TITAN_PREFIX):
-            to_parse = "https://" + cleaned.removeprefix(TITAN_PREFIX)
+            rest = cleaned.removeprefix(TITAN_PREFIX)
+            slash_pos = rest.find("/")
+            semi_pos = rest.find(";")
+            question_pos = rest.find("?")
+            if (
+                semi_pos != -1
+                and (slash_pos == -1 or semi_pos < slash_pos)
+                and (question_pos == -1 or semi_pos < question_pos)
+            ):
+                rest = f"{rest[:semi_pos]}/{rest[semi_pos:]}"
+            to_parse = f"https://{rest}"
 
         try:
             parsed = urlsplit(to_parse)
@@ -569,17 +579,41 @@ class TitanURI(_BaseURI):
             clean_path = raw_path if raw_path.startswith("/") else f"/{raw_path}"
             return clean_path, {}
 
-        clean_path_part, _, param_string = raw_path.partition(";")
-        clean_path = (
-            clean_path_part
-            if clean_path_part.startswith("/")
-            else f"/{clean_path_part}"
-        )
+        # Semicolon parameters in Titan are defined only for the last path segment.
+        # However, a 'mime=' parameter value may contain a slash (e.g. 'text/gemini').
+        parts = raw_path.split(";")
+        path_parts: list[str] = [parts[0]]
+        param_parts: list[str] = []
+
+        in_params = False
+        for i, part in enumerate(parts[1:], 1):
+            if not in_params:
+                # If this or any subsequent part contains a path slash outside a mime parameter,
+                # we are still in the path.
+                if "/" in part and not part.strip().lower().startswith("mime="):
+                    path_parts.append(part)
+                    continue
+                has_path_slash = False
+                for sub in parts[i:]:
+                    if "/" in sub and not sub.strip().lower().startswith("mime="):
+                        has_path_slash = True
+                        break
+                if has_path_slash:
+                    path_parts.append(part)
+                    continue
+                in_params = True
+                param_parts.append(part)
+            else:
+                param_parts.append(part)
+
+        clean_path = ";".join(path_parts)
+        if not clean_path.startswith("/"):
+            clean_path = f"/{clean_path}"
         if not clean_path:
             clean_path = "/"
 
         parameters: dict[str, str | None] = {}
-        for param in param_string.split(";"):
+        for param in param_parts:
             param = param.strip()
             if not param:
                 continue
