@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v181" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.8.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v180" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1066,6 +1077,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v181" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.8.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v180" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1339,6 +1361,28 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v181">v1.8.1</h2>
+<p><strong>Released: 2026-09-04</strong></p>
+<ul>
+<li>Fixed <code>TitanURI</code> path parameter parsing to strictly apply parameters to
+  the terminal path segment, preventing truncation of directory paths that
+  contain semicolons. (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+<li>Fixed <code>TitanURI</code> parsing to support semicolon parameters immediately
+  following the authority without an explicit path slash.
+  (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+<li>Updated <code>Client.upload</code> and Titan redirect handling to ignore existing
+  parameters on target and redirect URIs in compliance with the Titan
+  specification. (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+<li>Fixed <code>Client.delete</code> to avoid appending a default MIME type parameter on
+  zero-byte payload requests.
+  (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+<li>Updated <code>Client.request</code> to raise <code>RedirectError</code> when following a
+  redirect from a Gemini request to a Titan upload URI with size &gt; 0.
+  (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+<li>Updated the CLI to prompt for interactive input or read from standard
+  input when a Titan URI is requested without <code>--upload</code>, <code>--data</code>, or
+  <code>--delete</code>. (<a href="https://github.com/davep/wasat/pull/61">#61</a>)</li>
+</ul>
 <h2 id="v180">v1.8.0</h2>
 <p><strong>Released: 2026-09-03</strong></p>
 <ul>
