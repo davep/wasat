@@ -489,15 +489,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#titan-protocol-support-uploads-and-deletions" class="md-nav__link">
+  <a href="#titan-protocol-support-uploads-deletions-and-editing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Titan Protocol Support (Uploads and Deletions)
+        Titan Protocol Support (Uploads, Deletions, and Editing)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads and Deletions)">
+    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads, Deletions, and Editing)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -519,6 +519,34 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#editing-resources-the-edit-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Editing Resources (The Edit Extension)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Editing Resources (The Edit Extension)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#working-with-edit-uris" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working with Edit URIs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1040,15 +1068,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#titan-protocol-support-uploads-and-deletions" class="md-nav__link">
+  <a href="#titan-protocol-support-uploads-deletions-and-editing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Titan Protocol Support (Uploads and Deletions)
+        Titan Protocol Support (Uploads, Deletions, and Editing)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads and Deletions)">
+    <nav class="md-nav" aria-label="Titan Protocol Support (Uploads, Deletions, and Editing)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1070,6 +1098,34 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#editing-resources-the-edit-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Editing Resources (The Edit Extension)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Editing Resources (The Edit Extension)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#working-with-edit-uris" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working with Edit URIs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1231,7 +1287,7 @@
 <li><strong><a class="autorefs autorefs-internal" title="            ServerCertificate" href="../library/certs/#wasat.certs.ServerCertificate">ServerCertificate</a></strong>: A high-level representation of a server's TLS certificate providing parsed attributes (e.g. subject, issuer, validity dates, SANs, fingerprint). Access it lazily via <code>response.server_cert</code>.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ClientCertificate" href="../library/certs/#wasat.certs.ClientCertificate">ClientCertificate</a></strong>: A representation of a client TLS certificate and private key pair, exposing subject attributes, validity dates, public key info, fingerprint, and associated Gemini scopes. Access it lazily via <code>response.client_cert</code>.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a></strong>: A utility class to parse, validate, and resolve Gemini URIs safely.</li>
-<li><strong><a class="autorefs autorefs-internal" title="            TitanURI" href="../library/uri/#wasat.uri.TitanURI">TitanURI</a></strong>: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (<code>size</code>, <code>mime</code>, <code>token</code>).</li>
+<li><strong><a class="autorefs autorefs-internal" title="            TitanURI" href="../library/uri/#wasat.uri.TitanURI">TitanURI</a></strong>: A utility class to parse, validate, and manipulate Titan URIs, including semicolon-delimited parameters (<code>size</code>, <code>mime</code>, <code>token</code>, <code>edit</code>).</li>
 <li><strong><a class="autorefs autorefs-internal" title="            StatusCode" href="../library/status/#wasat.status.StatusCode">StatusCode</a></strong>: An integer enumeration representing the official status codes of the Gemini Protocol, featuring helper properties to categorise statuses.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            TrustStore" href="../library/trust/#wasat.trust.TrustStore">TrustStore</a></strong>: A protocol defining the trust verification interface.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            FileTrustStore" href="../library/trust/#wasat.trust.FileTrustStore">FileTrustStore</a></strong>: The default file-based Trust-On-First-Use (TOFU) backend that stores trusted certificate fingerprints.</li>
@@ -1283,8 +1339,8 @@
                 <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
 </code></pre></div>
 <hr />
-<h2 id="titan-protocol-support-uploads-and-deletions">Titan Protocol Support (Uploads and Deletions)</h2>
-<p>Wasat natively supports the <strong>Titan protocol</strong> (<code>titan://</code>), the companion upload and data exchange protocol for Gemini.</p>
+<h2 id="titan-protocol-support-uploads-deletions-and-editing">Titan Protocol Support (Uploads, Deletions, and Editing)</h2>
+<p>Wasat natively supports the <strong>Titan protocol</strong> (<code>titan://</code>), the companion upload, editing, and data exchange protocol for Gemini.</p>
 <h3 id="uploading-content">Uploading Content</h3>
 <p>Use <a class="autorefs autorefs-internal" title="            upload
 
@@ -1327,6 +1383,55 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">is_success</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">"Resource deleted successfully."</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="editing-resources-the-edit-extension">Editing Resources (The Edit Extension)</h3>
+<p>The Titan specification includes a proposed extension for collaborative editing and raw content retrieval using the <code>;edit</code> path parameter (e.g. <code>titan://example.com/page;edit</code>). While this remains a proposed specification extension rather than part of the core RFC, it is supported by a number of Gemini and Titan servers and clients.</p>
+<p>When a client sends a request to a Titan edit URI, the server:
+1. Locks the resource for editing (subject to a server-side timeout).
+2. Returns the "raw" unrendered page content (without site-injected headers, footers, or post-processing) with a <code>20 SUCCESS</code> response.
+3. If another user already holds the edit lock, the server responds with a <code>40 TEMPORARY FAILURE</code> explaining that the resource is locked.</p>
+<p>Use the <a class="autorefs autorefs-internal" title="            edit
+
+
+  
+      async
+  " href="../library/client/#wasat.client.Client.edit">edit</a> method to fetch raw content and acquire the lock:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">StatusCode</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">edit_resource</span><span class="p">():</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+        <span class="c1"># Request raw content for editing</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">edit</span><span class="p">(</span><span class="s2">"gemini://example.com/page"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">StatusCode</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">:</span>
+            <span class="n">raw_text</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="n">mime_type</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">meta</span>  <span class="c1"># e.g. text/gemini</span>
+
+            <span class="c1"># ... edit content in your editor ...</span>
+            <span class="n">modified_text</span> <span class="o">=</span> <span class="n">raw_text</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">Updated content!"</span>
+
+            <span class="c1"># Upload the modified text back to the server.</span>
+            <span class="c1"># Client.upload() automatically removes ';edit' to target the base resource.</span>
+            <span class="n">save_response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span>
+                <span class="n">modified_text</span><span class="p">,</span>
+                <span class="n">mime</span><span class="o">=</span><span class="n">mime_type</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Save status: </span><span class="si">{</span><span class="n">save_response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">StatusCode</span><span class="o">.</span><span class="n">TEMPORARY_FAILURE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Resource is locked by another user: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">meta</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="working-with-edit-uris">Working with Edit URIs</h4>
+<p>You can inspect and create edit URIs directly using <a class="autorefs autorefs-internal" title="            TitanURI" href="../library/uri/#wasat.uri.TitanURI">TitanURI</a> and <a class="autorefs autorefs-internal" title="            GeminiURI" href="../library/uri/#wasat.uri.GeminiURI">GeminiURI</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeminiURI</span><span class="p">,</span> <span class="n">TitanURI</span>
+
+<span class="c1"># Convert a Gemini URI into a Titan edit URI</span>
+<span class="n">gemini</span> <span class="o">=</span> <span class="n">GeminiURI</span><span class="p">(</span><span class="s2">"gemini://example.com/posts/article"</span><span class="p">)</span>
+<span class="n">titan_edit</span> <span class="o">=</span> <span class="n">gemini</span><span class="o">.</span><span class="n">to_titan</span><span class="p">(</span><span class="n">edit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">titan_edit</span><span class="p">)</span>  <span class="c1"># titan://example.com/posts/article;edit</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">titan_edit</span><span class="o">.</span><span class="n">is_edit</span><span class="p">)</span>  <span class="c1"># True</span>
+
+<span class="c1"># Convert back to the canonical Gemini viewing URI</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">titan_edit</span><span class="o">.</span><span class="n">to_gemini</span><span class="p">())</span>  <span class="c1"># gemini://example.com/posts/article</span>
 </code></pre></div>
 <hr />
 <h2 id="custom-trust-verification-tofu-and-hybrid-mode">Custom Trust Verification, TOFU, and Hybrid Mode</h2>

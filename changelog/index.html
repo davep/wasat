@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v190" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.9.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v181" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1077,6 +1088,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v190" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.9.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v181" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1361,6 +1383,25 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v190">v1.9.0</h2>
+<p><strong>Released: 2026-09-05</strong></p>
+<ul>
+<li>Added support for the proposed Titan edit extension (<code>titan://...;edit</code>).
+  (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+<li>Added <code>is_edit</code> property and <code>with_edit</code> method to <code>TitanURI</code>, and updated
+  <code>TitanURI.replace</code> to accept <code>edit: bool</code>.
+  (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+<li>Enforced parameter mutual exclusivity between <code>edit</code> and <code>size</code> on
+  <code>TitanURI</code>. (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+<li>Added <code>edit: bool = False</code> parameter to <code>GeminiURI.to_titan</code>.
+  (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+<li>Added <code>Client.edit</code> method to fetch raw editable content and acquire edit
+  locks. (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+<li>Updated the CLI with <code>-e</code> / <code>--edit</code> option to fetch raw content for
+  editing, and resolved an issue where requesting a <code>titan://</code> edit URI
+  directly prompted for upload data instead of retrieving content.
+  (<a href="https://github.com/davep/wasat/pull/63">#63</a>)</li>
+</ul>
 <h2 id="v181">v1.8.1</h2>
 <p><strong>Released: 2026-09-04</strong></p>
 <ul>

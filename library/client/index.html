@@ -871,6 +871,34 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.client.Client.edit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;edit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" edit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wasat.client.Client.edit(uri)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;uri
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.client.Client.request" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1558,6 +1586,34 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;token
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.client.Client.edit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;edit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" edit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wasat.client.Client.edit(uri)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;uri
       
     </span>
   </a>
@@ -2391,6 +2447,186 @@ encountered in TOFU mode. Must return True to accept, False to reject.</p>
             <td>
               <div class="doc-md-description">
                 <p>The final Response object.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="wasat.client.Client.edit" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">edit</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">edit</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="uri (wasat.client.Client.edit(uri))" href="#wasat.client.Client.edit(uri)">uri</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Response (wasat.response.Response)" href="../response/#wasat.response.Response">Response</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Request the raw content of a resource for editing using the Titan edit extension.</p>
+<p>Sends a Titan request with the ';edit' parameter to lock the resource (if supported
+by the server) and retrieve its raw unrendered content.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>The Titan edit parameter is a proposed extension to the Titan specification
+designed for collaborative editing and raw content retrieval. It is supported
+by various Gemini and Titan servers.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="wasat.client.Client.edit(uri)" class="doc doc-heading doc-heading-parameter">                  <code>uri</code>
+</h4>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="            AnyURI (wasat.uri.AnyURI)" href="../uri/#wasat.uri.AnyURI">AnyURI</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The target URI as a string, GeminiURI, or TitanURI.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            Response (wasat.response.Response)" href="../response/#wasat.response.Response">Response</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A Response instance containing the raw content for editing.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            URIError (wasat.exceptions.URIError)" href="../exceptions/#wasat.exceptions.URIError">URIError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the URI is invalid.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ConnectionError (wasat.exceptions.ConnectionError)" href="../exceptions/#wasat.exceptions.ConnectionError">ConnectionError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If network connection fails or times out.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            SecurityError (wasat.exceptions.SecurityError)" href="../exceptions/#wasat.exceptions.SecurityError">SecurityError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If TLS or certificate validation fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ProtocolError (wasat.exceptions.ProtocolError)" href="../exceptions/#wasat.exceptions.ProtocolError">ProtocolError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the server response violates the protocol.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            RedirectError (wasat.exceptions.RedirectError)" href="../exceptions/#wasat.exceptions.RedirectError">RedirectError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If redirect limits are exceeded or loops are detected.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If client certificate generation parameters are invalid.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#OSError">OSError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If creating directories or writing client certificate files fails.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError">RuntimeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If saving the updated client certificate store index fails.</p>
               </div>
             </td>
           </tr>
