@@ -1,5 +1,16 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Fixed Titan upload handling in `Client.upload` to concurrently read the
+  server's response while streaming payload data.
+  ([#65](https://github.com/davep/wasat/pull/65))
+- Added timeout handling to response line reading during requests to ensure
+  unresponsive servers cleanly raise `ConnectionError` rather than stalling.
+  ([#65](https://github.com/davep/wasat/pull/65))
+
 ## v1.9.0
 
 **Released: 2026-09-05**
