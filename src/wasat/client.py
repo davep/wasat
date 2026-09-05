@@ -103,6 +103,22 @@ def _get_default_certs_store_path() -> Path:
 
 
 ##############################################################################
+async def _safe_close_writer(
+    writer: asyncio.StreamWriter, timeout: float = 0.5
+) -> None:
+    """Safely close a StreamWriter without blocking indefinitely on uncooperative peers.
+
+    Args:
+        writer: The StreamWriter to close.
+        timeout: Maximum time in seconds to wait for connection close.
+    """
+    writer.close()
+    with suppress(Exception):
+        async with asyncio.timeout(timeout):
+            await writer.wait_closed()
+
+
+##############################################################################
 class WrappedStreamReader:
     """Wraps StreamReader to ensure the StreamWriter is closed upon reaching EOF or on error."""
 
@@ -147,9 +163,7 @@ class WrappedStreamReader:
         """Close the writer transport."""
         if not self._closed:
             self._closed = True
-            self._writer.close()
-            with suppress(Exception):
-                await self._writer.wait_closed()
+            await _safe_close_writer(self._writer)
 
 
 ##############################################################################
@@ -768,9 +782,7 @@ class Client:
                     verification_method=verification_method,
                 )
             else:
-                writer.close()
-                with suppress(Exception):
-                    await writer.wait_closed()
+                await _safe_close_writer(writer)
 
                 response = Response(
                     status_code,
@@ -819,21 +831,15 @@ class Client:
                 return response
 
         except WasatError:
-            writer.close()
-            with suppress(Exception):
-                await writer.wait_closed()
+            await _safe_close_writer(writer)
             raise
         except (TimeoutError, OSError, ssl.SSLError) as error:
-            writer.close()
-            with suppress(Exception):
-                await writer.wait_closed()
+            await _safe_close_writer(writer)
             raise ConnectionError(
                 f"Connection failed during request: {error}"
             ) from error
         except Exception:
-            writer.close()
-            with suppress(Exception):
-                await writer.wait_closed()
+            await _safe_close_writer(writer)
             raise
 
     async def request(self, uri: str | AnyURI) -> Response:

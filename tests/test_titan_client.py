@@ -13,6 +13,7 @@ import pytest
 # Local imports.
 from wasat import (
     Client,
+    ConnectionError,
     RedirectError,
     StatusCode,
     TitanURI,
@@ -45,7 +46,7 @@ def mock_server(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
             if sep_idx == -1:
                 data = bytes(self._buffer)
                 self._buffer.clear()
-                return data
+                raise asyncio.IncompleteReadError(data, None)
             data = bytes(self._buffer[: sep_idx + len(separator)])
             self._buffer = self._buffer[sep_idx + len(separator) :]
             return data
@@ -315,6 +316,25 @@ class TestTitanClient:
                 )
                 assert response.status == StatusCode.PERMANENT_FAILURE
                 assert response.meta == "A token is required to upload a file"
+
+        asyncio.run(run())
+
+    def test_upload_server_closes_connection_before_response(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that server closing the connection without sending a response raises ConnectionError."""
+
+        async def run() -> None:
+            # responses_to_send is empty, meaning the server sends 0 bytes and closes (EOF)
+            async with Client(verify_mode="off") as client:
+                with pytest.raises(
+                    ConnectionError,
+                    match="Connection closed by server before sending response",
+                ):
+                    await client.upload(
+                        "titan://example.com/upload",
+                        b"x" * 150000,
+                    )
 
         asyncio.run(run())
 
