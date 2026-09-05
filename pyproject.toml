@@ -1,6 +1,6 @@
 [project]
 name = "wasat"
-version = "1.9.2"
+version = "1.9.1"
 description = "An async client library for the Gemini protocol"
 readme = "README.md"
 authors = [

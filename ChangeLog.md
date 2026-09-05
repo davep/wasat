@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.9.1
 
-**Released: WiP**
+**Released: 2026-09-05**
 
 - Fixed Titan upload handling in `Client.upload` to concurrently read the
   server's response while streaming payload data.
