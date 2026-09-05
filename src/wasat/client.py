@@ -362,6 +362,100 @@ class Client:
             # line can be read and handled gracefully.
             pass
 
+    async def _send_payload_chunked(
+        self,
+        payload: bytes,
+        writer: asyncio.StreamWriter,
+        read_task: asyncio.Task[tuple[StatusCode, str]],
+    ) -> None:
+        """Stream payload chunks to the server while monitoring the read task.
+
+        Args:
+            payload: The raw bytes payload to send.
+            writer: The StreamWriter representing the established connection.
+            read_task: The background task reading the server response line.
+        """
+        chunk_size = 64 * 1024
+        total_bytes = len(payload)
+        for offset in range(0, total_bytes, chunk_size):
+            if read_task.done():
+                try:
+                    status_code, _ = read_task.result()
+                    if not status_code.is_success:
+                        break
+                except Exception:
+                    break
+            chunk = payload[offset : offset + chunk_size]
+            try:
+                writer.write(chunk)
+                await writer.drain()
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLEOFError, OSError):
+                break
+
+    async def _send_payload_and_read_response(
+        self,
+        payload: bytes,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+    ) -> tuple[StatusCode, str]:
+        """Send the payload to the server while concurrently reading the response.
+
+        Titan servers may reject an upload intent early (e.g. if the requested file size
+        exceeds internal limits, a token is required, or MIME type is rejected) and close
+        or stop reading from the connection. By concurrently reading the response line
+        while streaming the payload in chunks, we ensure that an early response is caught
+        immediately without stalling on TCP socket write buffers.
+
+        Args:
+            payload: The raw bytes payload to upload.
+            reader: The StreamReader representing the established connection.
+            writer: The StreamWriter representing the established connection.
+
+        Returns:
+            A tuple of (StatusCode, meta string).
+
+        Raises:
+            ConnectionError: If the connection is closed before reading the response.
+            ProtocolError: If the response line format is invalid.
+        """
+        read_task: asyncio.Task[tuple[StatusCode, str]] = asyncio.create_task(
+            self._read_response_line(reader)
+        )
+        send_task = asyncio.create_task(
+            self._send_payload_chunked(payload, writer, read_task)
+        )
+        try:
+            done, pending = await asyncio.wait(
+                [read_task, send_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            if read_task in done:
+                try:
+                    status_code, meta = read_task.result()
+                    if not status_code.is_success:
+                        for task in pending:
+                            task.cancel()
+                            with suppress(asyncio.CancelledError):
+                                await task
+                        return status_code, meta
+                except Exception:
+                    for task in pending:
+                        task.cancel()
+                        with suppress(asyncio.CancelledError):
+                            await task
+                    return read_task.result()
+
+            if send_task not in done:
+                await send_task
+            return await read_task
+        finally:
+            for task in (read_task, send_task):
+                if not task.done():
+                    task.cancel()
+                    with suppress(asyncio.CancelledError, Exception):
+                        await task
+
     async def _read_response_line(
         self, reader: asyncio.StreamReader
     ) -> tuple[StatusCode, str]:
@@ -377,21 +471,26 @@ class Client:
             ConnectionError: If the connection is closed before reading the response.
             ProtocolError: If the response line format is invalid.
         """
-        async with asyncio.timeout(self._read_timeout):
-            try:
-                response_line_bytes = await reader.readuntil(b"\r\n")
-            except asyncio.LimitOverrunError as error:
-                raise ProtocolError(
-                    "Response line exceeds maximum allowed limit"
-                ) from error
-            except (
-                asyncio.IncompleteReadError,
-                OSError,
-                ssl.SSLError,
-            ) as error:
-                raise ConnectionError(
-                    "Connection closed by server before sending response"
-                ) from error
+        try:
+            async with asyncio.timeout(self._read_timeout):
+                try:
+                    response_line_bytes = await reader.readuntil(b"\r\n")
+                except asyncio.LimitOverrunError as error:
+                    raise ProtocolError(
+                        "Response line exceeds maximum allowed limit"
+                    ) from error
+                except (
+                    asyncio.IncompleteReadError,
+                    OSError,
+                    ssl.SSLError,
+                ) as error:
+                    raise ConnectionError(
+                        "Connection closed by server before sending response"
+                    ) from error
+        except TimeoutError as error:
+            raise ConnectionError(
+                f"Timed out waiting for response line after {self._read_timeout}s"
+            ) from error
 
         response_line = response_line_bytes.decode("utf-8").rstrip("\r\n")
         if not response_line:
@@ -630,8 +729,11 @@ class Client:
 
             await self._send_request_line(uri, writer)
             if payload is not None and len(payload) > 0:
-                await self._send_payload(payload, writer)
-            status_code, meta = await self._read_response_line(reader)
+                status_code, meta = await self._send_payload_and_read_response(
+                    payload, reader, writer
+                )
+            else:
+                status_code, meta = await self._read_response_line(reader)
 
             # If the certificate was inherited from a redirect, and the request succeeded
             # or was redirected successfully, register/re-bind the certificate to this URI.
@@ -721,7 +823,7 @@ class Client:
             with suppress(Exception):
                 await writer.wait_closed()
             raise
-        except (OSError, ssl.SSLError) as error:
+        except (TimeoutError, OSError, ssl.SSLError) as error:
             writer.close()
             with suppress(Exception):
                 await writer.wait_closed()

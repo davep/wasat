@@ -30,6 +30,7 @@ def mock_server(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "responses_to_send": [],
         "connection_fail": False,
         "write_fail": False,
+        "write_stall": False,
     }
 
     class MockReader:
@@ -77,6 +78,8 @@ def mock_server(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
                 state["sent_payloads"].append(data)
 
         async def drain(self) -> None:
+            if state.get("write_stall") and state["sent_payloads"]:
+                await asyncio.sleep(100)
             if state["sent_payloads"] and state["write_fail"]:
                 raise BrokenPipeError("Server closed connection")
 
@@ -270,6 +273,48 @@ class TestTitanClient:
                 )
                 assert response.status == StatusCode.NOT_FOUND
                 assert response.meta == "Resource does not exist"
+
+        asyncio.run(run())
+
+    def test_initial_response_size_exceeded_stalled_upload(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that early server rejection (initial response) is received even if write stalls."""
+
+        async def run() -> None:
+            mock_server["write_stall"] = True
+            mock_server["responses_to_send"].append(
+                b"50 Payload size exceeds maximum allowed 100000 bytes\r\n"
+            )
+
+            async with Client(verify_mode="off") as client:
+                response = await client.upload(
+                    "titan://example.com/upload",
+                    b"x" * 500000,
+                )
+                assert response.status == StatusCode.PERMANENT_FAILURE
+                assert (
+                    response.meta == "Payload size exceeds maximum allowed 100000 bytes"
+                )
+
+        asyncio.run(run())
+
+    def test_initial_response_token_required(self, mock_server: dict[str, Any]) -> None:
+        """Test that initial response indicating token is required aborts upload."""
+
+        async def run() -> None:
+            mock_server["write_stall"] = True
+            mock_server["responses_to_send"].append(
+                b"50 A token is required to upload a file\r\n"
+            )
+
+            async with Client(verify_mode="off") as client:
+                response = await client.upload(
+                    "titan://example.com/upload",
+                    b"payload_bytes",
+                )
+                assert response.status == StatusCode.PERMANENT_FAILURE
+                assert response.meta == "A token is required to upload a file"
 
         asyncio.run(run())
 
