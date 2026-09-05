@@ -438,3 +438,101 @@ class TestTitanClient:
                     await client.request("gemini://example.com/edit")
 
         asyncio.run(run())
+
+    def test_edit_success(self, mock_server: dict[str, Any]) -> None:
+        """Test Client.edit() sending titan request with ;edit and reading raw content."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(
+                b"20 text/gemini\r\n# Raw page content to edit\r\n"
+            )
+
+            async with Client(verify_mode="off") as client:
+                response = await client.edit("gemini://example.com/page")
+                assert response.status == StatusCode.SUCCESS
+                assert response.meta == "text/gemini"
+                assert await response.text() == "# Raw page content to edit\r\n"
+
+            assert len(mock_server["sent_request_lines"]) == 1
+            req_line = mock_server["sent_request_lines"][0]
+            assert req_line == "titan://example.com/page;edit\r\n"
+            assert len(mock_server["sent_payloads"]) == 0
+
+        asyncio.run(run())
+
+    def test_edit_temporary_failure_locked(self, mock_server: dict[str, Any]) -> None:
+        """Test Client.edit() receiving 40 temporary failure when page is locked."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(
+                b"40 Page is currently locked for editing\r\n"
+            )
+
+            async with Client(verify_mode="off") as client:
+                response = await client.edit("titan://example.com/page;edit")
+                assert response.status == StatusCode.TEMPORARY_FAILURE
+                assert response.meta == "Page is currently locked for editing"
+
+            assert len(mock_server["sent_request_lines"]) == 1
+            assert (
+                mock_server["sent_request_lines"][0]
+                == "titan://example.com/page;edit\r\n"
+            )
+            assert len(mock_server["sent_payloads"]) == 0
+
+        asyncio.run(run())
+
+    def test_upload_after_edit_strips_edit_parameter(
+        self, mock_server: dict[str, Any]
+    ) -> None:
+        """Test that client.upload() called on an edit URI strips ;edit and appends size."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(
+                b"20 text/gemini\r\nUpload succeeded\r\n"
+            )
+
+            edit_uri = TitanURI("titan://example.com/page;edit")
+            async with Client(verify_mode="off") as client:
+                response = await client.upload(edit_uri, b"New content")
+                assert response.status == StatusCode.SUCCESS
+
+            assert len(mock_server["sent_request_lines"]) == 1
+            req_line = mock_server["sent_request_lines"][0]
+            assert "titan://example.com/page;" in req_line
+            assert "size=11" in req_line
+            assert ";edit" not in req_line
+            assert b"New content" in mock_server["sent_payloads"]
+
+        asyncio.run(run())
+
+    def test_request_with_titan_edit_uri(self, mock_server: dict[str, Any]) -> None:
+        """Test that client.request() allows a TitanURI with is_edit without raising size > 0 error."""
+
+        async def run() -> None:
+            mock_server["responses_to_send"].append(
+                b"20 text/gemini\r\nRaw content\r\n"
+            )
+
+            edit_uri = TitanURI("titan://example.com/page;edit")
+            async with Client(verify_mode="off") as client:
+                response = await client.request(edit_uri)
+                assert response.status == StatusCode.SUCCESS
+                assert await response.text() == "Raw content\r\n"
+
+            assert (
+                mock_server["sent_request_lines"][0]
+                == "titan://example.com/page;edit\r\n"
+            )
+
+        asyncio.run(run())
+
+    def test_edit_invalid_uri_type(self) -> None:
+        """Test client.edit() with invalid URI type raises URIError."""
+
+        async def run() -> None:
+            async with Client(verify_mode="off") as client:
+                with pytest.raises(URIError, match="Invalid URI type"):
+                    await client.edit(123)  # type: ignore[arg-type]
+
+        asyncio.run(run())

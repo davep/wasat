@@ -767,6 +767,7 @@ class Client:
 
         if (
             isinstance(requested_uri, TitanURI)
+            and not requested_uri.is_edit
             and requested_uri.size is not None
             and requested_uri.size > 0
         ):
@@ -1008,6 +1009,49 @@ class Client:
             The final Response object.
         """
         return await self.upload(uri, b"", token=token)
+
+    async def edit(self, uri: str | AnyURI) -> Response:
+        """Request the raw content of a resource for editing using the Titan edit extension.
+
+        Sends a Titan request with the ';edit' parameter to lock the resource (if supported
+        by the server) and retrieve its raw unrendered content.
+
+        Note:
+            The Titan edit parameter is a proposed extension to the Titan specification
+            designed for collaborative editing and raw content retrieval. It is supported
+            by various Gemini and Titan servers.
+
+        Args:
+            uri: The target URI as a string, GeminiURI, or TitanURI.
+
+        Returns:
+            A Response instance containing the raw content for editing.
+
+        Raises:
+            URIError: If the URI is invalid.
+            ConnectionError: If network connection fails or times out.
+            SecurityError: If TLS or certificate validation fails.
+            ProtocolError: If the server response violates the protocol.
+            RedirectError: If redirect limits are exceeded or loops are detected.
+            ValueError: If client certificate generation parameters are invalid.
+            OSError: If creating directories or writing client certificate files fails.
+            RuntimeError: If saving the updated client certificate store index fails.
+        """
+        target_uri: TitanURI
+        if isinstance(uri, str):
+            target_uri = (
+                GeminiURI(uri).to_titan(edit=True)
+                if uri.startswith("gemini://")
+                else TitanURI.with_default_scheme(uri).with_edit(True)
+            )
+        elif isinstance(uri, GeminiURI):
+            target_uri = uri.to_titan(edit=True)
+        elif isinstance(uri, TitanURI):
+            target_uri = uri.with_edit(True)
+        else:
+            raise URIError(f"Invalid URI type: {type(uri)}")
+
+        return await self.request(target_uri)
 
     async def close(self) -> None:
         """Close the client and clean up resources, including the client certificate store."""

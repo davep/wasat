@@ -284,3 +284,70 @@ def test_cli_interactive_prompt_cancelled(
     assert exit_info.value.code == 0
     captured = capsys.readouterr()
     assert "Upload cancelled." in captured.err
+
+
+def test_cli_edit_flag(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test CLI with --edit flag fetching raw editable content."""
+    recorded_calls: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "wasat",
+            "--edit",
+            "gemini://example.com/editable_page",
+        ],
+    )
+
+    async def mock_edit(self: Any, uri: Any) -> DummyResponse:
+        recorded_calls.append({"uri": uri})
+        return DummyResponse(
+            StatusCode.SUCCESS,
+            "text/gemini",
+            "# Raw text for editing",
+            uri=TitanURI("titan://example.com/editable_page;edit"),
+        )
+
+    monkeypatch.setattr("wasat.Client.edit", mock_edit)
+
+    asyncio.run(run_cli())
+
+    assert len(recorded_calls) == 1
+    assert str(recorded_calls[0]["uri"]) == "titan://example.com/editable_page;edit"
+    captured = capsys.readouterr()
+    assert "# Raw text for editing" in captured.out
+
+
+def test_cli_titan_edit_uri_without_flag(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test CLI with a titan:// URL containing ;edit without prompting for upload."""
+    recorded_calls: list[dict[str, Any]] = []
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "wasat",
+            "titan://example.com/editable_page;edit",
+        ],
+    )
+
+    async def mock_edit(self: Any, uri: Any) -> DummyResponse:
+        recorded_calls.append({"uri": uri})
+        return DummyResponse(
+            StatusCode.SUCCESS,
+            "text/gemini",
+            "# Raw text from direct titan edit URI",
+            uri=TitanURI("titan://example.com/editable_page;edit"),
+        )
+
+    monkeypatch.setattr("wasat.Client.edit", mock_edit)
+
+    asyncio.run(run_cli())
+
+    assert len(recorded_calls) == 1
+    assert str(recorded_calls[0]["uri"]) == "titan://example.com/editable_page;edit"
+    captured = capsys.readouterr()
+    assert "# Raw text from direct titan edit URI" in captured.out

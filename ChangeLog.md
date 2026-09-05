@@ -1,5 +1,25 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added support for the proposed Titan edit extension (`titan://...;edit`).
+  ([#63](https://github.com/davep/wasat/pull/63))
+- Added `is_edit` property and `with_edit` method to `TitanURI`, and updated
+  `TitanURI.replace` to accept `edit: bool`.
+  ([#63](https://github.com/davep/wasat/pull/63))
+- Enforced parameter mutual exclusivity between `edit` and `size` on
+  `TitanURI`. ([#63](https://github.com/davep/wasat/pull/63))
+- Added `edit: bool = False` parameter to `GeminiURI.to_titan`.
+  ([#63](https://github.com/davep/wasat/pull/63))
+- Added `Client.edit` method to fetch raw editable content and acquire edit
+  locks. ([#63](https://github.com/davep/wasat/pull/63))
+- Updated the CLI with `-e` / `--edit` option to fetch raw content for
+  editing, and resolved an issue where requesting a `titan://` edit URI
+  directly prompted for upload data instead of retrieving content.
+  ([#63](https://github.com/davep/wasat/pull/63))
+
 ## v1.8.1
 
 **Released: 2026-09-04**
