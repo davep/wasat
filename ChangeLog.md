@@ -6,13 +6,13 @@
 
 - Fixed Titan upload handling in `Client.upload` to concurrently read the
   server's response while streaming payload data.
-  ([#66](https://github.com/davep/wasat/pull/66))
+  ([#65](https://github.com/davep/wasat/pull/65))
+- Added timeout handling to response line reading during requests to ensure
+  unresponsive servers cleanly raise `ConnectionError` rather than stalling.
+  ([#65](https://github.com/davep/wasat/pull/65))
 - Added timeout enforcement when closing connections to prevent indefinite
   hangs on `wait_closed()` when servers reject uploads without completing a
   TLS shutdown handshake. ([#66](https://github.com/davep/wasat/pull/66))
-- Added timeout handling to response line reading during requests to ensure
-  unresponsive servers cleanly raise `ConnectionError` rather than stalling.
-  ([#66](https://github.com/davep/wasat/pull/66))
 
 ## v1.9.0
 
