@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.9.0
 
-**Released: WiP**
+**Released: 2026-09-05**
 
 - Added support for the proposed Titan edit extension (`titan://...;edit`).
   ([#63](https://github.com/davep/wasat/pull/63))
