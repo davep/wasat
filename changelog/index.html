@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v191" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.9.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v190" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1088,6 +1099,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v191" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.9.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v190" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1383,6 +1405,19 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v191">v1.9.1</h2>
+<p><strong>Released: 2026-09-05</strong></p>
+<ul>
+<li>Fixed Titan upload handling in <code>Client.upload</code> to concurrently read the
+  server's response while streaming payload data.
+  (<a href="https://github.com/davep/wasat/pull/65">#65</a>)</li>
+<li>Added timeout handling to response line reading during requests to ensure
+  unresponsive servers cleanly raise <code>ConnectionError</code> rather than stalling.
+  (<a href="https://github.com/davep/wasat/pull/65">#65</a>)</li>
+<li>Added timeout enforcement when closing connections to prevent indefinite
+  hangs on <code>wait_closed()</code> when servers reject uploads without completing a
+  TLS shutdown handshake. (<a href="https://github.com/davep/wasat/pull/66">#66</a>)</li>
+</ul>
 <h2 id="v190">v1.9.0</h2>
 <p><strong>Released: 2026-09-05</strong></p>
 <ul>
