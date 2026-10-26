@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.10.0
 
-**Released: WiP**
+**Released: 2026-10-26**
 
 - Added specific `SecurityError` subclasses (`CertificateExpiredError`,
   `CertificateNotYetValidError`, `HostnameMismatchError`,
