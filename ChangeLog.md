@@ -1,5 +1,24 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added `IgnorableSecurityError` as an intermediate base class for
+  session-ignorable TLS and certificate errors (`CertificateExpiredError`,
+  `CertificateNotYetValidError`, `HostnameMismatchError`, and
+  `CertificateUntrustedError`).
+  ([#72](https://github.com/davep/wasat/pull/72))
+- Added `ignore_security_error`, `unignore_security_error`,
+  `get_ignored_security_errors`, and `clear_ignored_security_errors` methods
+  to `Client` to allow ignoring specific `IgnorableSecurityError` subclasses
+  for a given host and port during a session without persisting the ignore
+  state to storage. ([#72](https://github.com/davep/wasat/pull/72))
+- Added `ignored_security_errors` and `has_ignored_security_errors`
+  properties to `Response` to surface any security errors that were ignored
+  during connection verification.
+  ([#72](https://github.com/davep/wasat/pull/72))
+
 ## v1.10.0
 
 **Released: 2026-10-26**

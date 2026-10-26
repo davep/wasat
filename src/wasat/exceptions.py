@@ -27,22 +27,27 @@ class SecurityError(WasatError):
 
 
 ##############################################################################
-class CertificateExpiredError(SecurityError):
+class IgnorableSecurityError(SecurityError):
+    """Base class for TLS or certificate security errors that can be ignored for a session."""
+
+
+##############################################################################
+class CertificateExpiredError(IgnorableSecurityError):
     """Raised when a server TLS certificate has expired."""
 
 
 ##############################################################################
-class CertificateNotYetValidError(SecurityError):
+class CertificateNotYetValidError(IgnorableSecurityError):
     """Raised when a server TLS certificate is not yet valid."""
 
 
 ##############################################################################
-class HostnameMismatchError(SecurityError):
+class HostnameMismatchError(IgnorableSecurityError):
     """Raised when a server TLS certificate does not match the requested hostname or IP address."""
 
 
 ##############################################################################
-class CertificateUntrustedError(SecurityError):
+class CertificateUntrustedError(IgnorableSecurityError):
     """Raised when CA verification fails due to a self-signed or untrusted certificate."""
 
 

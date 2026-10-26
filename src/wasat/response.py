@@ -4,14 +4,14 @@ from __future__ import annotations
 
 ##############################################################################
 # Python imports.
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 from typing import Literal, Protocol, Self
 
 ##############################################################################
 # Local imports.
 from .certs import ClientCertificate, ServerCertificate
-from .exceptions import ConnectionError, ProtocolError
+from .exceptions import ConnectionError, IgnorableSecurityError, ProtocolError
 from .status import StatusCode
 from .trust import get_cert_fingerprint
 from .uri import AnyURI
@@ -45,6 +45,7 @@ class Response:
         verification_method: VerificationMethod | None = None,
         client_key_path: Path | None = None,
         client_cert: ClientCertificate | None = None,
+        ignored_security_errors: Sequence[IgnorableSecurityError] | None = None,
     ) -> None:
         """Initialise the Response object.
 
@@ -60,6 +61,7 @@ class Response:
             verification_method: The method used to verify the server TLS certificate, or None.
             client_key_path: The path to the client private key used for the connection, or None.
             client_cert: The parsed client TLS certificate, or None.
+            ignored_security_errors: Security errors ignored during connection verification, or None.
         """
         self._status = status
         """The status code of the response."""
@@ -93,6 +95,12 @@ class Response:
         """The parsed client TLS certificate information, or None if unavailable."""
         self._verification_method = verification_method
         """The method used to verify the server TLS certificate, or None."""
+        self._ignored_security_errors: tuple[IgnorableSecurityError, ...] = (
+            tuple(ignored_security_errors)
+            if ignored_security_errors is not None
+            else ()
+        )
+        """The tuple of security errors that were ignored during connection verification."""
         self._body: bytes | None = None
         """The cached response body bytes, or None if not read yet."""
 
@@ -167,6 +175,16 @@ class Response:
     def verification_method(self) -> VerificationMethod | None:
         """The method used to verify the server TLS certificate, or None."""
         return self._verification_method
+
+    @property
+    def ignored_security_errors(self) -> tuple[IgnorableSecurityError, ...]:
+        """The tuple of security errors that were ignored during connection verification."""
+        return self._ignored_security_errors
+
+    @property
+    def has_ignored_security_errors(self) -> bool:
+        """Whether the response was obtained despite one or more ignored security errors."""
+        return bool(self._ignored_security_errors)
 
     @property
     def meta(self) -> str:
