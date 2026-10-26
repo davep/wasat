@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -27,10 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1618,7 +1618,16 @@
 <li><strong><a class="autorefs autorefs-internal" title="            URIError" href="../library/exceptions/#wasat.exceptions.URIError">URIError</a></strong>: Raised when a given URI cannot be parsed or resolved.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ProtocolError" href="../library/exceptions/#wasat.exceptions.ProtocolError">ProtocolError</a></strong>: Raised when server response headers violate the Gemini protocol specification.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ConnectionError" href="../library/exceptions/#wasat.exceptions.ConnectionError">ConnectionError</a></strong>: Raised when network connections fail, drop, or time out.</li>
-<li><strong><a class="autorefs autorefs-internal" title="            SecurityError" href="../library/exceptions/#wasat.exceptions.SecurityError">SecurityError</a></strong>: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            SecurityError" href="../library/exceptions/#wasat.exceptions.SecurityError">SecurityError</a></strong>: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store. Specific subclasses provide detailed error classification:<ul>
+<li><strong><a class="autorefs autorefs-internal" title="            CertificateExpiredError" href="../library/exceptions/#wasat.exceptions.CertificateExpiredError">CertificateExpiredError</a></strong>: Raised when a server TLS certificate has expired.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            CertificateNotYetValidError" href="../library/exceptions/#wasat.exceptions.CertificateNotYetValidError">CertificateNotYetValidError</a></strong>: Raised when a server TLS certificate is not yet valid.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            HostnameMismatchError" href="../library/exceptions/#wasat.exceptions.HostnameMismatchError">HostnameMismatchError</a></strong>: Raised when a server TLS certificate does not match the requested hostname or IP address.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            CertificateUntrustedError" href="../library/exceptions/#wasat.exceptions.CertificateUntrustedError">CertificateUntrustedError</a></strong>: Raised when CA verification fails due to a self-signed or untrusted certificate.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            CertificateRevokedError" href="../library/exceptions/#wasat.exceptions.CertificateRevokedError">CertificateRevokedError</a></strong>: Raised when a server TLS certificate has been revoked.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            FingerprintMismatchError" href="../library/exceptions/#wasat.exceptions.FingerprintMismatchError">FingerprintMismatchError</a></strong>: Raised when a server TLS certificate fingerprint does not match the stored TOFU fingerprint.</li>
+<li><strong><a class="autorefs autorefs-internal" title="            CertificateRejectedError" href="../library/exceptions/#wasat.exceptions.CertificateRejectedError">CertificateRejectedError</a></strong>: Raised when a new server TLS certificate is rejected by the verification callback.</li>
+</ul>
+</li>
 <li><strong><a class="autorefs autorefs-internal" title="            RedirectError" href="../library/exceptions/#wasat.exceptions.RedirectError">RedirectError</a></strong>: Raised when a redirect loop is detected or the maximum redirect limit is exceeded.</li>
 </ul>
 
@@ -1794,10 +1803,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
