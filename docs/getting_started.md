@@ -384,5 +384,12 @@ All exceptions raised by the library inherit from the base class [WasatError][wa
 - **[URIError][wasat.exceptions.URIError]**: Raised when a given URI cannot be parsed or resolved.
 - **[ProtocolError][wasat.exceptions.ProtocolError]**: Raised when server response headers violate the Gemini protocol specification.
 - **[ConnectionError][wasat.exceptions.ConnectionError]**: Raised when network connections fail, drop, or time out.
-- **[SecurityError][wasat.exceptions.SecurityError]**: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store.
+- **[SecurityError][wasat.exceptions.SecurityError]**: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store. Specific subclasses provide detailed error classification:
+    - **[CertificateExpiredError][wasat.exceptions.CertificateExpiredError]**: Raised when a server TLS certificate has expired.
+    - **[CertificateNotYetValidError][wasat.exceptions.CertificateNotYetValidError]**: Raised when a server TLS certificate is not yet valid.
+    - **[HostnameMismatchError][wasat.exceptions.HostnameMismatchError]**: Raised when a server TLS certificate does not match the requested hostname or IP address.
+    - **[CertificateUntrustedError][wasat.exceptions.CertificateUntrustedError]**: Raised when CA verification fails due to a self-signed or untrusted certificate.
+    - **[CertificateRevokedError][wasat.exceptions.CertificateRevokedError]**: Raised when a server TLS certificate has been revoked.
+    - **[FingerprintMismatchError][wasat.exceptions.FingerprintMismatchError]**: Raised when a server TLS certificate fingerprint does not match the stored TOFU fingerprint.
+    - **[CertificateRejectedError][wasat.exceptions.CertificateRejectedError]**: Raised when a new server TLS certificate is rejected by the verification callback.
 - **[RedirectError][wasat.exceptions.RedirectError]**: Raised when a redirect loop is detected or the maximum redirect limit is exceeded.

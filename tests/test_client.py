@@ -5,21 +5,34 @@ import pathlib
 import ssl
 import sys
 import tempfile
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import pytest
+from cryptography import x509
 from cryptography.hazmat.bindings.openssl.binding import Binding
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.x509.oid import NameOID
 
 from wasat import (
     GEMINI_DEFAULT_PORT,
+    CertificateExpiredError,
+    CertificateNotYetValidError,
+    CertificateRejectedError,
+    CertificateRevokedError,
+    CertificateUntrustedError,
     Client,
     ConnectionError,
     FileTrustStore,
+    FingerprintMismatchError,
     GeminiURI,
+    HostnameMismatchError,
     RedirectError,
     SecurityError,
     StatusCode,
+    WasatError,
 )
 from wasat.trust import get_cert_fingerprint
 
@@ -403,8 +416,9 @@ class TestClient:
                 writer3 = MockStreamWriter(ssl_object2)
                 connections[0] = (reader3, writer3)
 
-                with pytest.raises(SecurityError) as exception_context:
+                with pytest.raises(FingerprintMismatchError) as exception_context:
                     await client.request("gemini://example.com/index.gmi")
+                assert isinstance(exception_context.value, SecurityError)
                 assert "fingerprint mismatch" in str(exception_context.value)
 
         asyncio.run(run())
@@ -851,5 +865,275 @@ class TestClient:
             assert response.verification_method == "ca"
             assert response.server_cert_der == cert_der
             assert response.server_cert_fingerprint == get_cert_fingerprint(cert_der)
+
+        asyncio.run(run())
+
+    @staticmethod
+    def _build_test_cert_der(
+        not_before: datetime,
+        not_after: datetime,
+        common_name: str = "example.com",
+    ) -> bytes:
+        """Build a DER-encoded self-signed X.509 certificate with given validity dates."""
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        subject = issuer = x509.Name(
+            [x509.NameAttribute(NameOID.COMMON_NAME, common_name)]
+        )
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(private_key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(not_before)
+            .not_valid_after(not_after)
+            .sign(private_key, hashes.SHA256())
+        )
+        return cert.public_bytes(serialization.Encoding.DER)
+
+    def test_security_error_hierarchy(self) -> None:
+        """Test that all specific certificate/TLS errors inherit from SecurityError and WasatError."""
+        subclasses = (
+            CertificateExpiredError,
+            CertificateNotYetValidError,
+            HostnameMismatchError,
+            CertificateUntrustedError,
+            CertificateRevokedError,
+            FingerprintMismatchError,
+            CertificateRejectedError,
+        )
+        for error_cls in subclasses:
+            assert issubclass(error_cls, SecurityError)
+            assert issubclass(error_cls, WasatError)
+
+    @pytest.mark.parametrize(
+        ("verify_code", "message", "expected_exception"),
+        [
+            (
+                _openssl_lib.X509_V_ERR_CERT_HAS_EXPIRED,
+                "certificate has expired",
+                CertificateExpiredError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_CERT_NOT_YET_VALID,
+                "certificate is not yet valid",
+                CertificateNotYetValidError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_HOSTNAME_MISMATCH,
+                "hostname mismatch",
+                HostnameMismatchError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_IP_ADDRESS_MISMATCH,
+                "IP address mismatch",
+                HostnameMismatchError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_CERT_REVOKED,
+                "certificate revoked",
+                CertificateRevokedError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
+                "self-signed certificate",
+                CertificateUntrustedError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
+                "unable to get local issuer certificate",
+                CertificateUntrustedError,
+            ),
+            (
+                _openssl_lib.X509_V_ERR_CERT_SIGNATURE_FAILURE,
+                "certificate signature failure",
+                SecurityError,
+            ),
+        ],
+    )
+    def test_connect_ssl_cert_verification_error_mapping(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        verify_code: int,
+        message: str,
+        expected_exception: type[SecurityError],
+    ) -> None:
+        """Test that _connect maps OpenSSL verify codes to specific SecurityError subclasses."""
+
+        async def run() -> None:
+            async def mock_open_connection(*args: Any, **kwargs: Any) -> Any:
+                raise ssl.SSLCertVerificationError(verify_code, message)
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(verify_mode="ca")
+            with pytest.raises(expected_exception) as exc_info:
+                await client.request("gemini://example.com/")
+            assert type(exc_info.value) is expected_exception
+
+        asyncio.run(run())
+
+    @pytest.mark.parametrize(
+        ("message", "expected_exception"),
+        [
+            ("certificate has expired", CertificateExpiredError),
+            ("certificate is not yet valid", CertificateNotYetValidError),
+            ("hostname 'a.com' doesn't match 'b.com'", HostnameMismatchError),
+            ("certificate revoked by issuer", CertificateRevokedError),
+            ("self-signed certificate in chain", CertificateUntrustedError),
+            ("tlsv1 alert protocol version", SecurityError),
+        ],
+    )
+    def test_connect_ssl_error_message_fallback_mapping(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        message: str,
+        expected_exception: type[SecurityError],
+    ) -> None:
+        """Test that _connect maps generic ssl.SSLError messages to specific SecurityError subclasses."""
+
+        async def run() -> None:
+            async def mock_open_connection(*args: Any, **kwargs: Any) -> Any:
+                raise ssl.SSLError(message)
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            client = Client(verify_mode="ca")
+            with pytest.raises(expected_exception) as exc_info:
+                await client.request("gemini://example.com/")
+            assert type(exc_info.value) is expected_exception
+
+        asyncio.run(run())
+
+    def test_tofu_expired_certificate(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test that TOFU verification raises CertificateExpiredError when the server cert is expired."""
+
+        async def run() -> None:
+            now = datetime.now(UTC)
+            expired_der = self._build_test_cert_der(
+                not_before=now - timedelta(days=10),
+                not_after=now - timedelta(days=1),
+            )
+            ssl_object = MockSSLObject(expired_der)
+            reader = MockStreamReader([b"20 text/gemini\r\n"])
+            writer = MockStreamWriter(ssl_object)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            trust_store = FileTrustStore(tmp_path / "known_hosts")
+            client = Client(verify_mode="tofu", trust_store=trust_store)
+            with pytest.raises(CertificateExpiredError, match="expired on"):
+                await client.request("gemini://example.com/")
+            assert writer.closed
+
+        asyncio.run(run())
+
+    def test_tofu_not_yet_valid_certificate(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test that TOFU verification raises CertificateNotYetValidError when the server cert is not yet valid."""
+
+        async def run() -> None:
+            now = datetime.now(UTC)
+            future_der = self._build_test_cert_der(
+                not_before=now + timedelta(days=1),
+                not_after=now + timedelta(days=10),
+            )
+            ssl_object = MockSSLObject(future_der)
+            reader = MockStreamReader([b"20 text/gemini\r\n"])
+            writer = MockStreamWriter(ssl_object)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            trust_store = FileTrustStore(tmp_path / "known_hosts")
+            client = Client(verify_mode="tofu", trust_store=trust_store)
+            with pytest.raises(CertificateNotYetValidError, match="not valid until"):
+                await client.request("gemini://example.com/")
+            assert writer.closed
+
+        asyncio.run(run())
+
+    def test_tofu_certificate_rejected_by_callback(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test that rejecting a certificate via on_new_certificate raises CertificateRejectedError."""
+
+        async def run() -> None:
+            now = datetime.now(UTC)
+            valid_der = self._build_test_cert_der(
+                not_before=now - timedelta(days=1),
+                not_after=now + timedelta(days=10),
+            )
+            ssl_object = MockSSLObject(valid_der)
+            reader = MockStreamReader([b"20 text/gemini\r\n"])
+            writer = MockStreamWriter(ssl_object)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            async def reject_cert(host: str, port: int, fingerprint: str) -> bool:
+                return False
+
+            trust_store = FileTrustStore(tmp_path / "known_hosts")
+            client = Client(
+                verify_mode="tofu",
+                trust_store=trust_store,
+                on_new_certificate=reject_cert,
+            )
+            with pytest.raises(CertificateRejectedError, match="rejected"):
+                await client.request("gemini://example.com/")
+            assert writer.closed
+
+        asyncio.run(run())
+
+    def test_hybrid_mode_expired_self_signed_cert_raises_certificate_expired_error(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Test hybrid mode when CA fails due to self-signed cert and TOFU detects the cert is expired."""
+
+        async def run() -> None:
+            now = datetime.now(UTC)
+            expired_der = self._build_test_cert_der(
+                not_before=now - timedelta(days=10),
+                not_after=now - timedelta(days=1),
+            )
+            ssl_object = MockSSLObject(expired_der)
+            reader = MockStreamReader([b"20 text/gemini\r\n"])
+            writer = MockStreamWriter(ssl_object)
+
+            async def mock_open_connection(
+                *args: Any, **kwargs: Any
+            ) -> tuple[MockStreamReader, MockStreamWriter]:
+                ssl_ctx = kwargs.get("ssl")
+                if ssl_ctx is not None and ssl_ctx.verify_mode == ssl.CERT_REQUIRED:
+                    raise ssl.SSLCertVerificationError(
+                        _openssl_lib.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
+                        "self-signed certificate",
+                    )
+                return reader, writer
+
+            monkeypatch.setattr(asyncio, "open_connection", mock_open_connection)
+
+            trust_store = FileTrustStore(tmp_path / "known_hosts")
+            client = Client(verify_mode="hybrid", trust_store=trust_store)
+            with pytest.raises(CertificateExpiredError, match="expired on"):
+                await client.request("gemini://example.com/")
+            assert writer.closed
 
         asyncio.run(run())

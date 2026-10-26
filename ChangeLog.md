@@ -1,5 +1,20 @@
 # Wasat ChangeLog
 
+## Unreleased
+
+**Released: WiP**
+
+- Added specific `SecurityError` subclasses (`CertificateExpiredError`,
+  `CertificateNotYetValidError`, `HostnameMismatchError`,
+  `CertificateUntrustedError`, `CertificateRevokedError`,
+  `FingerprintMismatchError`, and `CertificateRejectedError`) to allow
+  callers to distinguish the nature of TLS and certificate validation
+  errors. ([#69](https://github.com/davep/wasat/pull/69))
+- Updated `Client` TOFU verification (`"tofu"` and `"hybrid"` fallback
+  modes) to check server certificate validity dates (`not_before` and
+  `not_after`) and raise `CertificateNotYetValidError` or
+  `CertificateExpiredError`. ([#69](https://github.com/davep/wasat/pull/69))
+
 ## v1.9.1
 
 **Released: 2026-09-05**

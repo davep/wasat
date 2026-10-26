@@ -27,7 +27,14 @@ from .certs import (
 )
 from .client import Client, VerifyMode
 from .exceptions import (
+    CertificateExpiredError,
+    CertificateNotYetValidError,
+    CertificateRejectedError,
+    CertificateRevokedError,
+    CertificateUntrustedError,
     ConnectionError,
+    FingerprintMismatchError,
+    HostnameMismatchError,
     ProtocolError,
     RedirectError,
     SecurityError,
@@ -80,6 +87,13 @@ __all__ = [
     "ProtocolError",
     "ConnectionError",
     "SecurityError",
+    "CertificateExpiredError",
+    "CertificateNotYetValidError",
+    "HostnameMismatchError",
+    "CertificateUntrustedError",
+    "CertificateRevokedError",
+    "FingerprintMismatchError",
+    "CertificateRejectedError",
     "RedirectError",
     "VerifyMode",
     "VerificationMethod",

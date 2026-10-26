@@ -27,6 +27,41 @@ class SecurityError(WasatError):
 
 
 ##############################################################################
+class CertificateExpiredError(SecurityError):
+    """Raised when a server TLS certificate has expired."""
+
+
+##############################################################################
+class CertificateNotYetValidError(SecurityError):
+    """Raised when a server TLS certificate is not yet valid."""
+
+
+##############################################################################
+class HostnameMismatchError(SecurityError):
+    """Raised when a server TLS certificate does not match the requested hostname or IP address."""
+
+
+##############################################################################
+class CertificateUntrustedError(SecurityError):
+    """Raised when CA verification fails due to a self-signed or untrusted certificate."""
+
+
+##############################################################################
+class CertificateRevokedError(SecurityError):
+    """Raised when a server TLS certificate has been revoked."""
+
+
+##############################################################################
+class FingerprintMismatchError(SecurityError):
+    """Raised when a server TLS certificate fingerprint does not match the stored TOFU fingerprint."""
+
+
+##############################################################################
+class CertificateRejectedError(SecurityError):
+    """Raised when a new server TLS certificate is rejected by the verification callback."""
+
+
+##############################################################################
 class RedirectError(WasatError):
     """Raised when redirect limits are exceeded or redirects are invalid."""
 

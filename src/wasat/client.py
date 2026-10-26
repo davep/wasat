@@ -8,6 +8,7 @@ import ssl
 import sys
 from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import BinaryIO, Final, Literal, Self
 
@@ -19,9 +20,17 @@ from .certs import (
     ClientCertCallback,
     ClientCertificateStore,
     FileClientCertificateStore,
+    ServerCertificate,
 )
 from .exceptions import (
+    CertificateExpiredError,
+    CertificateNotYetValidError,
+    CertificateRejectedError,
+    CertificateRevokedError,
+    CertificateUntrustedError,
     ConnectionError,
+    FingerprintMismatchError,
+    HostnameMismatchError,
     ProtocolError,
     RedirectError,
     SecurityError,
@@ -297,6 +306,61 @@ class Client:
         return context
 
     @staticmethod
+    def _ssl_error_to_security_error(error: ssl.SSLError) -> SecurityError:
+        """Convert an ssl.SSLError into an appropriate SecurityError or specific subclass.
+
+        Args:
+            error: The ssl.SSLError raised during TLS connection establishment.
+
+        Returns:
+            An instance of SecurityError or one of its specific subclasses.
+        """
+        message = f"TLS handshake failed: {error}"
+        verify_code = getattr(error, "verify_code", None)
+        if verify_code is not None and isinstance(verify_code, int):
+            if verify_code == _openssl_lib.X509_V_ERR_CERT_HAS_EXPIRED:
+                return CertificateExpiredError(message)
+            if verify_code == _openssl_lib.X509_V_ERR_CERT_NOT_YET_VALID:
+                return CertificateNotYetValidError(message)
+            if verify_code in (
+                _openssl_lib.X509_V_ERR_HOSTNAME_MISMATCH,
+                _openssl_lib.X509_V_ERR_IP_ADDRESS_MISMATCH,
+            ):
+                return HostnameMismatchError(message)
+            if verify_code == _openssl_lib.X509_V_ERR_CERT_REVOKED:
+                return CertificateRevokedError(message)
+            if verify_code in _UNTRUSTED_CA_VERIFY_CODES:
+                return CertificateUntrustedError(message)
+
+        error_message = str(error).lower()
+        if "expired" in error_message:
+            return CertificateExpiredError(message)
+        if "not yet valid" in error_message:
+            return CertificateNotYetValidError(message)
+        if any(
+            keyword in error_message
+            for keyword in ("hostname", "ip address mismatch", "doesn't match")
+        ):
+            return HostnameMismatchError(message)
+        if "revoked" in error_message:
+            return CertificateRevokedError(message)
+        if any(
+            keyword in error_message
+            for keyword in (
+                "self-signed",
+                "self signed",
+                "unable to get local issuer",
+                "unable to get issuer",
+                "unable to verify the first certificate",
+                "certificate untrusted",
+                "untrusted",
+            )
+        ):
+            return CertificateUntrustedError(message)
+
+        return SecurityError(message)
+
+    @staticmethod
     def _is_untrusted_root_error(error: SecurityError) -> bool:
         """Check if a SecurityError during CA verification was caused by an untrusted root or self-signed certificate.
 
@@ -310,6 +374,19 @@ class Client:
         Returns:
             True if the error is due to an untrusted root or self-signed certificate, False otherwise.
         """
+        if isinstance(error, CertificateUntrustedError):
+            return True
+        if isinstance(
+            error,
+            (
+                CertificateExpiredError,
+                CertificateNotYetValidError,
+                HostnameMismatchError,
+                CertificateRevokedError,
+            ),
+        ):
+            return False
+
         cause = error.__cause__
         target: BaseException = cause if cause is not None else error
 
@@ -555,7 +632,7 @@ class Client:
                 f"Connection to {uri.host}:{uri.port} timed out"
             ) from error
         except ssl.SSLError as error:
-            raise SecurityError(f"TLS handshake failed: {error}") from error
+            raise self._ssl_error_to_security_error(error) from error
         except Exception as error:
             raise ConnectionError(
                 f"Failed to connect to {uri.host}:{uri.port}: {error}"
@@ -570,7 +647,11 @@ class Client:
 
         Raises:
             ConnectionError: If the TLS handshake was not completed.
-            SecurityError: If the certificate is missing, mismatched, or rejected.
+            CertificateNotYetValidError: If the certificate is not yet valid.
+            CertificateExpiredError: If the certificate has expired.
+            FingerprintMismatchError: If the certificate fingerprint does not match the stored fingerprint.
+            CertificateRejectedError: If a new certificate is rejected by the callback.
+            SecurityError: If the server did not present a TLS certificate.
         """
         transport = writer.transport
         ssl_object = transport.get_extra_info("ssl_object")
@@ -581,6 +662,20 @@ class Client:
         if not cert_der:
             raise SecurityError("Server did not present a TLS certificate")
 
+        with suppress(ValueError):
+            server_cert = ServerCertificate(cert_der)
+            now = datetime.now(UTC)
+            if now < server_cert.not_before:
+                raise CertificateNotYetValidError(
+                    f"Certificate for {uri.host}:{uri.port} is not valid until "
+                    f"{server_cert.not_before.isoformat()}."
+                )
+            if now > server_cert.not_after:
+                raise CertificateExpiredError(
+                    f"Certificate for {uri.host}:{uri.port} expired on "
+                    f"{server_cert.not_after.isoformat()}."
+                )
+
         assert self._trust_store is not None
         is_trusted = await self._trust_store.verify(uri.host, uri.port, cert_der)
         if not is_trusted:
@@ -589,7 +684,7 @@ class Client:
             )
             current_fingerprint = get_cert_fingerprint(cert_der)
             if stored_fingerprint is not None:
-                raise SecurityError(
+                raise FingerprintMismatchError(
                     f"Verification failed: certificate fingerprint mismatch for {uri.host}:{uri.port}. "
                     f"Expected: sha256:{stored_fingerprint}, Received: sha256:{current_fingerprint}."
                 )
@@ -602,7 +697,7 @@ class Client:
             if accept:
                 await self._trust_store.save(uri.host, uri.port, cert_der)
             else:
-                raise SecurityError(
+                raise CertificateRejectedError(
                     f"Certificate rejected for {uri.host}:{uri.port} by callback."
                 )
 
@@ -708,7 +803,11 @@ class Client:
                     verify_mode_override="tofu",
                 )
                 reader, writer = await self._connect(uri, tofu_ssl_context)
-                await self._verify_tofu(uri, writer)
+                try:
+                    await self._verify_tofu(uri, writer)
+                except BaseException:
+                    await _safe_close_writer(writer)
+                    raise
                 verification_method = "tofu"
         else:
             if ssl_context is None:
