@@ -14,7 +14,7 @@ All source code lives in [src/wasat/](src/wasat/). Key modules and their respons
 | [`status.py`](src/wasat/status.py) | Gemini protocol status code parsing and category logic (`StatusCode`). |
 | [`trust.py`](src/wasat/trust.py) | Trust-On-First-Use (TOFU) validation logic and default file-based storage backend (`FileTrustStore`). |
 | [`uri.py`](src/wasat/uri.py) | Gemini and Titan URI representation, parsing, parameter manipulation, and relative path resolution (`GeminiURI`, `TitanURI`, `_BaseURI`). Uses a safe, undocumented-internal-free scheme-swapping method with `urllib.parse`. |
-| [`exceptions.py`](src/wasat/exceptions.py) | Custom exceptions for the library (`WasatError`, `URIError`, `ProtocolError`, `ConnectionError`, `SecurityError`, `RedirectError`). |
+| [`exceptions.py`](src/wasat/exceptions.py) | Custom exceptions for the library (`WasatError`, `URIError`, `ProtocolError`, `ConnectionError`, `SecurityError`, `CertificateExpiredError`, `CertificateNotYetValidError`, `HostnameMismatchError`, `CertificateUntrustedError`, `CertificateRevokedError`, `FingerprintMismatchError`, `CertificateRejectedError`, `RedirectError`). |
 
 ---
 
