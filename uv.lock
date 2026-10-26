@@ -1328,7 +1328,7 @@ wheels = [
 
 [[package]]
 name = "wasat"
-version = "1.10.0"
+version = "1.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
