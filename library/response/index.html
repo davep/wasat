@@ -800,6 +800,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response(ignored_security_errors)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;ignored_security_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.charset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -866,10 +877,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response.has_ignored_security_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;has_ignored_security_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.history" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;history
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.ignored_security_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;ignored_security_errors
       
     </span>
   </a>
@@ -1425,6 +1458,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response(ignored_security_errors)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;ignored_security_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.charset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1491,10 +1535,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#wasat.response.Response.has_ignored_security_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;has_ignored_security_errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#wasat.response.Response.history" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;history
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wasat.response.Response.ignored_security_errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;ignored_security_errors
       
     </span>
   </a>
@@ -1843,6 +1909,10 @@
     <span class="n"><a class="autorefs autorefs-internal" title="verification_method (wasat.response.Response(verification_method))" href="#wasat.response.Response(verification_method)">verification_method</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            VerificationMethod (wasat.response.VerificationMethod)" href="#wasat.response.VerificationMethod">VerificationMethod</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="client_key_path (wasat.response.Response(client_key_path))" href="#wasat.response.Response(client_key_path)">client_key_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="client_cert (wasat.response.Response(client_cert))" href="#wasat.response.Response(client_cert)">client_cert</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ClientCertificate (wasat.certs.ClientCertificate)" href="../certs/#wasat.certs.ClientCertificate">ClientCertificate</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="ignored_security_errors (wasat.response.Response(ignored_security_errors))" href="#wasat.response.Response(ignored_security_errors)">ignored_security_errors</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="            IgnorableSecurityError (wasat.exceptions.IgnorableSecurityError)" href="../exceptions/#wasat.exceptions.IgnorableSecurityError">IgnorableSecurityError</a></span>
+    <span class="p">]</span>
+    <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2041,6 +2111,22 @@
                   <code>None</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="wasat.response.Response(ignored_security_errors)" class="doc doc-heading doc-heading-parameter">                  <code>ignored_security_errors</code>
+</h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Sequence" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence">Sequence</a>[<a class="autorefs autorefs-internal" title="            IgnorableSecurityError (wasat.exceptions.IgnorableSecurityError)" href="../exceptions/#wasat.exceptions.IgnorableSecurityError">IgnorableSecurityError</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Security errors ignored during connection verification, or None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -2210,6 +2296,30 @@
 
 
 
+<h3 id="wasat.response.Response.has_ignored_security_errors" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">has_ignored_security_errors</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">has_ignored_security_errors</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether the response was obtained despite one or more ignored security errors.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h3 id="wasat.response.Response.history" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">history</span>
 
@@ -2225,6 +2335,30 @@
     <div class="doc doc-contents ">
 
         <p>The history of response objects from any redirections, ordered from oldest to newest.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="wasat.response.Response.ignored_security_errors" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">ignored_security_errors</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ignored_security_errors</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            IgnorableSecurityError (wasat.exceptions.IgnorableSecurityError)" href="../exceptions/#wasat.exceptions.IgnorableSecurityError">IgnorableSecurityError</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The tuple of security errors that were ignored during connection verification.</p>
 
     </div>
 

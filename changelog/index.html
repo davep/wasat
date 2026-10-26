@@ -752,6 +752,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v1110" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.11.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v1100" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1110,6 +1121,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v1110" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.11.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v1100" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1427,6 +1449,24 @@
 
 
 <h1 id="wasat-changelog">Wasat ChangeLog</h1>
+<h2 id="v1110">v1.11.0</h2>
+<p><strong>Released: 2026-10-26</strong></p>
+<ul>
+<li>Added <code>IgnorableSecurityError</code> as an intermediate base class for
+  session-ignorable TLS and certificate errors (<code>CertificateExpiredError</code>,
+  <code>CertificateNotYetValidError</code>, <code>HostnameMismatchError</code>, and
+  <code>CertificateUntrustedError</code>).
+  (<a href="https://github.com/davep/wasat/pull/72">#72</a>)</li>
+<li>Added <code>ignore_security_error</code>, <code>unignore_security_error</code>,
+  <code>get_ignored_security_errors</code>, and <code>clear_ignored_security_errors</code> methods
+  to <code>Client</code> to allow ignoring specific <code>IgnorableSecurityError</code> subclasses
+  for a given host and port during a session without persisting the ignore
+  state to storage. (<a href="https://github.com/davep/wasat/pull/72">#72</a>)</li>
+<li>Added <code>ignored_security_errors</code> and <code>has_ignored_security_errors</code>
+  properties to <code>Response</code> to surface any security errors that were ignored
+  during connection verification.
+  (<a href="https://github.com/davep/wasat/pull/72">#72</a>)</li>
+</ul>
 <h2 id="v1100">v1.10.0</h2>
 <p><strong>Released: 2026-10-26</strong></p>
 <ul>

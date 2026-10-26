@@ -578,6 +578,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#session-only-ignorable-security-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Session-Only Ignorable Security Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1157,6 +1168,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#session-only-ignorable-security-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Session-Only Ignorable Security Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1471,6 +1493,35 @@
     <span class="k">if</span> <span class="n">removed</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"Removed fingerprint; next connection will prompt for trust again."</span><span class="p">)</span>
 </code></pre></div>
+<h3 id="session-only-ignorable-security-errors">Session-Only Ignorable Security Errors</h3>
+<p>Certain non-fatal certificate errors (such as <a class="autorefs autorefs-internal" title="            CertificateExpiredError" href="../library/exceptions/#wasat.exceptions.CertificateExpiredError">CertificateExpiredError</a>, <a class="autorefs autorefs-internal" title="            CertificateNotYetValidError" href="../library/exceptions/#wasat.exceptions.CertificateNotYetValidError">CertificateNotYetValidError</a>, <a class="autorefs autorefs-internal" title="            HostnameMismatchError" href="../library/exceptions/#wasat.exceptions.HostnameMismatchError">HostnameMismatchError</a>, and <a class="autorefs autorefs-internal" title="            CertificateUntrustedError" href="../library/exceptions/#wasat.exceptions.CertificateUntrustedError">CertificateUntrustedError</a>) inherit from <a class="autorefs autorefs-internal" title="            IgnorableSecurityError" href="../library/exceptions/#wasat.exceptions.IgnorableSecurityError">IgnorableSecurityError</a>. You can instruct a <a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a> instance to ignore a specific error type for a given host and port for the duration of the session using <a class="autorefs autorefs-internal" title="            ignore_security_error" href="../library/client/#wasat.client.Client.ignore_security_error">ignore_security_error</a>.</p>
+<p>Ignore rules exist purely in memory on the <a class="autorefs autorefs-internal" title="            Client" href="../library/client/#wasat.client.Client">Client</a> instance and are never persisted to disk. When a response succeeds because one or more security errors were ignored, <a class="autorefs autorefs-internal" title="            has_ignored_security_errors
+
+
+  
+      property
+  " href="../library/response/#wasat.response.Response.has_ignored_security_errors">response.has_ignored_security_errors</a> is <code>True</code> and <a class="autorefs autorefs-internal" title="            ignored_security_errors
+
+
+  
+      property
+  " href="../library/response/#wasat.response.Response.ignored_security_errors">response.ignored_security_errors</a> exposes the ignored exception instances so client applications can warn the user:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">wasat</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">IgnorableSecurityError</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">verify_mode</span><span class="o">=</span><span class="s2">"tofu"</span><span class="p">)</span>
+<span class="n">uri</span> <span class="o">=</span> <span class="s2">"gemini://expired.example.com/"</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">IgnorableSecurityError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+    <span class="c1"># Prompt user whether to ignore this specific error for this host during the session</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">ignore_security_error</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">has_ignored_security_errors</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ignored_error</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">ignored_security_errors</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ignored_error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> was ignored: </span><span class="si">{</span><span class="n">ignored_error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
 <hr />
 <h2 id="client-certificate-authentication">Client Certificate Authentication</h2>
 <p>Gemini supports client certificates as a method of user authentication (e.g. for session tracking or user identities). When a server requires a client certificate, it returns a <code>60</code> status code (CLIENT_CERTIFICATE_REQUIRED).</p>
@@ -1619,10 +1670,13 @@
 <li><strong><a class="autorefs autorefs-internal" title="            ProtocolError" href="../library/exceptions/#wasat.exceptions.ProtocolError">ProtocolError</a></strong>: Raised when server response headers violate the Gemini protocol specification.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            ConnectionError" href="../library/exceptions/#wasat.exceptions.ConnectionError">ConnectionError</a></strong>: Raised when network connections fail, drop, or time out.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            SecurityError" href="../library/exceptions/#wasat.exceptions.SecurityError">SecurityError</a></strong>: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store. Specific subclasses provide detailed error classification:<ul>
+<li><strong><a class="autorefs autorefs-internal" title="            IgnorableSecurityError" href="../library/exceptions/#wasat.exceptions.IgnorableSecurityError">IgnorableSecurityError</a></strong>: Base class for TLS or certificate security errors that can be ignored for a session via <a class="autorefs autorefs-internal" title="            ignore_security_error" href="../library/client/#wasat.client.Client.ignore_security_error">Client.ignore_security_error</a>:<ul>
 <li><strong><a class="autorefs autorefs-internal" title="            CertificateExpiredError" href="../library/exceptions/#wasat.exceptions.CertificateExpiredError">CertificateExpiredError</a></strong>: Raised when a server TLS certificate has expired.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            CertificateNotYetValidError" href="../library/exceptions/#wasat.exceptions.CertificateNotYetValidError">CertificateNotYetValidError</a></strong>: Raised when a server TLS certificate is not yet valid.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            HostnameMismatchError" href="../library/exceptions/#wasat.exceptions.HostnameMismatchError">HostnameMismatchError</a></strong>: Raised when a server TLS certificate does not match the requested hostname or IP address.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            CertificateUntrustedError" href="../library/exceptions/#wasat.exceptions.CertificateUntrustedError">CertificateUntrustedError</a></strong>: Raised when CA verification fails due to a self-signed or untrusted certificate.</li>
+</ul>
+</li>
 <li><strong><a class="autorefs autorefs-internal" title="            CertificateRevokedError" href="../library/exceptions/#wasat.exceptions.CertificateRevokedError">CertificateRevokedError</a></strong>: Raised when a server TLS certificate has been revoked.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            FingerprintMismatchError" href="../library/exceptions/#wasat.exceptions.FingerprintMismatchError">FingerprintMismatchError</a></strong>: Raised when a server TLS certificate fingerprint does not match the stored TOFU fingerprint.</li>
 <li><strong><a class="autorefs autorefs-internal" title="            CertificateRejectedError" href="../library/exceptions/#wasat.exceptions.CertificateRejectedError">CertificateRejectedError</a></strong>: Raised when a new server TLS certificate is rejected by the verification callback.</li>
