@@ -1,8 +1,8 @@
 # Wasat ChangeLog
 
-## Unreleased
+## v1.11.0
 
-**Released: WiP**
+**Released: 2026-10-26**
 
 - Added `IgnorableSecurityError` as an intermediate base class for
   session-ignorable TLS and certificate errors (`CertificateExpiredError`,
