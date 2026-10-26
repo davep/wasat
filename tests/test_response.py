@@ -258,5 +258,23 @@ class TestResponse:
         assert server_certificate.subject_common_name == "lazy.example.com"
         assert response.server_cert is server_certificate
 
+    def test_ignored_security_errors_properties(self) -> None:
+        """Test ignored_security_errors and has_ignored_security_errors properties."""
+        from wasat import CertificateExpiredError, HostnameMismatchError
+
+        default_response = Response(StatusCode.SUCCESS, "")
+        assert default_response.ignored_security_errors == ()
+        assert default_response.has_ignored_security_errors is False
+
+        expired_error = CertificateExpiredError("Certificate expired")
+        mismatch_error = HostnameMismatchError("Hostname mismatch")
+        response = Response(
+            StatusCode.SUCCESS,
+            "",
+            ignored_security_errors=[expired_error, mismatch_error],
+        )
+        assert response.has_ignored_security_errors is True
+        assert response.ignored_security_errors == (expired_error, mismatch_error)
+
 
 ### test_response.py ends here

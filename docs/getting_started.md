@@ -212,6 +212,30 @@ if client.trust_store is not None:
         print("Removed fingerprint; next connection will prompt for trust again.")
 ```
 
+### Session-Only Ignorable Security Errors
+
+Certain non-fatal certificate errors (such as [CertificateExpiredError][wasat.exceptions.CertificateExpiredError], [CertificateNotYetValidError][wasat.exceptions.CertificateNotYetValidError], [HostnameMismatchError][wasat.exceptions.HostnameMismatchError], and [CertificateUntrustedError][wasat.exceptions.CertificateUntrustedError]) inherit from [IgnorableSecurityError][wasat.exceptions.IgnorableSecurityError]. You can instruct a [Client][wasat.client.Client] instance to ignore a specific error type for a given host and port for the duration of the session using [ignore_security_error][wasat.client.Client.ignore_security_error].
+
+Ignore rules exist purely in memory on the [Client][wasat.client.Client] instance and are never persisted to disk. When a response succeeds because one or more security errors were ignored, [response.has_ignored_security_errors][wasat.response.Response.has_ignored_security_errors] is `True` and [response.ignored_security_errors][wasat.response.Response.ignored_security_errors] exposes the ignored exception instances so client applications can warn the user:
+
+```python
+from wasat import Client, IgnorableSecurityError
+
+client = Client(verify_mode="tofu")
+uri = "gemini://expired.example.com/"
+
+try:
+    response = await client.request(uri)
+except IgnorableSecurityError as error:
+    # Prompt user whether to ignore this specific error for this host during the session
+    client.ignore_security_error(uri, error)
+    response = await client.request(uri)
+
+if response.has_ignored_security_errors:
+    for ignored_error in response.ignored_security_errors:
+        print(f"Warning: {type(ignored_error).__name__} was ignored: {ignored_error}")
+```
+
 ---
 
 ## Client Certificate Authentication
@@ -385,10 +409,11 @@ All exceptions raised by the library inherit from the base class [WasatError][wa
 - **[ProtocolError][wasat.exceptions.ProtocolError]**: Raised when server response headers violate the Gemini protocol specification.
 - **[ConnectionError][wasat.exceptions.ConnectionError]**: Raised when network connections fail, drop, or time out.
 - **[SecurityError][wasat.exceptions.SecurityError]**: Raised when TLS verification fails or a TOFU fingerprint does not match the trust store. Specific subclasses provide detailed error classification:
-    - **[CertificateExpiredError][wasat.exceptions.CertificateExpiredError]**: Raised when a server TLS certificate has expired.
-    - **[CertificateNotYetValidError][wasat.exceptions.CertificateNotYetValidError]**: Raised when a server TLS certificate is not yet valid.
-    - **[HostnameMismatchError][wasat.exceptions.HostnameMismatchError]**: Raised when a server TLS certificate does not match the requested hostname or IP address.
-    - **[CertificateUntrustedError][wasat.exceptions.CertificateUntrustedError]**: Raised when CA verification fails due to a self-signed or untrusted certificate.
+    - **[IgnorableSecurityError][wasat.exceptions.IgnorableSecurityError]**: Base class for TLS or certificate security errors that can be ignored for a session via [Client.ignore_security_error][wasat.client.Client.ignore_security_error]:
+        - **[CertificateExpiredError][wasat.exceptions.CertificateExpiredError]**: Raised when a server TLS certificate has expired.
+        - **[CertificateNotYetValidError][wasat.exceptions.CertificateNotYetValidError]**: Raised when a server TLS certificate is not yet valid.
+        - **[HostnameMismatchError][wasat.exceptions.HostnameMismatchError]**: Raised when a server TLS certificate does not match the requested hostname or IP address.
+        - **[CertificateUntrustedError][wasat.exceptions.CertificateUntrustedError]**: Raised when CA verification fails due to a self-signed or untrusted certificate.
     - **[CertificateRevokedError][wasat.exceptions.CertificateRevokedError]**: Raised when a server TLS certificate has been revoked.
     - **[FingerprintMismatchError][wasat.exceptions.FingerprintMismatchError]**: Raised when a server TLS certificate fingerprint does not match the stored TOFU fingerprint.
     - **[CertificateRejectedError][wasat.exceptions.CertificateRejectedError]**: Raised when a new server TLS certificate is rejected by the verification callback.

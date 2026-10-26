@@ -31,6 +31,7 @@ from .exceptions import (
     ConnectionError,
     FingerprintMismatchError,
     HostnameMismatchError,
+    IgnorableSecurityError,
     ProtocolError,
     RedirectError,
     SecurityError,
@@ -41,6 +42,7 @@ from .response import Response, VerificationMethod
 from .status import StatusCode
 from .trust import FileTrustStore, TrustStore, get_cert_fingerprint
 from .uri import (
+    GEMINI_DEFAULT_PORT,
     AnyURI,
     GeminiURI,
     TitanURI,
@@ -74,6 +76,11 @@ _UNTRUSTED_CA_VERIFY_CODES: Final[set[int]] = {
     _openssl_lib.X509_V_ERR_CERT_UNTRUSTED,
 }
 """OpenSSL X509 verification codes indicating untrusted root or self-signed certificates."""
+
+_X509_V_FLAG_NO_CHECK_TIME: Final[int] = int(
+    getattr(_openssl_lib, "X509_V_FLAG_NO_CHECK_TIME", 0x200000)
+)
+"""OpenSSL X509 verification flag to disable certificate validity time checking."""
 
 
 ##############################################################################
@@ -263,6 +270,197 @@ class Client:
         # Cache for permanent redirects (status 31)
         self._permanent_redirects: dict[AnyURI, AnyURI] = {}
         """Cache mapping requested URIs to their permanent redirect targets."""
+
+        # Session-only ignored security errors keyed by (host, port)
+        self._ignored_security_errors: dict[
+            tuple[str, int], set[type[IgnorableSecurityError]]
+        ] = {}
+        """In-memory mapping of (host, port) to ignored IgnorableSecurityError subclasses for this session."""
+
+    @staticmethod
+    def _resolve_host_port(
+        host: str | AnyURI, port: int = GEMINI_DEFAULT_PORT
+    ) -> tuple[str, int]:
+        """Normalise a host string or URI and port into a (lowercase_host, port) tuple.
+
+        Args:
+            host: Target hostname, 'host:port' string, GeminiURI, or TitanURI.
+            port: Default port if not specified in host or URI.
+
+        Returns:
+            A tuple of (normalised_host, port).
+
+        Raises:
+            URIError: If a URI string is malformed.
+            ValueError: If the host is empty or the port is invalid.
+        """
+        if isinstance(host, (GeminiURI, TitanURI)):
+            return (host.host.lower(), host.port)
+
+        if not isinstance(host, str):
+            raise ValueError(f"Invalid host type: {type(host)}")
+
+        raw = host.strip()
+        if not raw:
+            raise ValueError("Host cannot be empty")
+
+        if raw.startswith("titan://"):
+            titan_uri = TitanURI(raw)
+            return (titan_uri.host.lower(), titan_uri.port)
+        if raw.startswith("gemini://") or "://" in raw:
+            gemini_uri = GeminiURI(raw)
+            return (gemini_uri.host.lower(), gemini_uri.port)
+
+        authority = raw.split("/", 1)[0]
+        resolved_port = port
+        if authority.startswith("["):
+            if "]:" in authority:
+                host_part, port_str = authority.rsplit(":", 1)
+                try:
+                    resolved_port = int(port_str)
+                except ValueError as error:
+                    raise ValueError(
+                        f"Invalid port in host '{raw}': {port_str}"
+                    ) from error
+                resolved_host = host_part.strip("[]")
+            elif authority.endswith("]"):
+                resolved_host = authority.strip("[]")
+            else:
+                raise ValueError(f"Invalid IPv6 host format: '{raw}'")
+        elif ":" in authority:
+            host_part, port_str = authority.rsplit(":", 1)
+            try:
+                resolved_port = int(port_str)
+            except ValueError as error:
+                raise ValueError(f"Invalid port in host '{raw}': {port_str}") from error
+            resolved_host = host_part
+        else:
+            resolved_host = authority
+
+        if not resolved_host:
+            raise ValueError("Host cannot be empty")
+        if not (1 <= resolved_port <= 65535):
+            raise ValueError(f"Port must be between 1 and 65535, got {resolved_port}")
+
+        return (resolved_host.lower(), resolved_port)
+
+    @staticmethod
+    def _resolve_ignorable_error_type(
+        error: type[IgnorableSecurityError] | IgnorableSecurityError,
+    ) -> type[IgnorableSecurityError]:
+        """Validate and normalise an IgnorableSecurityError class or instance to its concrete class.
+
+        Args:
+            error: An IgnorableSecurityError subclass or instance.
+
+        Returns:
+            The concrete IgnorableSecurityError subclass.
+
+        Raises:
+            ValueError: If error is not a concrete subclass or instance of IgnorableSecurityError.
+        """
+        if isinstance(error, IgnorableSecurityError):
+            error_type: type[IgnorableSecurityError] = type(error)
+        elif isinstance(error, type) and issubclass(error, IgnorableSecurityError):
+            error_type = error
+        else:
+            raise ValueError(
+                f"Error must be a subclass or instance of IgnorableSecurityError, got {error!r}"
+            )
+        if error_type is IgnorableSecurityError:
+            raise ValueError(
+                "Specify a concrete subclass of IgnorableSecurityError (e.g. CertificateExpiredError)"
+            )
+        return error_type
+
+    def ignore_security_error(
+        self,
+        host: str | AnyURI,
+        error: type[IgnorableSecurityError] | IgnorableSecurityError,
+        *,
+        port: int = GEMINI_DEFAULT_PORT,
+    ) -> None:
+        """Ignore a specific ignorable security error for a host and port for this session.
+
+        The ignore rule is stored strictly in memory on this `Client` instance and is
+        never persisted to disk.
+
+        Args:
+            host: The target hostname (optionally 'host:port'), GeminiURI, or TitanURI.
+            error: The concrete IgnorableSecurityError subclass or instance to ignore.
+            port: The target port (defaults to 1965; ignored if host is a URI or 'host:port').
+
+        Raises:
+            URIError: If a URI string passed as `host` is malformed.
+            ValueError: If the host/port is invalid or `error` is not a concrete
+                IgnorableSecurityError subclass or instance.
+        """
+        key = self._resolve_host_port(host, port)
+        error_type = self._resolve_ignorable_error_type(error)
+        self._ignored_security_errors.setdefault(key, set()).add(error_type)
+
+    def unignore_security_error(
+        self,
+        host: str | AnyURI,
+        error: type[IgnorableSecurityError] | IgnorableSecurityError | None = None,
+        *,
+        port: int = GEMINI_DEFAULT_PORT,
+    ) -> bool:
+        """Stop ignoring a security error (or all ignored security errors) for a host and port.
+
+        Args:
+            host: The target hostname (optionally 'host:port'), GeminiURI, or TitanURI.
+            error: The concrete IgnorableSecurityError subclass or instance to stop ignoring,
+                or None to clear all ignored security errors for the host and port.
+            port: The target port (defaults to 1965; ignored if host is a URI or 'host:port').
+
+        Returns:
+            True if one or more ignore rules were removed, False if none were present.
+
+        Raises:
+            URIError: If a URI string passed as `host` is malformed.
+            ValueError: If the host/port is invalid or `error` is not a concrete
+                IgnorableSecurityError subclass or instance.
+        """
+        key = self._resolve_host_port(host, port)
+        if error is None:
+            return self._ignored_security_errors.pop(key, None) is not None
+
+        error_type = self._resolve_ignorable_error_type(error)
+        ignored_set = self._ignored_security_errors.get(key)
+        if ignored_set is None or error_type not in ignored_set:
+            return False
+
+        ignored_set.remove(error_type)
+        if not ignored_set:
+            del self._ignored_security_errors[key]
+        return True
+
+    def get_ignored_security_errors(
+        self,
+        host: str | AnyURI,
+        *,
+        port: int = GEMINI_DEFAULT_PORT,
+    ) -> frozenset[type[IgnorableSecurityError]]:
+        """Retrieve the set of ignored security error types for a host and port in this session.
+
+        Args:
+            host: The target hostname (optionally 'host:port'), GeminiURI, or TitanURI.
+            port: The target port (defaults to 1965; ignored if host is a URI or 'host:port').
+
+        Returns:
+            A frozenset of concrete IgnorableSecurityError subclasses ignored for the host and port.
+
+        Raises:
+            URIError: If a URI string passed as `host` is malformed.
+            ValueError: If the host/port is invalid.
+        """
+        key = self._resolve_host_port(host, port)
+        return frozenset(self._ignored_security_errors.get(key, set()))
+
+    def clear_ignored_security_errors(self) -> None:
+        """Clear all session-ignored security errors across all hosts."""
+        self._ignored_security_errors.clear()
 
     def _create_ssl_context(
         self,
@@ -638,17 +836,159 @@ class Client:
                 f"Failed to connect to {uri.host}:{uri.port}: {error}"
             ) from error
 
-    async def _verify_tofu(self, uri: AnyURI, writer: asyncio.StreamWriter) -> None:
+    @staticmethod
+    def _verify_cert_dates(
+        uri: AnyURI,
+        cert_der: bytes,
+        ignored_types: set[type[IgnorableSecurityError]],
+        ignored_errors: list[IgnorableSecurityError],
+    ) -> None:
+        """Verify the peer certificate validity dates, recording or raising errors.
+
+        Args:
+            uri: The target URI (GeminiURI or TitanURI).
+            cert_der: The raw DER-encoded server certificate.
+            ignored_types: Set of IgnorableSecurityError subclasses ignored for this host/port.
+            ignored_errors: Mutable list to record any ignored security error instances.
+
+        Raises:
+            CertificateNotYetValidError: If the certificate is not yet valid and not ignored.
+            CertificateExpiredError: If the certificate has expired and not ignored.
+        """
+        with suppress(ValueError):
+            server_cert = ServerCertificate(cert_der)
+            now = datetime.now(UTC)
+            if now < server_cert.not_before:
+                not_yet_valid_error = CertificateNotYetValidError(
+                    f"Certificate for {uri.host}:{uri.port} is not valid until "
+                    f"{server_cert.not_before.isoformat()}."
+                )
+                if CertificateNotYetValidError in ignored_types:
+                    if not any(
+                        isinstance(existing, CertificateNotYetValidError)
+                        for existing in ignored_errors
+                    ):
+                        ignored_errors.append(not_yet_valid_error)
+                else:
+                    raise not_yet_valid_error
+            if now > server_cert.not_after:
+                expired_error = CertificateExpiredError(
+                    f"Certificate for {uri.host}:{uri.port} expired on "
+                    f"{server_cert.not_after.isoformat()}."
+                )
+                if CertificateExpiredError in ignored_types:
+                    if not any(
+                        isinstance(existing, CertificateExpiredError)
+                        for existing in ignored_errors
+                    ):
+                        ignored_errors.append(expired_error)
+                else:
+                    raise expired_error
+
+    async def _connect_ca_after_ignored_error(
+        self,
+        uri: AnyURI,
+        initial_error: IgnorableSecurityError,
+        ignored_types: set[type[IgnorableSecurityError]],
+        ignored_errors: list[IgnorableSecurityError],
+        client_cert: Path | None = None,
+        client_key: Path | None = None,
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        """Reconnect after a CA verification handshake fails with an ignored security error.
+
+        Args:
+            uri: The target URI (GeminiURI or TitanURI).
+            initial_error: The IgnorableSecurityError caught during the initial CA connection.
+            ignored_types: Set of IgnorableSecurityError subclasses ignored for this host/port.
+            ignored_errors: Mutable list to record any ignored security error instances.
+            client_cert: Optional path to the client certificate PEM file.
+            client_key: Optional path to the client private key PEM file.
+
+        Returns:
+            A tuple of (StreamReader, StreamWriter).
+
+        Raises:
+            ConnectionError: If the connection attempt times out or fails.
+            SecurityError: If an unignored TLS or certificate validation error occurs.
+        """
+        ignored_errors.append(initial_error)
+        encountered_types: set[type[IgnorableSecurityError]] = {type(initial_error)}
+
+        while True:
+            if CertificateUntrustedError in encountered_types:
+                relaxed_context = self._create_ssl_context(
+                    client_cert=client_cert,
+                    client_key=client_key,
+                    verify_mode_override="tofu",
+                )
+            else:
+                relaxed_context = self._create_ssl_context(
+                    client_cert=client_cert,
+                    client_key=client_key,
+                    verify_mode_override="ca",
+                )
+                if HostnameMismatchError in encountered_types:
+                    relaxed_context.check_hostname = False
+                if (
+                    CertificateExpiredError in encountered_types
+                    or CertificateNotYetValidError in encountered_types
+                ):
+                    relaxed_context.verify_flags |= ssl.VerifyFlags(
+                        _X509_V_FLAG_NO_CHECK_TIME
+                    )
+
+            try:
+                reader, writer = await self._connect(uri, relaxed_context)
+                break
+            except IgnorableSecurityError as next_error:
+                if type(next_error) not in ignored_types:
+                    raise
+                if type(next_error) not in encountered_types:
+                    encountered_types.add(type(next_error))
+                    ignored_errors.append(next_error)
+                    continue
+                fallback_context = self._create_ssl_context(
+                    client_cert=client_cert,
+                    client_key=client_key,
+                    verify_mode_override="tofu",
+                )
+                reader, writer = await self._connect(uri, fallback_context)
+                break
+
+        try:
+            transport = writer.transport
+            ssl_object = transport.get_extra_info("ssl_object")
+            if ssl_object is not None:
+                cert_der = ssl_object.getpeercert(binary_form=True)
+                if isinstance(cert_der, bytes) and cert_der:
+                    self._verify_cert_dates(
+                        uri, cert_der, ignored_types, ignored_errors
+                    )
+        except BaseException:
+            await _safe_close_writer(writer)
+            raise
+
+        return reader, writer
+
+    async def _verify_tofu(
+        self,
+        uri: AnyURI,
+        writer: asyncio.StreamWriter,
+        ignored_types: set[type[IgnorableSecurityError]] | None = None,
+        ignored_errors: list[IgnorableSecurityError] | None = None,
+    ) -> None:
         """Verify the peer certificate using Trust-On-First-Use (TOFU).
 
         Args:
             uri: The target URI (GeminiURI or TitanURI).
             writer: The StreamWriter representing the established connection.
+            ignored_types: Optional set of IgnorableSecurityError subclasses ignored for this host/port.
+            ignored_errors: Optional mutable list to record any ignored security error instances.
 
         Raises:
             ConnectionError: If the TLS handshake was not completed.
-            CertificateNotYetValidError: If the certificate is not yet valid.
-            CertificateExpiredError: If the certificate has expired.
+            CertificateNotYetValidError: If the certificate is not yet valid and not ignored.
+            CertificateExpiredError: If the certificate has expired and not ignored.
             FingerprintMismatchError: If the certificate fingerprint does not match the stored fingerprint.
             CertificateRejectedError: If a new certificate is rejected by the callback.
             SecurityError: If the server did not present a TLS certificate.
@@ -662,19 +1002,12 @@ class Client:
         if not cert_der:
             raise SecurityError("Server did not present a TLS certificate")
 
-        with suppress(ValueError):
-            server_cert = ServerCertificate(cert_der)
-            now = datetime.now(UTC)
-            if now < server_cert.not_before:
-                raise CertificateNotYetValidError(
-                    f"Certificate for {uri.host}:{uri.port} is not valid until "
-                    f"{server_cert.not_before.isoformat()}."
-                )
-            if now > server_cert.not_after:
-                raise CertificateExpiredError(
-                    f"Certificate for {uri.host}:{uri.port} expired on "
-                    f"{server_cert.not_after.isoformat()}."
-                )
+        self._verify_cert_dates(
+            uri,
+            cert_der,
+            ignored_types if ignored_types is not None else set(),
+            ignored_errors if ignored_errors is not None else [],
+        )
 
         assert self._trust_store is not None
         is_trusted = await self._trust_store.verify(uri.host, uri.port, cert_der)
@@ -777,6 +1110,10 @@ class Client:
                                 break
 
         verification_method: VerificationMethod | None = None
+        ignored_for_host: set[type[IgnorableSecurityError]] = set(
+            self._ignored_security_errors.get((uri.host.lower(), uri.port), set())
+        )
+        ignored_errors: list[IgnorableSecurityError] = []
 
         if ssl_context is None and self._verify_mode == "hybrid":
             ca_ssl_context = self._create_ssl_context(
@@ -785,9 +1122,21 @@ class Client:
                 verify_mode_override="ca",
             )
             try:
-                reader, writer = await self._connect(uri, ca_ssl_context)
+                try:
+                    reader, writer = await self._connect(uri, ca_ssl_context)
+                except IgnorableSecurityError as error:
+                    if type(error) not in ignored_for_host:
+                        raise
+                    reader, writer = await self._connect_ca_after_ignored_error(
+                        uri,
+                        error,
+                        ignored_for_host,
+                        ignored_errors,
+                        client_cert=cert_path,
+                        client_key=key_path,
+                    )
                 verification_method = "ca"
-                if self._trust_store is not None:
+                if self._trust_store is not None and not ignored_errors:
                     transport = writer.transport
                     ssl_object = transport.get_extra_info("ssl_object")
                     if ssl_object is not None:
@@ -804,7 +1153,9 @@ class Client:
                 )
                 reader, writer = await self._connect(uri, tofu_ssl_context)
                 try:
-                    await self._verify_tofu(uri, writer)
+                    await self._verify_tofu(
+                        uri, writer, ignored_for_host, ignored_errors
+                    )
                 except BaseException:
                     await _safe_close_writer(writer)
                     raise
@@ -825,11 +1176,23 @@ class Client:
                 else:
                     verification_method = "off"
 
-            reader, writer = await self._connect(uri, ssl_context)
+            try:
+                reader, writer = await self._connect(uri, ssl_context)
+            except IgnorableSecurityError as error:
+                if type(error) not in ignored_for_host:
+                    raise
+                reader, writer = await self._connect_ca_after_ignored_error(
+                    uri,
+                    error,
+                    ignored_for_host,
+                    ignored_errors,
+                    client_cert=cert_path,
+                    client_key=key_path,
+                )
 
         try:
             if self._verify_mode == "tofu":
-                await self._verify_tofu(uri, writer)
+                await self._verify_tofu(uri, writer, ignored_for_host, ignored_errors)
 
             server_cert_der: bytes | None = None
             if verification_method != "off":
@@ -879,6 +1242,7 @@ class Client:
                     client_key_path=key_path,
                     server_cert_der=server_cert_der,
                     verification_method=verification_method,
+                    ignored_security_errors=ignored_errors,
                 )
             else:
                 await _safe_close_writer(writer)
@@ -894,6 +1258,7 @@ class Client:
                     client_key_path=key_path,
                     server_cert_der=server_cert_der,
                     verification_method=verification_method,
+                    ignored_security_errors=ignored_errors,
                 )
 
                 # Handle client certificate required status
